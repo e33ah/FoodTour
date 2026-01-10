@@ -7,6 +7,11 @@ public class Program {
         // Add services to the container.
         builder.Services.AddControllersWithViews();
 
+        // Add database context
+        string connectionString = builder.Configuration.GetConnectionString("FoodTourContext") ?? throw new InvalidOperationException("Connection string 'FoodTourContext' not found.");
+        builder.Services.AddDbContext<FoodTourContext>(options =>
+            options.UseSqlServer(connectionString));
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
