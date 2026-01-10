@@ -2,6 +2,9 @@
   <Folder Name="/SolutionItems/">
     <File Path="README.md" />
   </Folder>
+  <Project Path="FoodTour.Pipeline/FoodTour.Pipeline.csproj">
+    <Build Project="false" />
+  </Project>
   <Project Path="FoodTour.Test/FoodTour.Test.csproj" />
   <Project Path="FoodTour/FoodTour.csproj" />
   <Project Path="_Dependencies/_Dependencies.shproj" Id="5815bcd8-6123-402d-931e-83270e0dc0de" />
