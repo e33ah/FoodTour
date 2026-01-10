@@ -73,7 +73,7 @@ namespace FoodTour.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Suppliers");
+                    b.ToTable("Suppliers", (string)null);
                 });
 #pragma warning restore 612, 618
         }

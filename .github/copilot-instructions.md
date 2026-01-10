@@ -34,7 +34,7 @@ public class ExampleClass{
 
 - **Modernity:** Use modern technologies and best practices relevant to the programming language and framework in use.
 - **Rationale:** If a code suggestion involves a significant change, provide a detailed explanation of the rationale behind the change.
-- **Constants:** Avoid using magic numbers; use constants or enums instead.
+- **Constants:** Avoid using magic numbers; use constants or enums instead. Constants should be named using ALL_CAPS with underscores separating words (e.g., `MAX_SUPPLIER_SELECTIONS`, `DEFAULT_TIMEOUT_SECONDS`).
 - **Whitespace:** Don't suggest whitespace changes.
 - **Modularity & Maintainability:** Encourage modular design, maintainability, and reusability; follow DRY (Do Not Repeat Yourself) principle.
 - **Explicitness:** Only implement changes explicitly requested.
