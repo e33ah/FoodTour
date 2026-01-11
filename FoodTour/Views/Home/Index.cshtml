@@ -1,8 +1,52 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model FoodTour.Models.FoodTourVM
+
+@{
+	ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+	<h1 class="display-4 my-5">Weymouth Self-Guided Tasting Tour</h1>
+	<p class="lead mb-4">Select @Model.MaxSelections tasting experiences to create your personalised food tasting tour</p>
+	
+	<div class="container">
+		<div class="row justify-content-center">
+			<div class="col-md-8 col-lg-6">
+				@if (ViewBag.NoSuppliersMessage != null) {
+					<div class="alert alert-info" role="alert">
+						<i class="bi bi-info-circle"></i> @ViewBag.NoSuppliersMessage
+					</div>
+				} else {
+					@if (ViewBag.InsufficientSuppliersWarning != null) {
+						<div class="alert alert-warning" role="alert">
+							<i class="bi bi-exclamation-triangle"></i> @ViewBag.InsufficientSuppliersWarning
+						</div>
+					}
+					<form asp-action="Index" method="post" data-max-selections="@Model.MaxSelections">
+						@foreach (var item in Model.Suppliers) {
+							<div class="card mb-3 supplier-card" data-supplier-id="@item.Id">
+								<div class="card-body">
+									<div class="d-flex align-items-center">
+										<input type="checkbox" name="selectedSuppliers" value="@item.Id" class="visually-hidden supplier-checkbox" id="supplier-@item.Id" />
+										<label for="supplier-@item.Id" class="visually-hidden">Select @item.Name</label>
+										<div class="flex-grow-1 text-start">
+											<h3 class="card-title mb-1">@item.Name</h3>
+											<p class="card-text mb-0">@item.Address</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						}
+						
+						<div class="text-center mt-4">
+							<button type="submit" class="btn btn-primary btn-lg" id="createTourBtn" disabled>Create My Tour</button>
+						</div>
+					</form>
+				}
+			</div>
+		</div>
+	</div>
 </div>
+
+@section Scripts {
+	<script src="~/js/tour-selection.js" asp-append-version="true"></script>
+}

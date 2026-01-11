@@ -29,3 +29,19 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* Supplier card styles */
+.supplier-card {
+  transition: all 0.3s ease;
+  border: 2px solid #dee2e6;
+  cursor: pointer;
+}
+
+.supplier-card:hover {
+  box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.15);
+}
+
+.supplier-card.selected {
+  border-color: #198754;
+  background-color: #f8fff9;
+}
