@@ -1,234 +1,208 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const maxSelections = parseInt(document.querySelector('[data-max-selections]')?.dataset.maxSelections || '0');
+document.addEventListener('DOMContentLoaded', () => {
+    // Constants
+    const MAX_SELECTIONS = parseInt(document.querySelector('[data-max-selections]')?.dataset.maxSelections || '0');
+    const DATE_FORMAT = 'Y-m-d';
+    const ALT_DATE_FORMAT = 'd/m/Y';
+    const TOUR_MONTH_START = 3; // March
+    const TOUR_MONTH_END = 10; // October
+    const SUNDAY = 0;
+    const ERROR_TIMEOUT_MS = 5000;
+
+    // Cached selectors
     const checkboxes = document.querySelectorAll('.supplier-checkbox');
     const supplierCards = document.querySelectorAll('.supplier-card');
     const createTourBtn = document.getElementById('createTourBtn');
     const tourDateInput = document.getElementById('tourDate');
+
     let messageTimeout;
     let currentMessage = null;
 
-    // Calculate tomorrow's date
-    var now = new Date();
-    var tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    // Utility functions
+    const getTomorrow = () => {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    };
 
-    if (tourDateInput && typeof flatpickr !== 'undefined') {
+    const getTourDateRange = () => {
+        const now = new Date();
         const currentYear = now.getFullYear();
-        const marchFirst = new Date(currentYear, 2, 1);
-        const octoberLast = new Date(currentYear, 9, 31);
-        
-        let minDate = tomorrow > marchFirst ? tomorrow : marchFirst;
-        let maxDate = octoberLast;
-        
-        if (now > octoberLast) {
-            const nextYear = currentYear + 1;
-            minDate = new Date(nextYear, 2, 1);
-            maxDate = new Date(nextYear, 9, 31);
-        }
-        
-        flatpickr(tourDateInput, {
-            minDate: minDate,
-            maxDate: maxDate,
-            dateFormat: 'Y-m-d',
-            altInput: true,
-            altFormat: 'd/m/Y',
-            disable: [
-                function(date) {
-                    return date.getDay() === 0;
-                }
-            ],
-            onChange: function(selectedDates, dateStr, instance) {
-                validateTourDate();
-            },
-            onReady: function(selectedDates, dateStr, instance) {
-                if (tourDateInput.value) {
-                    validateTourDate();
-                }
-            }
-        });
-    } else if (tourDateInput) {
-        const currentYear = now.getFullYear();
-        const marchFirst = new Date(currentYear, 2, 1);
-        const octoberLast = new Date(currentYear, 9, 31);
-        
-        let minDate = tomorrow > marchFirst ? tomorrow : marchFirst;
+        const marchFirst = new Date(currentYear, TOUR_MONTH_START - 1, 1);
+        const octoberLast = new Date(currentYear, TOUR_MONTH_END - 1, 31);
+        let minDate = getTomorrow() > marchFirst ? getTomorrow() : marchFirst;
         let maxDate = octoberLast;
         if (now > octoberLast) {
             const nextYear = currentYear + 1;
-            minDate = new Date(nextYear, 2, 1);
-            maxDate = new Date(nextYear, 9, 31);
+            minDate = new Date(nextYear, TOUR_MONTH_START - 1, 1);
+            maxDate = new Date(nextYear, TOUR_MONTH_END - 1, 31);
         }
-        tourDateInput.min = minDate.toISOString().split('T')[0];
-        tourDateInput.max = maxDate.toISOString().split('T')[0];
-        tourDateInput.addEventListener('change', validateTourDate);
-        tourDateInput.addEventListener('blur', validateTourDate);
-    }
+        return { minDate, maxDate };
+    };
 
-    function isValidTourDate(dateString) {
-        if (!dateString) return false;
-        
-        let date;
+    const parseDate = (dateString) => {
+        if (!dateString) return null;
         if (dateString.includes('/')) {
-            const parts = dateString.split('/');
-            date = new Date(parts[2], parts[1] - 1, parts[0]);
-        } else {
-            date = new Date(dateString + 'T00:00:00');
+            const [day, month, year] = dateString.split('/').map(Number);
+            return new Date(year, month - 1, day);
         }
-        
-        // Only allow future dates
-        var today = new Date();
-        today.setHours(0,0,0,0);
-        if (date <= today) {
-            return false;
-        }
-        
+        return new Date(dateString + 'T00:00:00');
+    };
+
+    const isFutureDate = (date) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return date > today;
+    };
+
+    const isValidTourDate = (dateString) => {
+        const date = parseDate(dateString);
+        if (!date || !isFutureDate(date)) return false;
         const month = date.getMonth() + 1;
         const dayOfWeek = date.getDay();
-        
-        if (dayOfWeek === 0) {
-            return false;
-        }
-        
-        if (month < 3 || month > 10) {
-            return false;
-        }
-        
-        return true;
-    }
+        return dayOfWeek !== SUNDAY && month >= TOUR_MONTH_START && month <= TOUR_MONTH_END;
+    };
 
-    function updateButtonState() {
-        const checkedCount = document.querySelectorAll('.supplier-checkbox:checked').length;
-        const hasValidDate = tourDateInput && isValidTourDate(tourDateInput.value);
-        
-        if (createTourBtn) {
-            createTourBtn.disabled = checkedCount !== maxSelections || !hasValidDate;
-        }
-    }
-
-    function showDateError(message) {
-        const existingError = tourDateInput?.parentElement.querySelector('.date-validation-error');
-        if (existingError) {
-            existingError.remove();
-        }
-        
+    const showDateError = (message) => {
+        clearDateError();
         if (tourDateInput) {
-            const errorElement = document.createElement('div');
-            errorElement.className = 'text-danger small mt-1 date-validation-error';
-            errorElement.textContent = message;
-            tourDateInput.parentElement.appendChild(errorElement);
+            // Find the .form-group containing the date input
+            const formGroup = tourDateInput.closest('.form-group');
+            if (formGroup) {
+                const errorElement = document.createElement('div');
+                errorElement.className = 'text-danger small mt-1 date-validation-error';
+                errorElement.textContent = message;
+                errorElement.setAttribute('tabindex', '-1');
+                formGroup.parentNode.insertBefore(errorElement, formGroup.nextSibling);
+                errorElement.focus();
+            }
         }
-    }
+    };
 
-    function clearDateError() {
-        const existingError = tourDateInput?.parentElement.querySelector('.date-validation-error');
-        if (existingError) {
-            existingError.remove();
+    const clearDateError = () => {
+        if (tourDateInput) {
+            const formGroup = tourDateInput.closest('.form-group');
+            if (formGroup) {
+                // Remove any error message directly after the form-group
+                const nextSibling = formGroup.nextSibling;
+                if (nextSibling && nextSibling.classList && nextSibling.classList.contains('date-validation-error')) {
+                    nextSibling.remove();
+                }
+            }
         }
-    }
+    };
 
-    function validateTourDate() {
-        if (!tourDateInput) return;
-        
-        if (!tourDateInput.value) {
+    const updateButtonState = () => {
+        const checkedCount = document.querySelectorAll('.supplier-checkbox:checked').length;
+        if (createTourBtn) {
+            createTourBtn.disabled = checkedCount !== MAX_SELECTIONS;
+        }
+    };
+
+    const validateTourDate = () => {
+        if (!tourDateInput || !tourDateInput.value) {
             clearDateError();
             updateButtonState();
             return;
         }
-        
-        let date;
-        const dateString = tourDateInput.value;
-        if (dateString.includes('/')) {
-            const parts = dateString.split('/');
-            date = new Date(parts[2], parts[1] - 1, parts[0]);
-        } else {
-            date = new Date(dateString + 'T00:00:00');
-        }
-        var today = new Date();
-        today.setHours(0,0,0,0);
-        if (date <= today) {
+        const date = parseDate(tourDateInput.value);
+        if (!date || !isFutureDate(date)) {
             showDateError('Please select a date in the future.');
-            updateButtonState();
-            return;
-        }
-        const month = date.getMonth() + 1;
-        const dayOfWeek = date.getDay();
-        if (dayOfWeek === 0) {
+        } else if (date.getDay() === SUNDAY) {
             showDateError('Tours are not available on Sundays. Please select a different date.');
-            updateButtonState();
-            return;
-        }
-        if (month < 3 || month > 10) {
+        } else if (date.getMonth() + 1 < TOUR_MONTH_START || date.getMonth() + 1 > TOUR_MONTH_END) {
             showDateError('Tours are only available from March to October. Please select a date within this period.');
-            updateButtonState();
-            return;
-        }
-        clearDateError();
-        updateButtonState();
-    }
-
-    function updateCardVisualState(card, checkbox) {
-        if (checkbox.checked) {
-            card.classList.add('selected');
         } else {
-            card.classList.remove('selected');
+            clearDateError();
         }
-    }
+        updateButtonState();
+    };
 
-    function handleCheckboxChange(checkbox) {
+    const updateCardVisualState = (card, checkbox) => {
+        card.classList.toggle('selected', checkbox.checked);
+    };
+
+    const showMaxSelectionMessage = (card) => {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'alert alert-warning mt-2 mb-3';
+        messageElement.innerHTML = `<strong>Maximum selections reached!</strong><br>You must select exactly ${MAX_SELECTIONS} tasting experiences for your tour.`;
+        card.parentNode.insertBefore(messageElement, card.nextSibling);
+        currentMessage = messageElement;
+        clearTimeout(messageTimeout);
+        messageTimeout = setTimeout(() => {
+            if (messageElement.parentNode) messageElement.remove();
+            currentMessage = null;
+        }, ERROR_TIMEOUT_MS);
+    };
+
+    const handleCheckboxChange = (checkbox) => {
         const checkedCount = document.querySelectorAll('.supplier-checkbox:checked').length;
         const card = checkbox.closest('.supplier-card');
-
         if (currentMessage) {
             currentMessage.remove();
             currentMessage = null;
         }
-
-        if (checkedCount > maxSelections) {
+        if (checkedCount > MAX_SELECTIONS) {
             checkbox.checked = false;
-
-            const messageElement = document.createElement('div');
-            messageElement.className = 'alert alert-warning mt-2 mb-3';
-
-            const strongElement = document.createElement('strong');
-            strongElement.textContent = 'Maximum selections reached!';
-            messageElement.appendChild(strongElement);
-
-            const lineBreakElement = document.createElement('br');
-            messageElement.appendChild(lineBreakElement);
-
-            const infoText = document.createTextNode(`You must select exactly ${maxSelections} tasting experiences for your tour.`);
-            messageElement.appendChild(infoText);
-            card.parentNode.insertBefore(messageElement, card.nextSibling);
-            currentMessage = messageElement;
-
-            clearTimeout(messageTimeout);
-            messageTimeout = setTimeout(function () {
-                if (messageElement && messageElement.parentNode) {
-                    messageElement.remove();
-                    currentMessage = null;
-                }
-            }, 5000);
+            showMaxSelectionMessage(card);
         }
-
         updateCardVisualState(card, checkbox);
         updateButtonState();
+    };
+
+    // Event listeners
+    const setupDateInput = () => {
+        const { minDate, maxDate } = getTourDateRange();
+        if (tourDateInput && typeof flatpickr !== 'undefined') {
+            flatpickr(tourDateInput, {
+                minDate,
+                maxDate,
+                dateFormat: DATE_FORMAT,
+                altInput: true,
+                altFormat: ALT_DATE_FORMAT,
+                disable: [date => date.getDay() === SUNDAY],
+                onChange: validateTourDate,
+                onReady: () => { if (tourDateInput.value) validateTourDate(); }
+            });
+        } else if (tourDateInput) {
+            tourDateInput.min = minDate.toISOString().split('T')[0];
+            tourDateInput.max = maxDate.toISOString().split('T')[0];
+            tourDateInput.addEventListener('change', validateTourDate);
+            tourDateInput.addEventListener('blur', validateTourDate);
+        }
+    };
+
+    const setupCheckboxes = () => {
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => handleCheckboxChange(checkbox));
+        });
+    };
+
+    const setupSupplierCards = () => {
+        supplierCards.forEach(card => {
+            card.addEventListener('click', event => {
+                if (event.target.closest('.supplier-checkbox')) return;
+                const checkbox = card.querySelector('.supplier-checkbox');
+                checkbox.checked = !checkbox.checked;
+                handleCheckboxChange(checkbox);
+            });
+        });
+    };
+
+    // Add form validation on submit
+    const tourForm = document.querySelector('form[data-max-selections]');
+    if (tourForm) {
+        tourForm.addEventListener('submit', function (event) {
+            // Validate tour date before submitting
+            if (!tourDateInput || !tourDateInput.value || !isValidTourDate(tourDateInput.value)) {
+                event.preventDefault();
+                showDateError('Please select a valid tour date before creating your tour.');
+                tourDateInput.focus();
+            }
+        });
     }
 
-    checkboxes.forEach(function (checkbox) {
-        checkbox.addEventListener('change', function () {
-            handleCheckboxChange(this);
-        });
-    });
-
-    supplierCards.forEach(function (card) {
-        card.addEventListener('click', function (event) {
-            if (event.target.closest('.supplier-checkbox')) {
-                return;
-            }
-            const checkbox = this.querySelector('.supplier-checkbox');
-            checkbox.checked = !checkbox.checked;
-            handleCheckboxChange(checkbox);
-        });
-    });
-    
+    // Initialise
+    setupDateInput();
+    setupCheckboxes();
+    setupSupplierCards();
     updateButtonState();
 });
