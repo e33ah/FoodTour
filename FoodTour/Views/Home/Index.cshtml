@@ -29,14 +29,32 @@
 										<input type="checkbox" name="selectedSuppliers" value="@item.Id" class="visually-hidden supplier-checkbox" id="supplier-@item.Id" />
 										<label for="supplier-@item.Id" class="visually-hidden">Select @item.Name</label>
 										<div class="flex-grow-1 text-start">
-											<h3 class="card-title mb-1">@item.Name</h3>
-											<p class="card-text mb-0">@item.Address</p>
+											@if (!string.IsNullOrWhiteSpace(item.Description)) {
+												<p class="card-text mb-0">@item.Description</p>
+											}
+												@item.Name
+												@if (!string.IsNullOrWhiteSpace(item.Tag1)) {
+													<span class="badge border border-info text-dark fw-normal ms-2" style="font-size: 0.8rem; background-color: transparent;">@item.Tag1</span>
+												}
+												@if (!string.IsNullOrWhiteSpace(item.Tag2)) {
+													<span class="badge border border-info text-dark fw-normal ms-1" style="font-size: 0.8rem; background-color: transparent;">@item.Tag2</span>
+												}
+												@if (!string.IsNullOrWhiteSpace(item.Tag3)) {
+													<span class="badge border border-info text-dark fw-normal ms-1" style="font-size: 0.8rem; background-color: transparent;">@item.Tag3</span>
+												}
+												@if (!string.IsNullOrWhiteSpace(item.Tag4)) {
+													<span class="badge border border-info text-dark fw-normal ms-1" style="font-size: 0.8rem; background-color: transparent;">@item.Tag4</span>
+												}
+											</h3>
+											<p class="card-text text-muted small mb-1">
+												<i class="bi bi-geo-alt-fill"></i> @item.Address
+											</p>
+											<p class="card-text mb-0">@item.Description</p>
 										</div>
 									</div>
 								</div>
 							</div>
 						}
-						
 						<div class="text-center mt-4">
 							<button type="submit" class="btn btn-primary btn-lg" id="createTourBtn" disabled>Create My Tour</button>
 						</div>
