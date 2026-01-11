@@ -17,7 +17,13 @@ public class HomeController(FoodTourContext context) : Controller {
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Index(List<int> selectedSuppliers) {
+    public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers) {
+        if (!tourDate.HasValue) {
+            ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Please select a date for your tour.");
+        } else if (!IsValidTourDate(tourDate.Value)) {
+            ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Tours are only available Monday to Saturday between March and October, and only for future dates.");
+        }
+
         var activeSelectedSupplierIds = await context.Suppliers
             .Where(s => s.IsActive && selectedSuppliers.Contains(s.Id))
             .Select(s => s.Id)
@@ -25,10 +31,15 @@ public class HomeController(FoodTourContext context) : Controller {
 
         if (selectedSuppliers.Count != MAX_SUPPLIER_SELECTIONS) {
             ModelState.AddModelError(string.Empty, $"You must select exactly {MAX_SUPPLIER_SELECTIONS} tasting experiences for your tour.");
-            return View(await CreateFoodTourViewModel());
         }
 
-        // TODO: Store selectedSuppliers (e.g., in session, database, or pass to confirmation page) before redirecting to preserve user's selection and create the tour.
+        if (!ModelState.IsValid) {
+            var model = await CreateFoodTourViewModel();
+            model.TourDate = tourDate;
+            return View(model);
+        }
+
+        // TODO: Store selectedSuppliers and tourDate (e.g., in session, database, or pass to confirmation page) before redirecting to preserve user's selection and create the tour.
         return RedirectToAction(nameof(Index));
     }
 
@@ -56,5 +67,19 @@ public class HomeController(FoodTourContext context) : Controller {
     private static string GetInsufficientSuppliersMessage(int supplierCount) {
         string experienceText = supplierCount == 1 ? "tasting experience is" : "tasting experiences are";
         return $"Only {supplierCount} {experienceText} currently available. You need at least {MAX_SUPPLIER_SELECTIONS} to create a tour. Please check back later.";
+    }
+
+    private static bool IsValidTourDate(DateTime date) {
+        var today = DateTime.Today;
+        if (date <= today) {
+            return false;
+        }
+        if (date.DayOfWeek == DayOfWeek.Sunday) {
+            return false;
+        }
+        if (date.Month < 3 || date.Month > 10) {
+            return false;
+        }
+        return true;
     }
 }

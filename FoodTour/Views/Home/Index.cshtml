@@ -1,70 +1,59 @@
 ﻿@model FoodTour.Models.FoodTourVM
 
 @{
-	ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
-	<h1 class="display-4 my-5">Weymouth Self-Guided Tasting Tour</h1>
-	<p class="lead mb-4">Select @Model.MaxSelections tasting experiences to create your personalised food tasting tour</p>
-	
-	<div class="container">
-		<div class="row justify-content-center">
-			<div class="col-md-8 col-lg-6">
-				@if (ViewBag.NoSuppliersMessage != null) {
-					<div class="alert alert-info" role="alert">
-						<i class="bi bi-info-circle"></i> @ViewBag.NoSuppliersMessage
-					</div>
-				} else {
-					@if (ViewBag.InsufficientSuppliersWarning != null) {
-						<div class="alert alert-warning" role="alert">
-							<i class="bi bi-exclamation-triangle"></i> @ViewBag.InsufficientSuppliersWarning
-						</div>
-					}
-					<form asp-action="Index" method="post" data-max-selections="@Model.MaxSelections">
-						@foreach (var item in Model.Suppliers) {
-							<div class="card mb-3 supplier-card" data-supplier-id="@item.Id">
-								<div class="card-body">
-									<div class="d-flex align-items-center">
-										<input type="checkbox" name="selectedSuppliers" value="@item.Id" class="visually-hidden supplier-checkbox" id="supplier-@item.Id" />
-										<label for="supplier-@item.Id" class="visually-hidden">Select @item.Name</label>
-										<div class="flex-grow-1 text-start">
-											@if (!string.IsNullOrWhiteSpace(item.Description)) {
-												<p class="card-text mb-0">@item.Description</p>
-											}
-												@item.Name
-												@if (!string.IsNullOrWhiteSpace(item.Tag1)) {
-													<span class="badge border border-info text-dark fw-normal ms-2" style="font-size: 0.8rem; background-color: transparent;">@item.Tag1</span>
-												}
-												@if (!string.IsNullOrWhiteSpace(item.Tag2)) {
-													<span class="badge border border-info text-dark fw-normal ms-1" style="font-size: 0.8rem; background-color: transparent;">@item.Tag2</span>
-												}
-												@if (!string.IsNullOrWhiteSpace(item.Tag3)) {
-													<span class="badge border border-info text-dark fw-normal ms-1" style="font-size: 0.8rem; background-color: transparent;">@item.Tag3</span>
-												}
-												@if (!string.IsNullOrWhiteSpace(item.Tag4)) {
-													<span class="badge border border-info text-dark fw-normal ms-1" style="font-size: 0.8rem; background-color: transparent;">@item.Tag4</span>
-												}
-											</h3>
-											<p class="card-text text-muted small mb-1">
-												<i class="bi bi-geo-alt-fill"></i> @item.Address
-											</p>
-											<p class="card-text mb-0">@item.Description</p>
-										</div>
-									</div>
-								</div>
-							</div>
-						}
-						<div class="text-center mt-4">
-							<button type="submit" class="btn btn-primary btn-lg" id="createTourBtn" disabled>Create My Tour</button>
-						</div>
-					</form>
-				}
-			</div>
-		</div>
-	</div>
+    <h1 class="display-4 my-5">Weymouth Self-Guided Tasting Tour</h1>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                @if (ViewBag.NoSuppliersMessage != null) {
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle"></i> @ViewBag.NoSuppliersMessage
+                    </div>
+                }
+                else {
+                    @if (ViewBag.InsufficientSuppliersWarning != null) {
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i> @ViewBag.InsufficientSuppliersWarning
+                        </div>
+                    }
+                    <form asp-action="Index" method="post" data-max-selections="@Model.MaxSelections">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h3 class="card-title mb-3">
+                                    <i class="bi bi-calendar-event"></i> Select Your Tour Date
+                                </h3>
+                                <div class="form-group">
+                                    <small class="form-text text-muted mt-2 d-block">
+                                        Tours are available Monday to Saturday from March to October
+                                    </small>
+                                    <label asp-for="TourDate" class="form-label visually-hidden">Tour Date</label>
+                                    <div class="d-flex justify-content-center">
+                                        <input asp-for="TourDate" type="date" class="form-control w-auto" id="tourDate" style="max-width: 220px;" />
+                                    </div>
+                                    <span asp-validation-for="TourDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="lead mb-4">Select @Model.MaxSelections tasting experiences to create your personalised food tasting tour</p>
+
+                        @foreach (var item in Model.Suppliers) {
+                            <partial name="_SupplierCard" model="item" />
+                        }
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg" id="createTourBtn" disabled>Create My Tour</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
-	<script src="~/js/tour-selection.js" asp-append-version="true"></script>
+    <script src="~/js/tour-selection.js" asp-append-version="true"></script>
 }
