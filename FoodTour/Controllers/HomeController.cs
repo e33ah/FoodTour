@@ -17,11 +17,16 @@ public class HomeController(FoodTourContext context) : Controller {
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers) {
+    public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail) {
         if (!tourDate.HasValue) {
             ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Please select a date for your tour.");
         } else if (!IsValidTourDate(tourDate.Value)) {
             ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Tours are only available Monday to Saturday between March and October, and only for future dates.");
+        }
+        if (string.IsNullOrWhiteSpace(customerEmail)) {
+            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter your email address.");
+        } else if (!new EmailAddressAttribute().IsValid(customerEmail)) {
+            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter a valid email address.");
         }
 
         var activeSelectedSupplierIds = await context.Suppliers

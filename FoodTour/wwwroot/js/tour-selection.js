@@ -187,15 +187,67 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // Email validation helpers
+    const emailInput = document.querySelector('input[type="email"][name$="CustomerEmail"]');
+
+    const isValidEmail = (email) => {
+        // Simple email regex for client-side validation
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    };
+
+    const showEmailError = (message) => {
+        clearEmailError();
+        if (emailInput) {
+            const formGroup = emailInput.closest('.form-group');
+            if (formGroup) {
+                const errorElement = document.createElement('div');
+                errorElement.className = 'text-danger small mt-1 email-validation-error';
+                errorElement.textContent = message;
+                errorElement.setAttribute('tabindex', '-1');
+                formGroup.parentNode.insertBefore(errorElement, formGroup.nextSibling);
+            }
+        }
+    };
+
+    const clearEmailError = () => {
+        if (emailInput) {
+            const formGroup = emailInput.closest('.form-group');
+            if (formGroup) {
+                const nextSibling = formGroup.nextSibling;
+                if (nextSibling && nextSibling.classList && nextSibling.classList.contains('email-validation-error')) {
+                    nextSibling.remove();
+                }
+            }
+        }
+    };
+
     // Add form validation on submit
     const tourForm = document.querySelector('form[data-max-selections]');
     if (tourForm) {
         tourForm.addEventListener('submit', function (event) {
+            let hasError = false;
             // Validate tour date before submitting
             if (!tourDateInput || !tourDateInput.value || !isValidTourDate(tourDateInput.value)) {
                 event.preventDefault();
                 showDateError('Please select a valid tour date before creating your tour.');
                 tourDateInput.focus();
+                hasError = true;
+            } else {
+                clearDateError();
+            }
+            // Validate email before submitting
+            if (!emailInput || !emailInput.value.trim() || !isValidEmail(emailInput.value.trim())) {
+                event.preventDefault();
+                showEmailError('Please enter a valid email address.');
+                hasError = true;
+
+            } else {
+                clearEmailError();
+            }
+
+            // Prevent form submission if any validation failed
+            if (hasError) {
+                event.preventDefault();
             }
         });
     }
