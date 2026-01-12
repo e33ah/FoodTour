@@ -17,7 +17,7 @@ public class HomeController(FoodTourContext context) : Controller {
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail) {
+    public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string purchaseCode) {
         if (!tourDate.HasValue) {
             ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Please select a date for your tour.");
         } else if (!IsValidTourDate(tourDate.Value)) {
@@ -28,6 +28,10 @@ public class HomeController(FoodTourContext context) : Controller {
         } else if (!new EmailAddressAttribute().IsValid(customerEmail)) {
             ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter a valid email address.");
         }
+        if (string.IsNullOrWhiteSpace(purchaseCode)) {
+            ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter your purchase code.");
+        }
+        // TODO: Validate purchase code
 
         var activeSelectedSupplierIds = await context.Suppliers
             .Where(s => s.IsActive && selectedSuppliers.Contains(s.Id))
@@ -63,10 +67,6 @@ public class HomeController(FoodTourContext context) : Controller {
             Suppliers = suppliers,
             MaxSelections = MAX_SUPPLIER_SELECTIONS
         };
-    }
-
-    private static bool HasInactiveSelections(List<int> selectedSuppliers, List<int> activeSelectedSupplierIds) {
-        return selectedSuppliers.Count != activeSelectedSupplierIds.Count;
     }
 
     private static string GetInsufficientSuppliersMessage(int supplierCount) {

@@ -47,7 +47,7 @@
 						<div class="card mb-4 mt-4">
 							<div class="card-body">
 								<h3 class="card-title">
-									<i class="bi bi-send"></i> Enter Your Email:
+									<i class="bi bi-send"></i> Email
 								</h3>
 								<small class="form-text text-muted mb-2 mt-2 d-block">
 									Please provide your email address to receive your tour details.
@@ -56,6 +56,23 @@
 									<label asp-for="CustomerEmail" class="form-label visually-hidden">Email</label>
 									<input asp-for="CustomerEmail" type="email" class="form-control" placeholder="your.email@example.com" />
 									<span asp-validation-for="CustomerEmail" class="text-danger"></span>
+								</div>
+							</div>
+						</div>
+						<div class="card mb-4 mt-4">
+							<div class="card-body">
+								<h3 class="card-title">
+									<i class="bi bi-key"></i> Purchase Code
+								</h3>
+								<small class="form-text text-muted mb-2 mt-2 d-block">
+									Please enter the purchase code you received after payment.
+								</small>
+								<div class="form-group">
+									<label asp-for="PurchaseCode" class="form-label visually-hidden">Purchase Code</label>
+									<div class="d-flex justify-content-center">
+										<input asp-for="PurchaseCode" type="text" class="form-control w-auto" style="max-width: 220px;" />
+									</div>
+									<span asp-validation-for="PurchaseCode" class="text-danger"></span>
 								</div>
 							</div>
 						</div>

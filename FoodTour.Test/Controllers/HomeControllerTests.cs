@@ -2,7 +2,8 @@ namespace FoodTour.Test.Controllers;
 
 public class HomeControllerTests {
     private const int EXPECTED_MAX_SELECTIONS = 5;
-    private const string EXPECTED_EMAIL = "customer@test.com";
+    private const string VALID_EMAIL = "customer@test.com";
+    private const string VALID_CODE = "VALIDCODE123";
     private const string NO_SUPPLIERS_MESSAGE_KEY = "NoSuppliersMessage";
     private const string INSUFFICIENT_SUPPLIERS_WARNING_KEY = "InsufficientSuppliersWarning";
     private const string EXPECTED_NO_SUPPLIERS_MESSAGE = "No tasting experiences are currently available for the tour. Please check back later.";
@@ -87,7 +88,7 @@ public class HomeControllerTests {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(EXPECTED_MAX_SELECTIONS);
         var validTourDate = HomeControllerTests.validTourDate;
 
-        var result = await PostIndex(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, EXPECTED_EMAIL);
+        var result = await PostIndex(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS);
 
         var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
         redirectResult.ActionName.ShouldBe(nameof(HomeController.Index));
@@ -95,10 +96,11 @@ public class HomeControllerTests {
 
     [Fact]
     public async Task IndexPost_ReturnsViewWithError_WhenTooManySelections() {
-        var selectedSuppliers = TestHelper.CreateSupplierIdList(6);
+        int overMaxCount = EXPECTED_MAX_SELECTIONS + 1;
+        var selectedSuppliers = TestHelper.CreateSupplierIdList(overMaxCount);
         var validTourDate = HomeControllerTests.validTourDate;
 
-        var (result, controller) = await PostIndexWithController(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS + 1, EXPECTED_EMAIL);
+        var (result, controller) = await PostIndexWithController(validTourDate, selectedSuppliers, overMaxCount);
 
         result.ShouldBeOfType<ViewResult>();
         controller.ModelState.IsValid.ShouldBeFalse();
@@ -110,7 +112,7 @@ public class HomeControllerTests {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(EXPECTED_MAX_SELECTIONS);
         var validTourDate = HomeControllerTests.validTourDate;
 
-        var result = await PostIndex(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, EXPECTED_EMAIL);
+        var result = await PostIndex(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS);
 
         result.ShouldBeOfType<RedirectToActionResult>();
     }
@@ -128,7 +130,7 @@ public class HomeControllerTests {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(selectionCount);
         int contextSupplierCount = Math.Max(selectionCount, EXPECTED_MAX_SELECTIONS);
 
-        var (result, controller) = await PostIndexWithController(validTourDate, selectedSuppliers, contextSupplierCount, EXPECTED_EMAIL);
+        var (result, controller) = await PostIndexWithController(validTourDate, selectedSuppliers, contextSupplierCount);
 
         result.ShouldBeOfType<ViewResult>();
         controller.ModelState.IsValid.ShouldBeFalse();
@@ -143,7 +145,20 @@ public class HomeControllerTests {
             sundayDate = sundayDate.AddDays(daysUntilSunday);
         }
 
-        var (result, controller) = await PostIndexWithController(sundayDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, EXPECTED_EMAIL);
+        var (result, controller) = await PostIndexWithController(sundayDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS);
+
+        result.ShouldBeOfType<ViewResult>();
+        controller.ModelState.IsValid.ShouldBeFalse();
+        controller.ModelState.ContainsKey(nameof(FoodTourVM.TourDate)).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task IndexPost_ReturnsViewWithError_WhenTourDateIsInThePast() {
+        var selectedSuppliers = TestHelper.CreateSupplierIdList(EXPECTED_MAX_SELECTIONS);
+        int lastYear = DateTime.Today.AddYears(-1).Year;
+        var pastDate = new DateTime(lastYear, 6, 15);
+
+        var (result, controller) = await PostIndexWithController(pastDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS);
 
         result.ShouldBeOfType<ViewResult>();
         controller.ModelState.IsValid.ShouldBeFalse();
@@ -154,7 +169,7 @@ public class HomeControllerTests {
     public async Task IndexPost_ReturnsViewWithError_WhenTourDateIsNull() {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(EXPECTED_MAX_SELECTIONS);
 
-        var (result, controller) = await PostIndexWithController(null, selectedSuppliers, EXPECTED_MAX_SELECTIONS, EXPECTED_EMAIL);
+        var (result, controller) = await PostIndexWithController(null, selectedSuppliers, EXPECTED_MAX_SELECTIONS);
 
         result.ShouldBeOfType<ViewResult>();
         controller.ModelState.IsValid.ShouldBeFalse();
@@ -170,7 +185,7 @@ public class HomeControllerTests {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(EXPECTED_MAX_SELECTIONS);
         var outOfSeasonDate = new DateTime(nextYear, month, 15);
 
-        var (result, controller) = await PostIndexWithController(outOfSeasonDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, EXPECTED_EMAIL);
+        var (result, controller) = await PostIndexWithController(outOfSeasonDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS);
 
         result.ShouldBeOfType<ViewResult>();
         controller.ModelState.IsValid.ShouldBeFalse();
@@ -188,7 +203,7 @@ public class HomeControllerTests {
             validDate = validDate.AddDays(1);
         }
 
-        var result = await PostIndex(validDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, EXPECTED_EMAIL);
+        var result = await PostIndex(validDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS);
 
         result.ShouldBeOfType<RedirectToActionResult>();
     }
@@ -198,9 +213,8 @@ public class HomeControllerTests {
     [InlineData("   ")]
     public async Task IndexPost_ReturnsViewWithError_WhenEmailIsMissing(string customerEmail) {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(EXPECTED_MAX_SELECTIONS);
-        var validTourDate = HomeControllerTests.validTourDate;
 
-        var (result, controller) = await PostIndexWithController(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, customerEmail);
+        var (result, controller) = await PostIndexWithController(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, customerEmail, VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         controller.ModelState.IsValid.ShouldBeFalse();
@@ -213,9 +227,8 @@ public class HomeControllerTests {
     [InlineData("missingdomain@")]
     public async Task IndexPost_ReturnsViewWithError_WhenEmailIsInvalid(string email) {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(EXPECTED_MAX_SELECTIONS);
-        var validTourDate = HomeControllerTests.validTourDate;
 
-        var (result, controller) = await PostIndexWithController(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, email);
+        var (result, controller) = await PostIndexWithController(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, email, VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         controller.ModelState.IsValid.ShouldBeFalse();
@@ -227,9 +240,20 @@ public class HomeControllerTests {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(EXPECTED_MAX_SELECTIONS);
         var validTourDate = HomeControllerTests.validTourDate;
 
-        var result = await PostIndex(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, EXPECTED_EMAIL);
+        var result = await PostIndex(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS);
 
         result.ShouldBeOfType<RedirectToActionResult>();
+    }
+
+    [Fact]
+    public async Task IndexPost_ReturnsViewWithError_WhenCodeMissing() {
+        var selectedSuppliers = TestHelper.CreateSupplierIdList(EXPECTED_MAX_SELECTIONS);
+
+        var (result, controller) = await PostIndexWithController(validTourDate, selectedSuppliers, EXPECTED_MAX_SELECTIONS, VALID_EMAIL, "");
+
+        result.ShouldBeOfType<ViewResult>();
+        controller.ModelState.IsValid.ShouldBeFalse();
+        controller.ModelState.ContainsKey(nameof(FoodTourVM.PurchaseCode)).ShouldBeTrue();
     }
 
     [Fact]
@@ -261,16 +285,22 @@ public class HomeControllerTests {
         return await GetIndexViewModel(suppliers);
     }
 
-    private static async Task<IActionResult> PostIndex(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail) {
+    private static async Task<IActionResult> PostIndex(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount) {
+        return await PostIndex(tourDate, selectedSuppliers, contextSupplierCount, VALID_EMAIL, VALID_CODE);
+    }
+    private static async Task<IActionResult> PostIndex(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(contextSupplierCount);
         var sut = new HomeController(context);
-        return await sut.Index(tourDate, selectedSuppliers, customerEmail);
+        return await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
     }
 
-    private static async Task<(IActionResult result, HomeController controller)> PostIndexWithController(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail) {
+    private static async Task<(IActionResult result, HomeController controller)> PostIndexWithController(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount) {
+        return await PostIndexWithController(tourDate, selectedSuppliers, contextSupplierCount, VALID_EMAIL, VALID_CODE);
+    }
+    private static async Task<(IActionResult result, HomeController controller)> PostIndexWithController(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(contextSupplierCount);
         var sut = new HomeController(context);
-        var result = await sut.Index(tourDate, selectedSuppliers, customerEmail);
+        var result = await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
         return (result, sut);
     }
 

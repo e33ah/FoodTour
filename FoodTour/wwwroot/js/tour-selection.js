@@ -155,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
             flatpickr(tourDateInput, {
                 minDate,
                 maxDate,
+                locale: { firstDayOfWeek: 1 },
                 dateFormat: DATE_FORMAT,
                 altInput: true,
                 altFormat: ALT_DATE_FORMAT,
@@ -221,6 +222,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Purchase code validation helpers
+    const purchaseCodeInput = document.querySelector('input[name$="PurchaseCode"]');
+
+    const showPurchaseCodeError = (message) => {
+        clearPurchaseCodeError();
+        if (purchaseCodeInput) {
+            const formGroup = purchaseCodeInput.closest('.form-group');
+            if (formGroup) {
+                const errorElement = document.createElement('div');
+                errorElement.className = 'text-danger small mt-1 purchase-code-validation-error';
+                errorElement.textContent = message;
+                errorElement.setAttribute('tabindex', '-1');
+                formGroup.parentNode.insertBefore(errorElement, formGroup.nextSibling);
+                purchaseCodeInput.focus();
+            }
+        }
+    };
+
+    const clearPurchaseCodeError = () => {
+        if (purchaseCodeInput) {
+            const formGroup = purchaseCodeInput.closest('.form-group');
+            if (formGroup) {
+                const nextSibling = formGroup.nextSibling;
+                if (nextSibling && nextSibling.classList && nextSibling.classList.contains('purchase-code-validation-error')) {
+                    nextSibling.remove();
+                }
+            }
+        }
+    };
+
     // Add form validation on submit
     const tourForm = document.querySelector('form[data-max-selections]');
     if (tourForm) {
@@ -240,11 +271,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 event.preventDefault();
                 showEmailError('Please enter a valid email address.');
                 hasError = true;
-
             } else {
                 clearEmailError();
             }
-
+            // Validate purchase code before submitting
+            if (!purchaseCodeInput || !purchaseCodeInput.value.trim()) {
+                event.preventDefault();
+                showPurchaseCodeError('Please enter your purchase code to continue.');
+                hasError = true;
+            } else {
+                clearPurchaseCodeError();
+            }
             // Prevent form submission if any validation failed
             if (hasError) {
                 event.preventDefault();
@@ -257,4 +294,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCheckboxes();
     setupSupplierCards();
     updateButtonState();
+
+    // Clear purchase code and email error messages as soon as the user types or changes the value
+    if (purchaseCodeInput) {
+        purchaseCodeInput.addEventListener('input', clearPurchaseCodeError);
+        purchaseCodeInput.addEventListener('change', clearPurchaseCodeError);
+    }
+    if (emailInput) {
+        emailInput.addEventListener('input', clearEmailError);
+        emailInput.addEventListener('change', clearEmailError);
+    }
 });
