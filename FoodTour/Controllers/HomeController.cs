@@ -31,15 +31,10 @@ public class HomeController(FoodTourContext context) : Controller {
         if (string.IsNullOrWhiteSpace(purchaseCode)) {
             ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter your purchase code.");
         }
-        // TODO: Validate purchase code
-
-        var activeSelectedSupplierIds = await context.Suppliers
-            .Where(s => s.IsActive && selectedSuppliers.Contains(s.Id))
-            .Select(s => s.Id)
-            .ToListAsync();
+        // TODO: FT-12 Validate purchase code
 
         if (selectedSuppliers.Count != MAX_SUPPLIER_SELECTIONS) {
-            ModelState.AddModelError(string.Empty, $"You must select exactly {MAX_SUPPLIER_SELECTIONS} tasting experiences for your tour.");
+            ModelState.AddModelError(string.Empty, $"You must select {MAX_SUPPLIER_SELECTIONS} tasting experiences for your tour.");
         }
 
         if (!ModelState.IsValid) {
@@ -48,7 +43,7 @@ public class HomeController(FoodTourContext context) : Controller {
             return View(model);
         }
 
-        // TODO: Store selectedSuppliers and tourDate (e.g., in session, database, or pass to confirmation page) before redirecting to preserve user's selection and create the tour.
+        // TODO: FT-10 Store selectedSuppliers and tourDate (e.g., in session, database, or pass to confirmation page) before redirecting to preserve user's selection and create the tour.
         return RedirectToAction(nameof(Index));
     }
 
@@ -62,7 +57,13 @@ public class HomeController(FoodTourContext context) : Controller {
     }
 
     private async Task<FoodTourVM> CreateFoodTourViewModel() {
-        var suppliers = await context.Suppliers.Where(s => s.IsActive).ToListAsync();
+        List<Supplier> suppliers;
+        try {
+            suppliers = await context.Suppliers.Where(s => s.IsActive).ToListAsync();
+        } catch (Exception) {
+            suppliers = [];
+            // TODO: FT-9 Log the exception.
+        }
         return new FoodTourVM {
             Suppliers = suppliers,
             MaxSelections = MAX_SUPPLIER_SELECTIONS

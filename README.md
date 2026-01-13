@@ -39,6 +39,9 @@ FoodTour allows users to browse and select from a list of active food suppliers 
 dotnet ef database update --project FoodTour/FoodTour.csproj
 ```
 
+3. Add Sample Data (optional):
+Run the SQL scripts in `_Dependencies/Sample_Data/` against your database to populate it.
+
 ### Running the Application
 
 #### Using Visual Studio

@@ -12,6 +12,8 @@ public partial class Build : Nuke.Common.NukeBuild {
     [Solution]
     readonly Solution Solution;
 
+    AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
+
     public Target FoodTourCI => _ => _
         .DependsOn(RunUnitTests);
 }
