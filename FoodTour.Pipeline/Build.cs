@@ -2,7 +2,7 @@ namespace FoodTour.Pipeline;
 
 
 [GitHubActions("foodtour-ci", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.Push, GitHubActionsTrigger.PullRequest },
-    InvokedTargets = new[] { nameof(BuildSolution), nameof(RunUnitTests) }, AutoGenerate = false)]
+    InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests) }, AutoGenerate = false)]
 public partial class Build : Nuke.Common.NukeBuild {
     public static int Main() => Execute<Build>(x => x.FoodTourCI);
 
@@ -15,5 +15,5 @@ public partial class Build : Nuke.Common.NukeBuild {
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
 
     public Target FoodTourCI => _ => _
-        .DependsOn(RunUnitTests);
+        .DependsOn(ExecuteUnitTests);
 }

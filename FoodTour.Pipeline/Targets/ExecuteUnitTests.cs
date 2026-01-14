@@ -1,7 +1,7 @@
 ﻿namespace FoodTour.Pipeline;
 
 public partial class Build : NukeBuild {
-    public Target RunUnitTests => _ => _
+    public Target ExecuteUnitTests => _ => _
         .DependsOn(BuildSolution)
         .Executes(() => {
             var testProjects = Solution.GetAllProjects("*.Test");
