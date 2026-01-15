@@ -10,6 +10,7 @@ public class HomeController(FoodTourContext context) : Controller {
             ViewBag.NoSuppliersMessage = "No tasting experiences are currently available for the tour. Please check back later.";
         } else if (model.Suppliers.Count < MAX_SUPPLIER_SELECTIONS) {
             ViewBag.InsufficientSuppliersWarning = GetInsufficientSuppliersMessage(model.Suppliers.Count);
+            Log.Warning("Insufficient active suppliers: {SupplierCount} found, {RequiredCount} required.", model.Suppliers.Count, MAX_SUPPLIER_SELECTIONS);
         }
 
         return View(model);
@@ -23,11 +24,13 @@ public class HomeController(FoodTourContext context) : Controller {
         } else if (!IsValidTourDate(tourDate.Value)) {
             ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Tours are only available Monday to Saturday between March and October, and only for future dates.");
         }
+
         if (string.IsNullOrWhiteSpace(customerEmail)) {
             ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter your email address.");
         } else if (!new EmailAddressAttribute().IsValid(customerEmail)) {
             ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter a valid email address.");
         }
+
         if (string.IsNullOrWhiteSpace(purchaseCode)) {
             ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter your purchase code.");
         }
@@ -43,7 +46,8 @@ public class HomeController(FoodTourContext context) : Controller {
             return View(model);
         }
 
-        // TODO: FT-10 Store selectedSuppliers and tourDate (e.g., in session, database, or pass to confirmation page) before redirecting to preserve user's selection and create the tour.
+        // TODO: FT-10 Store selectedSuppliers and tourDate before redirecting to preserve user's selection and create the tour.
+        Log.Information("User successfully submitted tour request for date {TourDate} with {SelectedCount} suppliers.", tourDate!.Value, selectedSuppliers.Count);
         return RedirectToAction(nameof(Index));
     }
 
@@ -60,9 +64,10 @@ public class HomeController(FoodTourContext context) : Controller {
         List<Supplier> suppliers;
         try {
             suppliers = await context.Suppliers.Where(s => s.IsActive).ToListAsync();
-        } catch (Exception) {
+            Log.Debug("Retrieved {SupplierCount} active suppliers from the database.", suppliers.Count);
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed to retrieve active suppliers from the database.");
             suppliers = [];
-            // TODO: FT-9 Log the exception.
         }
         return new FoodTourVM {
             Suppliers = suppliers,
