@@ -12,6 +12,10 @@
     <None Include="$(MSBuildThisFileDirectory)Sample_Data\Suppliers.sql" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Publish_Support\" />
     <Folder Include="$(MSBuildThisFileDirectory)Sample_Data\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)publish_support\app_offline.htm" />
   </ItemGroup>
 </Project>

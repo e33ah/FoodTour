@@ -1,5 +1,9 @@
+global using System;
 global using System.ComponentModel;
+global using System.IO;
 global using System.Linq;
+global using FluentFTP;
+global using FluentFTP.Helpers;
 global using Nuke.Common;
 global using Nuke.Common.CI.GitHubActions;
 global using Nuke.Common.IO;

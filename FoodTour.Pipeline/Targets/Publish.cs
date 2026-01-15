@@ -9,7 +9,7 @@ public partial class Build : NukeBuild {
             DotNetTasks.DotNetPublish(s => s
                 .SetProject(project)
                 .SetConfiguration(Configuration.Release)
-                .SetOutput(ArtifactsDirectory / "publish")
+                .SetOutput(PublishDirectory)
                 .EnableNoRestore()
                 .EnableNoBuild()
             );

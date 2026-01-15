@@ -41,5 +41,5 @@ jobs:
       - name: 'Run: BuildSolution'
         run: ./build.cmd BuildSolution
 
-      - name: 'Run: RunUnitTests'
+      - name: 'Run: ExecuteUnitTests'
         run: ./build.cmd ExecuteUnitTests --skip BuildSolution

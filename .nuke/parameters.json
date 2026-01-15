@@ -1,4 +1,7 @@
 {
   "$schema": "build.schema.json",
-  "Solution": "FoodTour.slnx"
+  "Solution": "FoodTour.slnx",
+  "FtpHost": "v1:SyxwNhbB5pTcxWWQMrQg7OWL8efnwLrCzL5nTs5t6Fo=",
+  "FtpUser": "v1:L11ZmcMvrzjnkT4uGj/3bw==",
+  "FtpPassword": "v1:Kx4XRKTqJnWcVbob5ilX6QiKAVO27P9OgHjQR9nGlDc="
 }
