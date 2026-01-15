@@ -19,8 +19,8 @@ name: foodtour-cd
 on: [workflow_dispatch]
 
 jobs:
-  windows-latest:
-    name: windows-latest
+  build-and-deploy:
+    name: 'Build and Deploy'
     runs-on: windows-latest
     env:
       FtpHost: ${{ secrets.FTP_HOST }}
@@ -49,7 +49,7 @@ jobs:
         run: ./build.cmd ExecuteUnitTests --skip BuildSolution
 
       - name: 'Run: Publish'
-        run: ./build.cmd Publish --skip BuildSolution, ExecuteUnitTests
+        run: ./build.cmd Publish --skip BuildSolution ExecuteUnitTests
 
       - name: 'Run Release'
-        run: ./build.cmd Release --skip BuildSolution, ExecuteUnitTests, Publish
+        run: ./build.cmd Release --skip BuildSolution ExecuteUnitTests Publish
