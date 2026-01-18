@@ -22,6 +22,7 @@ FoodTour allows users to browse and select from a list of active food suppliers 
 - .NET 10 SDK
 - SQL Server (LocalDB or full installation)
 - Visual Studio 2022 or VS Code
+- Nuke global tool (optional)
 
 ### Database Setup
 
@@ -50,7 +51,7 @@ Run the SQL scripts in `_Dependencies/Sample_Data/` against your database to pop
 3. Press F5 to run
 
 #### Using Command Line
-```bash
+```
 cd FoodTour
 dotnet run
 ```
@@ -59,7 +60,7 @@ The application will be available at `https://localhost:5001` (or the port speci
 
 ### Running Tests
 
-```bash
+```
 dotnet test
 ```
 
@@ -67,7 +68,7 @@ dotnet test
 
 To run the build pipeline locally using NUKE, use the following commands based on your operating system:
 
-```bash
+```
 # Windows
 .\build.cmd 
 
@@ -78,4 +79,10 @@ To run the build pipeline locally using NUKE, use the following commands based o
 nuke
 ```
 
-The project uses GitHub Actions for continuous integration.
+The project uses GitHub Actions for continuous integration and continuous deployment.
+
+To run the CI/CD pipeline locally with the Nuke global tool, add `FtpHost`, `FtpUser`, and `FtpPassword` to user secrets.
+Run:
+```
+nuke Release
+```

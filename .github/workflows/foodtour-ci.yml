@@ -22,10 +22,6 @@ jobs:
   build-and-test:
     name: 'Build and Test'
     runs-on: windows-latest
-    env:
-      FtpHost: ${{ secrets.FTP_HOST }}
-      FtpUser: ${{ secrets.FTP_USER }}
-      FtpPassword: ${{ secrets.FTP_PASSWORD }}
     steps:
       - uses: actions/checkout@v6
 
