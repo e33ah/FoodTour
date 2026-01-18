@@ -2,13 +2,13 @@
 
 public partial class Build : NukeBuild {
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
+    readonly Configuration Configuration = IsLocalBuild && !IsLocalDeployEnabled ? Configuration.Debug : Configuration.Release;
 
     [Solution]
     readonly Solution Solution;
-    
-    [Parameter("Enable deployment")]
-    readonly bool DeployEnabled = false;
+
+    [Parameter("Enable local deploy")]
+    static readonly bool IsLocalDeployEnabled = false;
 
     [Parameter("FTP host name")]
     [Secret]

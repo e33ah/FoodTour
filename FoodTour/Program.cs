@@ -10,7 +10,7 @@ public class Program {
         try {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configure Serilog
+            // Configure logging
             builder.Host.UseSerilog((context, services, configuration) => {
                 configuration
                     .ReadFrom.Configuration(context.Configuration)
@@ -29,6 +29,17 @@ public class Program {
                 options.UseSqlServer(connectionString));
 
             var app = builder.Build();
+
+            // Apply EF Core migrations on start-up
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<FoodTourContext>();
+            try {
+                db.Database.Migrate();
+                Log.Information("Database migrations applied successfully.");
+            } catch (Exception ex) {
+                Log.Fatal(ex, "Failed to apply database migrations");
+                throw;
+            }
 
             Log.Information("Application started - Application: {Application}, Environment: {Environment}, MachineName: {MachineName}",
                 "FoodTour",
