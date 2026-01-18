@@ -45,10 +45,87 @@ public class HomeController(FoodTourContext context) : Controller {
             model.TourDate = tourDate;
             return View(model);
         }
-
-        // TODO: FT-10 Store selectedSuppliers and tourDate before redirecting to preserve user's selection and create the tour.
+        var bookingSummaryModel = new BookingSummaryVM {
+            TourDate = tourDate!.Value,
+            CustomerEmail = customerEmail,
+            PurchaseCode = purchaseCode,
+            SelectedSupplierIds = selectedSuppliers,
+            SelectedSuppliers = await context.Suppliers.Where(s => selectedSuppliers.Contains(s.Id)).ToListAsync()
+        };
         Log.Information("User successfully submitted tour request for date {TourDate} with {SelectedCount} suppliers.", tourDate!.Value, selectedSuppliers.Count);
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction("BookingSummary", bookingSummaryModel);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> BookingSummary(BookingSummaryVM bookingSummary) {
+        if (bookingSummary == null) {
+            return RedirectToAction("Index");
+        }
+
+        bookingSummary.SelectedSupplierIds ??= [];
+
+        if (bookingSummary.SelectedSuppliers == null || bookingSummary.SelectedSuppliers.Count == 0) {
+            if (bookingSummary.SelectedSupplierIds.Count > 0) {
+                bookingSummary.SelectedSuppliers = await context.Suppliers
+                    .Where(s => bookingSummary.SelectedSupplierIds.Contains(s.Id))
+                    .ToListAsync();
+            } else {
+                bookingSummary.SelectedSuppliers = [];
+            }
+        }
+
+        return View(bookingSummary);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ConfirmBookingSummary(BookingSummaryVM bookingSummary) {
+        if (bookingSummary == null) {
+            Log.Warning("ConfirmBookingSummary called with null model.");
+            return RedirectToAction("Index");
+        }
+
+        if (!ModelState.IsValid) {
+            return View("BookingSummary", bookingSummary);
+        }
+
+        var confirmationModel = new ConfirmationVM {
+            TourDate = bookingSummary.TourDate,
+            CustomerEmail = bookingSummary.CustomerEmail,
+            PurchaseCode = bookingSummary.PurchaseCode,
+            SelectedSupplierIds = bookingSummary.SelectedSupplierIds
+        };
+
+        TempData["Confirmation"] = JsonSerializer.Serialize(confirmationModel);
+
+        Log.Information("User confirmed booking for {CustomerEmail} on {TourDate}.", bookingSummary.CustomerEmail, bookingSummary.TourDate);
+
+        return RedirectToAction("Confirmation");
+    }
+
+    [HttpGet]
+    public IActionResult Confirmation() {
+        string? json = TempData["Confirmation"] as string;
+        if (string.IsNullOrEmpty(json)) {
+            return RedirectToAction("Index");
+        }
+
+        var model = JsonSerializer.Deserialize<ConfirmationVM>(json);
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult SaveConfirmedBooking() {
+        if (ModelState.IsValid) {
+            Log.Information("Saving booking to database.");
+        } else {
+            Log.Warning("Attempted to save booking with invalid model state.");
+        }
+
+        //TODO: FT-10 Save booking to database
+
+        return RedirectToAction("Index");
     }
 
     public IActionResult Privacy() {

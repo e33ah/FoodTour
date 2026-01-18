@@ -1,6 +1,10 @@
 global using System.ComponentModel.DataAnnotations;
+global using System.Text.Json;
 global using FoodTour.Controllers;
 global using FoodTour.Models;
+global using Microsoft.AspNetCore.Http;
 global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Mvc.ViewFeatures;
 global using Microsoft.EntityFrameworkCore;
+global using Moq;
 global using Shouldly;

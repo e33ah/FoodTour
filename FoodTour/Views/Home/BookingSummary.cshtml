@@ -1,0 +1,52 @@
+﻿@model FoodTour.Models.BookingSummaryVM
+@{
+	ViewData["Title"] = "BookingSummary";
+}
+
+<div class="container">
+	<div class="row justify-content-center">
+		<div class="col-md-8 col-lg-6">
+			<div class="card mb-4">
+				<div class="card-body">
+					<h3 class="card-title text-center">
+						<i class="bi bi-card-checklist"></i> Booking Summary
+					</h3>
+					<p class="mt-3 text-center">Here are the details of your Weymouth Self-Guided Tasting Tour:</p>
+					<ul class="list-group list-group-flush">
+						<li class="list-group-item">
+							<strong>Tour Date:</strong> @Model.TourDate.ToString("D")
+						</li>
+						<li class="list-group-item">
+							<strong>Email:</strong> @Model.CustomerEmail
+						</li>
+						<li class="list-group-item">
+							<strong>Selected Tasting Experiences:</strong>
+							<ul>
+								@foreach (var supplier in Model.SelectedSuppliers) {
+									<li>@supplier.Name - @supplier.Address</li>
+								}
+							</ul>
+						</li>
+					</ul>
+					<div class="mt-4 d-flex justify-content-between align-items-center flex-column flex-sm-row">
+						<a href="@Url.Action("Index", "Home")" class="btn btn-secondary mb-2 mb-sm-0">
+							<i class="bi bi-arrow-left-circle"></i> Back to Home
+						</a>
+						<form asp-action="ConfirmBookingSummary" method="post" class="d-inline">
+							@Html.AntiForgeryToken()
+							<input type="hidden" name="TourDate" value="@Model.TourDate.ToString("o")" />
+							<input type="hidden" name="CustomerEmail" value="@Model.CustomerEmail" />
+							<input type="hidden" name="PurchaseCode" value="@Model.PurchaseCode" />
+							@foreach (var id in Model.SelectedSupplierIds) {
+								<input type="hidden" name="SelectedSupplierIds" value="@id" />
+							}
+							<button type="submit" class="btn btn-success ms-sm-2">
+								<i class="bi bi-check-circle"></i> Confirm Booking
+							</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

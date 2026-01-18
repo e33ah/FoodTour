@@ -1,6 +1,16 @@
 namespace FoodTour.Test;
 
 public static class TestHelper {
+    // Shared test data/constants used across unit tests
+    public const int EXPECTED_MAX_SELECTIONS = 5;
+    public const string VALID_EMAIL = "customer@test.com";
+    public const string VALID_CODE = "VALIDCODE123";
+    public const string NO_SUPPLIERS_MESSAGE_KEY = "NoSuppliersMessage";
+    public const string INSUFFICIENT_SUPPLIERS_WARNING_KEY = "InsufficientSuppliersWarning";
+    public const string EXPECTED_NO_SUPPLIERS_MESSAGE = "No tasting experiences are currently available for the tour. Please check back later.";
+    public static readonly int nextYear = DateTime.Today.AddYears(1).Year;
+    public static readonly DateTime validTourDate = new(nextYear, 6, 16);
+
     public static FoodTourContext CreateInMemoryContext() {
         var options = new DbContextOptionsBuilder<FoodTourContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
@@ -36,5 +46,15 @@ public static class TestHelper {
 
     public static List<int> CreateSupplierIdList(int count) {
         return [.. Enumerable.Range(1, count)];
+    }
+
+    public static BookingSummaryVM CreateValidBookingSummaryVM(List<int> selectedSupplierIds) {
+        return new BookingSummaryVM {
+            TourDate = validTourDate,
+            CustomerEmail = VALID_EMAIL,
+            PurchaseCode = VALID_CODE,
+            SelectedSupplierIds = selectedSupplierIds,
+            SelectedSuppliers = [.. selectedSupplierIds.Select(id => CreateSupplier(id, $"Supplier {id}"))]
+        };
     }
 }
