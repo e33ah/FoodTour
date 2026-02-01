@@ -339,31 +339,36 @@ public class HomeControllerTests {
     }
 
     [Fact]
-    public void Confirmation_RedirectsToIndex_WhenNoTempData() {
+    public async Task Confirmation_RedirectsToIndex_WhenNoTempData() {
         var sut = CreateControllerWithTempData(TestHelper.CreateInMemoryContext());
 
-        var result = sut.Confirmation();
+        var result = await sut.Confirmation();
 
         var redirect = result.ShouldBeOfType<RedirectToActionResult>();
         redirect.ActionName.ShouldBe(nameof(HomeController.Index));
     }
 
     [Fact]
-    public void Confirmation_ReturnsView_WhenTempDataPresent() {
-        var sut = CreateControllerWithTempData(TestHelper.CreateInMemoryContext());
-        var confirmation = new ConfirmationVM {
-            TourDate = TestHelper.validTourDate,
+    public async Task Confirmation_ReturnsView_WhenTempDataPresent() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var booking = new Booking {
             CustomerEmail = TestHelper.VALID_EMAIL,
             PurchaseCode = TestHelper.VALID_CODE,
+            TourDate = TestHelper.validTourDate,
             SelectedSupplierIds = [1, 2]
         };
-        sut.TempData["Confirmation"] = JsonSerializer.Serialize(confirmation);
+        context.Bookings.Add(booking);
+        context.SaveChanges();
+        var sut = CreateControllerWithTempData(context);
+        sut.TempData["BookingId"] = booking.Id;
 
-        var result = sut.Confirmation();
+        var result = await sut.Confirmation();
 
         var view = result.ShouldBeOfType<ViewResult>();
         var model = view.Model.ShouldBeOfType<ConfirmationVM>();
-        model.CustomerEmail.ShouldBe(confirmation.CustomerEmail);
+        model.CustomerEmail.ShouldBe(booking.CustomerEmail);
+        model.PurchaseCode.ShouldBe(booking.PurchaseCode);
+        model.TourDate.ShouldBe(booking.TourDate);
     }
 
     [Fact]

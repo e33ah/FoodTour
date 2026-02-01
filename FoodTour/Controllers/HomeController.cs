@@ -52,7 +52,7 @@ public class HomeController(FoodTourContext context) : Controller {
             SelectedSupplierIds = selectedSuppliers,
             SelectedSuppliers = await context.Suppliers.Where(s => selectedSuppliers.Contains(s.Id)).ToListAsync()
         };
-        Log.Information("User successfully submitted tour request for date {TourDate} with {SelectedCount} suppliers.", tourDate!.Value, selectedSuppliers.Count);
+        Log.Information("User submitted tour request for date {TourDate:dd/MM/yyyy} with {SelectedCount} suppliers.", bookingSummaryModel.TourDate, selectedSuppliers.Count);
         return RedirectToAction("BookingSummary", bookingSummaryModel);
     }
 
@@ -98,19 +98,42 @@ public class HomeController(FoodTourContext context) : Controller {
 
         TempData["Confirmation"] = JsonSerializer.Serialize(confirmationModel);
 
-        Log.Information("User confirmed booking for {CustomerEmail} on {TourDate}.", bookingSummary.CustomerEmail, bookingSummary.TourDate);
+        Log.Information("User confirmed booking for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", bookingSummary.CustomerEmail, bookingSummary.TourDate);
 
         return RedirectToAction("Confirmation");
     }
 
     [HttpGet]
-    public IActionResult Confirmation() {
-        string? json = TempData["Confirmation"] as string;
-        if (string.IsNullOrEmpty(json)) {
+    public async Task<IActionResult> Confirmation() {
+        object? bookingIdObj = TempData.Peek("BookingId"); // Peek to retain TempData for subsequent requests
+        if (bookingIdObj == null) {
             return RedirectToAction("Index");
         }
 
-        var model = JsonSerializer.Deserialize<ConfirmationVM>(json);
+        int bookingId;
+        if (bookingIdObj is int bookingIdInt) {
+            bookingId = bookingIdInt;
+        } else if (bookingIdObj is string s && int.TryParse(s, out int parsedId)) {
+            bookingId = parsedId;
+
+        } else {
+            Log.Warning("Confirmation action received unexpected BookingId type: {Type}.", bookingIdObj.GetType().FullName);
+            return RedirectToAction("Index");
+        }
+
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.Id == bookingId);
+        if (booking == null) {
+            Log.Warning("Confirmation action could not find booking with id {BookingId}.", bookingId);
+            return RedirectToAction("Index");
+        }
+
+        var model = new ConfirmationVM() {
+            TourDate = booking.TourDate,
+            CustomerEmail = booking.CustomerEmail,
+            PurchaseCode = booking.PurchaseCode,
+            SelectedSupplierIds = booking.SelectedSupplierIds
+        };
+
         return View(model);
     }
 
@@ -158,14 +181,11 @@ public class HomeController(FoodTourContext context) : Controller {
             await context.Bookings.AddAsync(booking);
             await context.SaveChangesAsync();
 
-            Log.Information("Saved booking {BookingId} for {CustomerEmail} on {TourDate}.", booking.Id, booking.CustomerEmail, booking.TourDate);
+            Log.Information("Saved booking id {BookingId} for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", booking.Id, booking.CustomerEmail, booking.TourDate);
 
             // Store booking identifier so the Confirmation view can load full details from the database
             TempData["BookingId"] = booking.Id;
             TempData["BookingSaved"] = "Your booking has been saved.";
-
-            // Also store the confirmation model in TempData so the GET Confirmation action can render the view
-            TempData["Confirmation"] = JsonSerializer.Serialize(confirmation);
 
             return Ok(new { success = true, nextAction = "Confirmation" });
         } catch (Exception ex) {
