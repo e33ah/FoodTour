@@ -4,6 +4,8 @@ global using FoodTour.Controllers;
 global using FoodTour.Models;
 global using Microsoft.AspNetCore.Http;
 global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Mvc.Abstractions;
+global using Microsoft.AspNetCore.Mvc.Routing;
 global using Microsoft.AspNetCore.Mvc.ViewFeatures;
 global using Microsoft.EntityFrameworkCore;
 global using Moq;

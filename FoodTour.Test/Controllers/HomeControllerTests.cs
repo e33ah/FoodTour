@@ -193,7 +193,7 @@ public class HomeControllerTests {
     public async Task IndexPost_AcceptsValidDatesWithinSeason(int month, int day) {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS);
         var validDate = new DateTime(TestHelper.nextYear, month, day);
-        if (validDate.DayOfWeek == DayOfWeek.Sunday) { 
+        if (validDate.DayOfWeek == DayOfWeek.Sunday) {
             validDate = validDate.AddDays(1);
         }
 
@@ -257,6 +257,17 @@ public class HomeControllerTests {
         var result = sut.Privacy();
 
         result.ShouldBeOfType<ViewResult>();
+    }
+
+    [Fact]
+    public void Error_ReturnsViewResult_WithErrorViewModel() {
+        var sut = CreateController();
+        var httpContext = new DefaultHttpContext { TraceIdentifier = "TestTraceId" };
+        sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
+        var result = sut.Error();
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<ErrorViewModel>();
+        model.RequestId.ShouldBe("TestTraceId");
     }
 
     [Fact]
@@ -340,11 +351,12 @@ public class HomeControllerTests {
     [Fact]
     public void Confirmation_ReturnsView_WhenTempDataPresent() {
         var sut = CreateControllerWithTempData(TestHelper.CreateInMemoryContext());
-        var confirmation = new ConfirmationVM { 
-            TourDate = TestHelper.validTourDate, 
-            CustomerEmail = TestHelper.VALID_EMAIL, 
+        var confirmation = new ConfirmationVM {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
             PurchaseCode = TestHelper.VALID_CODE,
-            SelectedSupplierIds = [1, 2] };
+            SelectedSupplierIds = [1, 2]
+        };
         sut.TempData["Confirmation"] = JsonSerializer.Serialize(confirmation);
 
         var result = sut.Confirmation();
@@ -355,18 +367,89 @@ public class HomeControllerTests {
     }
 
     [Fact]
-    public void SaveConfirmedBooking_AlwaysRedirectsToIndex() {
-        var sut = CreateControllerWithTempData(TestHelper.CreateInMemoryContext());
+    public async Task SaveConfirmedBooking_ReturnsBadRequest_WhenBookingInvalidAsync() {
+        var sut = CreateController();
 
-        var result = sut.SaveConfirmedBooking();
+        var result = await sut.SaveConfirmedBooking();
 
-        var redirect = result.ShouldBeOfType<RedirectToActionResult>();
-        redirect.ActionName.ShouldBe(nameof(HomeController.Index));
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        badRequestResult.Value.ShouldNotBeNull();
+        badRequestResult.Value.ToString()!.ShouldContain("Invalid request");
+    }
+
+    [Fact]
+    public async Task SaveConfirmedBooking_ReturnsBadRequest_WhenInvalidSuppliersAsync() {
+        var context = TestHelper.CreateInMemoryContext();
+        var sut = CreateControllerWithTempData(context);
+        var confirmation = new ConfirmationVM {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            PurchaseCode = TestHelper.VALID_CODE,
+            SelectedSupplierIds = [1, 2]
+        };
+
+        var result = await sut.SaveConfirmedBooking(confirmation);
+
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        badRequestResult.Value.ShouldNotBeNull();
+        badRequestResult.Value.ToString()!.ShouldContain("Invalid supplier selection");
+    }
+
+    [Fact]
+    public async Task SaveConfirmedBooking_SavesBookingAndReturnsOkAsync() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var sut = CreateControllerWithTempData(context);
+        var confirmation = new ConfirmationVM {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            PurchaseCode = TestHelper.VALID_CODE,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+        sut.TempData["Confirmation"] = JsonSerializer.Serialize(confirmation);
+
+        var result = await sut.SaveConfirmedBooking(confirmation);
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+        okResult.Value.ShouldNotBeNull();
+        okResult.Value.ToString()!.ShouldContain("True");
+
+        var bookings = context.Bookings.Include(b => b.BookingSuppliers).ToList();
+        bookings.Count.ShouldBe(1);
+
+        var booking = bookings[0];
+        booking.CustomerEmail.ShouldBe(confirmation.CustomerEmail);
+        booking.PurchaseCode.ShouldBe(confirmation.PurchaseCode);
+        booking.TourDate.ShouldBe(confirmation.TourDate);
+        booking.BookingSuppliers.Count.ShouldBe(5);
+        booking.BookingSuppliers.Select(bs => bs.SupplierId).ShouldBe(confirmation.SelectedSupplierIds);
+    }
+
+    [Fact]
+    public async Task SaveConfirmedBooking_ReturnsServerError_WhenDatabaseSaveThrowsAsync() {
+        using var context = TestHelper.CreateContextWithSuppliersFailingOnSave();
+        var sut = CreateControllerWithTempData(context);
+
+        var confirmation = new ConfirmationVM {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            PurchaseCode = TestHelper.VALID_CODE,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+
+        var result = await sut.SaveConfirmedBooking(confirmation);
+
+        var objectResult = result.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(500);
+        objectResult.Value.ShouldNotBeNull();
+        objectResult.Value.ToString()!.ShouldContain("BookingSummary");
     }
 
     private static async Task<(ViewResult viewResult, FoodTourVM model)> GetIndexViewModel(params Supplier[] suppliers) {
-        var context = suppliers.Length > 0 
-            ? TestHelper.CreateContextWithSuppliers(suppliers) 
+        var context = suppliers.Length > 0
+            ? TestHelper.CreateContextWithSuppliers(suppliers)
             : TestHelper.CreateInMemoryContext();
         var sut = new HomeController(context);
 
@@ -408,9 +491,8 @@ public class HomeControllerTests {
     }
 
     private static HomeController CreateControllerWithTempData(FoodTourContext context) {
-        var sut = new HomeController(context) {
+        return new HomeController(context) {
             TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
         };
-        return sut;
     }
 }

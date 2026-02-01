@@ -11,7 +11,7 @@
 					<h3 class="card-title text-center">
 						<i class="bi bi-card-checklist"></i> Booking Summary
 					</h3>
-					<p class="mt-3 text-center">Here are the details of your Weymouth Self-Guided Tasting Tour:</p>
+					<p class="mt-3 text-center">Here are your selections for your Weymouth Self-Guided Tasting Tour:</p>
 					<ul class="list-group list-group-flush">
 						<li class="list-group-item">
 							<strong>Tour Date:</strong> @Model.TourDate.ToString("D")
@@ -27,6 +27,10 @@
 								}
 							</ul>
 						</li>
+						<li class="list-group-item mt-3 text-center">
+							<strong>Does this look correct?</strong><br />
+							Please confirm to save your booking.
+						</li>
 					</ul>
 					<div class="mt-4 d-flex justify-content-between align-items-center flex-column flex-sm-row">
 						<a href="@Url.Action("Index", "Home")" class="btn btn-secondary mb-2 mb-sm-0">
@@ -40,7 +44,7 @@
 							@foreach (var id in Model.SelectedSupplierIds) {
 								<input type="hidden" name="SelectedSupplierIds" value="@id" />
 							}
-							<button type="submit" class="btn btn-success ms-sm-2">
+							<button type="submit" class="btn btn-success ms-sm-2" id="btnConfirm">
 								<i class="bi bi-check-circle"></i> Confirm Booking
 							</button>
 						</form>
@@ -50,3 +54,76 @@
 		</div>
 	</div>
 </div>
+
+@section Scripts {
+	<script type="text/javascript">
+		(function () {
+			var btn = document.getElementById('btnConfirm');
+			if (!btn) {
+				return;
+			}
+
+			// URL to navigate to when confirmation is successful
+			var confirmationUrl = '@Url.Action("Confirmation", "Home")';
+
+			btn.addEventListener('click', function (e) {
+				e.preventDefault();
+
+				var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+				var token = tokenInput ? tokenInput.value : '';
+
+				var tourDateInput = document.querySelector('input[name="TourDate"]');
+				var customerEmailInput = document.querySelector('input[name="CustomerEmail"]');
+				var purchaseCodeInput = document.querySelector('input[name="PurchaseCode"]');
+				var selectedSupplierInputs = document.querySelectorAll('input[name="SelectedSupplierIds"]');
+
+				var data = {
+					tourDate: tourDateInput ? tourDateInput.value : '',
+					customerEmail: customerEmailInput ? customerEmailInput.value : '',
+					purchaseCode: purchaseCodeInput ? purchaseCodeInput.value : '',
+					selectedSupplierIds: Array.from(selectedSupplierInputs).map(function (supplierInput) { return parseInt(supplierInput.value, 10); })
+				};
+
+				fetch('/Home/SaveConfirmedBooking', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'RequestVerificationToken': token
+					},
+					credentials: 'same-origin',
+					body: JSON.stringify(data)
+				})
+					.then(function (response) {
+						return response.json().catch(function () { return null; }).then(function (json) {
+							return { ok: response.ok, status: response.status, json: json };
+						});
+					})
+					.then(function (result) {
+						var json = result && result.json ? result.json : null;
+
+						// If server indicates nextAction "Confirmation" or explicit success, navigate to Confirmation page
+						if (json && (json.nextAction === 'Confirmation' || json.success === true)) {
+							window.location.href = confirmationUrl;
+							return;
+						}
+
+						// Fallback to homepage
+						window.location.href = '@Url.Action("Index", "Home")';
+					})
+					.catch(function (err) {
+						console.error(err);
+						var defaultMessage = 'We could not complete your booking. Please check your internet connection and try again. If the problem continues, please contact our support team.';
+						var message = (err && err.message) ? err.message : defaultMessage;
+						
+						var errorContainer = document.createElement('div');
+						errorContainer.className = 'alert alert-danger mt-3';
+						errorContainer.textContent = message;
+						var cardBody = document.querySelector('.card-body');
+						if (cardBody) {
+							cardBody.insertBefore(errorContainer, cardBody.firstChild);
+						}
+					});
+			});
+		})();
+	</script>
+}

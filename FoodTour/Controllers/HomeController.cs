@@ -116,16 +116,64 @@ public class HomeController(FoodTourContext context) : Controller {
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult SaveConfirmedBooking() {
-        if (ModelState.IsValid) {
-            Log.Information("Saving booking to database.");
-        } else {
-            Log.Warning("Attempted to save booking with invalid model state.");
+    public async Task<IActionResult> SaveConfirmedBooking([FromBody] ConfirmationVM? confirmation = null) {
+        if (confirmation == null) {
+            Log.Warning("SaveConfirmedBooking called with null or invalid request body.");
+            return BadRequest("Invalid request.");
         }
 
-        //TODO: FT-10 Save booking to database
+        int actualSupplierSelectionCount = confirmation.SelectedSupplierIds?.Count ?? 0;
+        if (confirmation.SelectedSupplierIds == null || actualSupplierSelectionCount != MAX_SUPPLIER_SELECTIONS) {
+            Log.Warning("Invalid supplier selection in confirmation data: {ActualCount}, expected: {ExpectedCount}", actualSupplierSelectionCount, MAX_SUPPLIER_SELECTIONS);
+            string result = $"Invalid supplier selection. Expected {MAX_SUPPLIER_SELECTIONS} supplier selections, but received {actualSupplierSelectionCount}.";
+            return BadRequest(result);
+        }
 
-        return RedirectToAction("Index");
+        // Validate that all supplier IDs exist in the database before creating BookingSupplier records
+        var existingSupplierIds = await context.Suppliers
+            .Where(s => confirmation.SelectedSupplierIds.Contains(s.Id) && s.IsActive)
+            .Select(s => s.Id)
+            .ToListAsync();
+
+        if (existingSupplierIds.Count != confirmation.SelectedSupplierIds.Count) {
+            Log.Warning("One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", confirmation.SelectedSupplierIds, existingSupplierIds);
+            return BadRequest("One or more selected suppliers are invalid.");
+        }
+
+        var booking = new Booking {
+            TourDate = confirmation.TourDate,
+            CustomerEmail = confirmation.CustomerEmail,
+            PurchaseCode = confirmation.PurchaseCode,
+            SelectedSupplierIds = confirmation.SelectedSupplierIds,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        booking.BookingSuppliers = [.. existingSupplierIds.Select(id =>
+            new BookingSupplier {
+                Booking = booking,
+                SupplierId = id
+            })];
+
+        try {
+            await context.Bookings.AddAsync(booking);
+            await context.SaveChangesAsync();
+
+            Log.Information("Saved booking {BookingId} for {CustomerEmail} on {TourDate}.", booking.Id, booking.CustomerEmail, booking.TourDate);
+
+            // Store booking identifier so the Confirmation view can load full details from the database
+            TempData["BookingId"] = booking.Id;
+            TempData["BookingSaved"] = "Your booking has been saved.";
+
+            // Also store the confirmation model in TempData so the GET Confirmation action can render the view
+            TempData["Confirmation"] = JsonSerializer.Serialize(confirmation);
+
+            return Ok(new { success = true, nextAction = "Confirmation" });
+        } catch (Exception ex) {
+            const string BOOKING_SAVE_ERROR_MESSAGE = "Unable to save your booking due to a system error. Please try again or contact support if the problem persists.";
+            Log.Error(ex, "Failed to save booking to database.");
+            TempData["BookingSaveError"] = BOOKING_SAVE_ERROR_MESSAGE;
+            return StatusCode(500, new { success = false, nextAction = "BookingSummary", message = BOOKING_SAVE_ERROR_MESSAGE });
+        }
     }
 
     public IActionResult Privacy() {

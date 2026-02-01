@@ -57,4 +57,30 @@ public static class TestHelper {
             SelectedSuppliers = [.. selectedSupplierIds.Select(id => CreateSupplier(id, $"Supplier {id}"))]
         };
     }
+
+    public static FoodTourContext CreateContextWithSuppliersFailingOnSave() {
+        var options = new DbContextOptionsBuilder<FoodTourContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        var context = new FailingContext(options);
+        var suppliers = Enumerable.Range(1, 5)
+            .Select(i => CreateSupplier(i, $"Supplier {i}"))
+            .ToArray();
+        context.Suppliers.AddRange(suppliers);
+        context.SaveChanges();
+        return context;
+    }
+
+    public static FoodTourContext CreateContextFailingOnSave() {
+        var options = new DbContextOptionsBuilder<FoodTourContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        return new FailingContext(options);
+    }
+
+    private class FailingContext(DbContextOptions<FoodTourContext> options) : FoodTourContext(options) {
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) {
+            throw new Exception("Simulated database failure during SaveChangesAsync");
+        }
+    }
 }
