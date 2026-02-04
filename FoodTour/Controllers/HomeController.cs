@@ -89,7 +89,7 @@ public class HomeController(FoodTourContext context) : Controller {
             return View("BookingSummary", bookingSummary);
         }
 
-        var confirmationModel = new ConfirmationVM {
+        var confirmationModel = new BookingConfirmationVM {
             TourDate = bookingSummary.TourDate,
             CustomerEmail = bookingSummary.CustomerEmail,
             PurchaseCode = bookingSummary.PurchaseCode,
@@ -100,11 +100,11 @@ public class HomeController(FoodTourContext context) : Controller {
 
         Log.Information("User confirmed booking for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", bookingSummary.CustomerEmail, bookingSummary.TourDate);
 
-        return RedirectToAction("Confirmation");
+        return RedirectToAction("BookingConfirmation");
     }
 
     [HttpGet]
-    public async Task<IActionResult> Confirmation() {
+    public async Task<IActionResult> BookingConfirmation() {
         object? bookingIdObj = TempData.Peek("BookingId"); // Peek to retain TempData for subsequent requests
         if (bookingIdObj == null) {
             return RedirectToAction("Index");
@@ -127,7 +127,7 @@ public class HomeController(FoodTourContext context) : Controller {
             return RedirectToAction("Index");
         }
 
-        var model = new ConfirmationVM() {
+        var model = new BookingConfirmationVM() {
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
             PurchaseCode = booking.PurchaseCode,
@@ -139,7 +139,7 @@ public class HomeController(FoodTourContext context) : Controller {
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SaveConfirmedBooking([FromBody] ConfirmationVM? confirmation = null) {
+    public async Task<IActionResult> SaveConfirmedBooking([FromBody] BookingConfirmationVM? confirmation = null) {
         if (confirmation == null) {
             Log.Warning("SaveConfirmedBooking called with null or invalid request body.");
             return BadRequest("Invalid request.");
@@ -183,7 +183,7 @@ public class HomeController(FoodTourContext context) : Controller {
 
             Log.Information("Saved booking id {BookingId} for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", booking.Id, booking.CustomerEmail, booking.TourDate);
 
-            // Store booking identifier so the Confirmation view can load full details from the database
+            // Store booking identifier so the BookingConfirmation view can load full details from the database
             TempData["BookingId"] = booking.Id;
             TempData["BookingSaved"] = "Your booking has been saved.";
 

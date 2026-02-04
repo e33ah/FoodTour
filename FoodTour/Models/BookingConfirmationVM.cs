@@ -1,6 +1,6 @@
 ﻿namespace FoodTour.Models;
 
-public class ConfirmationVM {
+public class BookingConfirmationVM {
     public DateTime TourDate { get; set; }
     public string CustomerEmail { get; set; } = string.Empty;
     public string PurchaseCode { get; set; } = string.Empty;

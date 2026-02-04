@@ -327,13 +327,13 @@ public class HomeControllerTests {
         var result = sut.ConfirmBookingSummary(bookingSummary);
 
         var redirect = result.ShouldBeOfType<RedirectToActionResult>();
-        redirect.ActionName.ShouldBe(nameof(HomeController.Confirmation));
+        redirect.ActionName.ShouldBe(nameof(HomeController.BookingConfirmation));
 
         sut.TempData.ContainsKey("Confirmation").ShouldBeTrue();
         string? json = sut.TempData["Confirmation"] as string;
         json.ShouldNotBeNull();
 
-        var confirmation = JsonSerializer.Deserialize<ConfirmationVM>(json!);
+        var confirmation = JsonSerializer.Deserialize<BookingConfirmationVM>(json!);
         confirmation!.CustomerEmail.ShouldBe(bookingSummary.CustomerEmail);
         confirmation.TourDate.ShouldBe(bookingSummary.TourDate);
     }
@@ -342,7 +342,7 @@ public class HomeControllerTests {
     public async Task Confirmation_RedirectsToIndex_WhenNoTempData() {
         var sut = CreateControllerWithTempData(TestHelper.CreateInMemoryContext());
 
-        var result = await sut.Confirmation();
+        var result = await sut.BookingConfirmation();
 
         var redirect = result.ShouldBeOfType<RedirectToActionResult>();
         redirect.ActionName.ShouldBe(nameof(HomeController.Index));
@@ -362,10 +362,10 @@ public class HomeControllerTests {
         var sut = CreateControllerWithTempData(context);
         sut.TempData["BookingId"] = booking.Id;
 
-        var result = await sut.Confirmation();
+        var result = await sut.BookingConfirmation();
 
         var view = result.ShouldBeOfType<ViewResult>();
-        var model = view.Model.ShouldBeOfType<ConfirmationVM>();
+        var model = view.Model.ShouldBeOfType<BookingConfirmationVM>();
         model.CustomerEmail.ShouldBe(booking.CustomerEmail);
         model.PurchaseCode.ShouldBe(booking.PurchaseCode);
         model.TourDate.ShouldBe(booking.TourDate);
@@ -387,7 +387,7 @@ public class HomeControllerTests {
     public async Task SaveConfirmedBooking_ReturnsBadRequest_WhenInvalidSuppliersAsync() {
         var context = TestHelper.CreateInMemoryContext();
         var sut = CreateControllerWithTempData(context);
-        var confirmation = new ConfirmationVM {
+        var confirmation = new BookingConfirmationVM {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
             PurchaseCode = TestHelper.VALID_CODE,
@@ -406,7 +406,7 @@ public class HomeControllerTests {
     public async Task SaveConfirmedBooking_SavesBookingAndReturnsOkAsync() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
         var sut = CreateControllerWithTempData(context);
-        var confirmation = new ConfirmationVM {
+        var confirmation = new BookingConfirmationVM {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
             PurchaseCode = TestHelper.VALID_CODE,
@@ -437,7 +437,7 @@ public class HomeControllerTests {
         using var context = TestHelper.CreateContextWithSuppliersFailingOnSave();
         var sut = CreateControllerWithTempData(context);
 
-        var confirmation = new ConfirmationVM {
+        var confirmation = new BookingConfirmationVM {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
             PurchaseCode = TestHelper.VALID_CODE,
