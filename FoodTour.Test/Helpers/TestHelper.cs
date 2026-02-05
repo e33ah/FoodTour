@@ -37,6 +37,14 @@ public static class TestHelper {
         return context;
     }
 
+    public static FoodTourContext CreateContextWithSuppliersAndBookings(Supplier[] suppliers, Booking[] bookings) {
+        var context = CreateInMemoryContext();
+        context.Suppliers.AddRange(suppliers);
+        context.Bookings.AddRange(bookings);
+        context.SaveChanges();
+        return context;
+    }
+
     public static FoodTourContext CreateContextWithActiveSuppliersCount(int count) {
         var suppliers = Enumerable.Range(1, count)
             .Select(i => CreateSupplier(i, $"Supplier {i}"))
@@ -82,5 +90,15 @@ public static class TestHelper {
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) {
             throw new Exception("Simulated database failure during SaveChangesAsync");
         }
+    }
+
+    public static Booking CreateValidBooking(List<int> selectedSupplierIds) {
+        return new Booking {
+            TourDate = validTourDate,
+            CustomerEmail = VALID_EMAIL,
+            PurchaseCode = VALID_CODE,
+            SelectedSupplierIds = selectedSupplierIds,
+            BookingSuppliers = [.. selectedSupplierIds.Select(id => new BookingSupplier { SupplierId = id })]
+        };
     }
 }

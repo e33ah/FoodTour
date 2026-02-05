@@ -1,0 +1,30 @@
+﻿@model FoodTour.Models.SupplierVisitVM
+
+@{
+	ViewData["Title"] = "Food Tour Visit";
+}
+<div class="container text-center mt-5">
+	<h1>Food Tour Visit</h1>
+	<p>Thank you for participating in Weymouth FoodTour!</p>
+	<p>
+		Customer email: <strong>@Model.CustomerEmail</strong> <br />
+		Tour Date: <strong>@Model.TourDate.ToString("d")</strong>
+	</p>
+	<div>
+		<form asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
+			<div class="mb-3 col-12 col-md-8 col-lg-4 py-1">
+				<label asp-for="SelectedSupplierId" class="form-label">Select your business to confirm your customer visit:</label>
+				<span asp-validation-for="SelectedSupplierId" class="text-danger"></span>
+				<select asp-for="SelectedSupplierId" class="form-select">
+					<option value="">-- Select a Supplier --</option>
+					@if (Model?.Suppliers != null) {
+						foreach (var supplier in Model.Suppliers) {
+							<option value="@supplier.Id">@supplier.Name</option>
+						}
+					}
+				</select>
+				<button type="submit" class="btn btn-primary mt-4">Confirm Visit</button>
+			</div>
+		</form>
+	</div>
+</div>

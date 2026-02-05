@@ -196,6 +196,29 @@ public class HomeController(FoodTourContext context) : Controller {
         }
     }
 
+    public IActionResult SupplierVisit(int bookingId) {
+        if (bookingId <= 0) {
+            Log.Warning("SupplierVisit action called with invalid bookingId: {BookingId}.", bookingId);
+            return RedirectToAction("Error");
+            //bookingId = 17; // For test purposes only
+        }
+        var booking = context.Bookings
+            .Include(b => b.BookingSuppliers)
+            .ThenInclude(bs => bs.Supplier)
+            .FirstOrDefault(b => b.Id == bookingId);
+
+        if (booking == null) {
+            Log.Warning("SupplierVisit action could not find booking with id {BookingId}.", bookingId);
+            return RedirectToAction("Error");
+        }
+        var model = new SupplierVisitVM() {
+            Suppliers = [.. booking.BookingSuppliers.Select(bs => bs.Supplier)],
+            TourDate = booking.TourDate,
+            CustomerEmail = booking.CustomerEmail,
+        };
+        return View(model);
+    }
+
     public IActionResult Privacy() {
         return View();
     }

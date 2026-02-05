@@ -400,7 +400,7 @@ public class HomeControllerTests {
         badRequestResult.StatusCode.ShouldBe(400);
         badRequestResult.Value.ShouldNotBeNull();
         badRequestResult.Value.ToString()!.ShouldContain("Invalid supplier selection");
-    }
+    } 
 
     [Fact]
     public async Task SaveConfirmedBooking_SavesBookingAndReturnsOkAsync() {
@@ -450,6 +450,63 @@ public class HomeControllerTests {
         objectResult.StatusCode.ShouldBe(500);
         objectResult.Value.ShouldNotBeNull();
         objectResult.Value.ToString()!.ShouldContain("BookingSummary");
+    }
+
+    [Fact]
+    public void SupplierVisit_ReturnsViewResult_WithSupplierDetails() {
+        string supplierName = "Gourmet Bites";
+        int supplierId = 1;
+        int bookingId = 1;
+        var supplier = TestHelper.CreateSupplier(supplierId, supplierName, true);
+        var booking = TestHelper.CreateValidBooking([bookingId]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        var sut = new HomeController(context);
+
+        var result = sut.SupplierVisit(bookingId);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<SupplierVisitVM>();
+        model.Suppliers.Count.ShouldBe(1);
+        model.Suppliers[0].Name.ShouldBe(supplierName);
+
+    }
+
+    [Fact]
+    public void SupplierVisit_RedirectsToError_WhenBookingNotFound() {
+        var sut = new HomeController(TestHelper.CreateInMemoryContext());
+
+        var result = sut.SupplierVisit(999);
+
+        var viewResult = result.ShouldBeOfType<RedirectToActionResult>();
+        viewResult.ActionName.ShouldBe(nameof(HomeController.Error));
+    }
+
+    [Fact]
+    public void SupplierVisit_IncludesAllBookingSuppliers_WhenMultipleAssigned() {
+        var supplier1 = TestHelper.CreateSupplier(1, "The Rusty Spoon", true);
+        var supplier2 = TestHelper.CreateSupplier(2, "Fisherman's Table", true);
+        var booking = TestHelper.CreateValidBooking([1, 2]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier1, supplier2], [booking]);
+        var sut = new HomeController(context);
+
+        var result = sut.SupplierVisit(booking.Id);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<SupplierVisitVM>();
+        model.Suppliers.Count.ShouldBe(2);
+        model.Suppliers.Select(s => s.Id).OrderBy(i => i).ShouldBe([1, 2]);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void SupplierVisit_RedirectsToError_WhenBookingIdIsZeroOrNegative(int invalidBookingId) {
+        var sut = new HomeController(TestHelper.CreateInMemoryContext());
+
+        var result = sut.SupplierVisit(invalidBookingId);
+
+        var viewResult = result.ShouldBeOfType<RedirectToActionResult>();
+        viewResult.ActionName.ShouldBe(nameof(HomeController.Error));
     }
 
     private static async Task<(ViewResult viewResult, FoodTourVM model)> GetIndexViewModel(params Supplier[] suppliers) {
