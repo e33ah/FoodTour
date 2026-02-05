@@ -198,9 +198,12 @@ public class HomeController(FoodTourContext context) : Controller {
 
     public IActionResult SupplierVisit(int bookingId) {
         if (bookingId <= 0) {
+#if DEBUG
+            bookingId = 17; // For test purposes only, needs removing. FT-14
+#else
             Log.Warning("SupplierVisit action called with invalid bookingId: {BookingId}.", bookingId);
             return RedirectToAction("Error");
-            //bookingId = 17; // For test purposes only
+#endif
         }
         var booking = context.Bookings
             .Include(b => b.BookingSuppliers)
@@ -217,6 +220,37 @@ public class HomeController(FoodTourContext context) : Controller {
             CustomerEmail = booking.CustomerEmail,
         };
         return View(model);
+    }
+
+    public record RecordVisitDTO(int SelectedSupplierId);
+
+    [HttpPut]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDTO? payload)
+    {
+        if (payload == null || payload.SelectedSupplierId <= 0)
+        {
+            Log.Warning("RecordVisit called without a selectedSupplierId.");
+            return BadRequest(new { error = "No supplier selected." });
+        }
+
+        int selectedSupplierId = payload.SelectedSupplierId;
+
+        bool supplierExists = await context.Suppliers.AnyAsync(s => s.Id == selectedSupplierId);
+        if (!supplierExists)
+        {
+            Log.Warning("RecordVisit called with invalid supplier id {SupplierId}.", selectedSupplierId);
+            return BadRequest(new { error = "Invalid supplier selected." });
+        }
+
+        // TODO: FT-18 Validate that the selected supplier ID is valid and associated with the user's booking and save to db
+
+        return Ok(new { success = true });
+    }
+
+
+    public IActionResult VisitConfirmation() {
+        return View();
     }
 
     public IActionResult Privacy() {

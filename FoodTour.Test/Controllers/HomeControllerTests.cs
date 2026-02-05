@@ -264,7 +264,9 @@ public class HomeControllerTests {
         var sut = CreateController();
         var httpContext = new DefaultHttpContext { TraceIdentifier = "TestTraceId" };
         sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
         var result = sut.Error();
+
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<ErrorViewModel>();
         model.RequestId.ShouldBe("TestTraceId");
@@ -400,7 +402,7 @@ public class HomeControllerTests {
         badRequestResult.StatusCode.ShouldBe(400);
         badRequestResult.Value.ShouldNotBeNull();
         badRequestResult.Value.ToString()!.ShouldContain("Invalid supplier selection");
-    } 
+    }
 
     [Fact]
     public async Task SaveConfirmedBooking_SavesBookingAndReturnsOkAsync() {
@@ -507,6 +509,40 @@ public class HomeControllerTests {
 
         var viewResult = result.ShouldBeOfType<RedirectToActionResult>();
         viewResult.ActionName.ShouldBe(nameof(HomeController.Error));
+    }
+
+    [Fact]
+    public async Task RecordVisit_ReturnsOk_WhenSupplierIdIsValidAsync() {
+        var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+        var booking = TestHelper.CreateValidBooking([1]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        var sut = new HomeController(context);
+
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(supplier.Id));
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+    }
+
+    [Fact]
+    public async Task RecordVisit_ReturnsBadRequest_WhenSupplierIdIsInvalidAsync() {
+        var sut = new HomeController(TestHelper.CreateInMemoryContext());
+
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(999));
+
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        badRequestResult.Value.ShouldNotBeNull();
+        badRequestResult.Value.ToString()!.ShouldContain("Invalid supplier selected");
+    }
+
+    [Fact]
+    public void VisitConfirmation_ReturnsView_WhenCalled() {
+        var sut = CreateController();
+
+        var result = sut.VisitConfirmation();
+        
+        result.ShouldBeOfType<ViewResult>();
     }
 
     private static async Task<(ViewResult viewResult, FoodTourVM model)> GetIndexViewModel(params Supplier[] suppliers) {

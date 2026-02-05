@@ -11,7 +11,8 @@
 		Tour Date: <strong>@Model.TourDate.ToString("d")</strong>
 	</p>
 	<div>
-		<form asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
+		<form id="supplierVisitForm" asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
+			@Html.AntiForgeryToken()
 			<div class="mb-3 col-12 col-md-8 col-lg-4 py-1">
 				<label asp-for="SelectedSupplierId" class="form-label">Select your business to confirm your customer visit:</label>
 				<span asp-validation-for="SelectedSupplierId" class="text-danger"></span>
@@ -23,8 +24,76 @@
 						}
 					}
 				</select>
-				<button type="submit" class="btn btn-primary mt-4">Confirm Visit</button>
+				<button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
 			</div>
+			<div id="supplierErrorRegion" class="text-danger d-none"></div>
 		</form>
 	</div>
 </div>
+
+@section Scripts {
+	<script type="text/javascript">
+		(function () {
+			var form = document.getElementById('supplierVisitForm');
+			if (!form) {
+				return;
+			}
+
+			form.addEventListener('submit', async function (e) {
+				e.preventDefault();
+
+				var select = form.querySelector('select[name="SelectedSupplierId"]');
+				var selectedValue = select ? select.value : '';
+
+				if (!selectedValue) {
+					var errorRegion = document.getElementById('supplierErrorRegion');
+					if (errorRegion) {
+						errorRegion.textContent = 'Please select your business to confirm the visit.';
+						errorRegion.classList.remove('d-none');
+					}
+					return;
+				}
+
+				var tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+				var token = tokenInput ? tokenInput.value : '';
+
+				var payload = {
+					selectedSupplierId: Number(selectedValue)
+				};
+
+				try {
+					var recordUrl = '@Url.Action("RecordVisit", "Home")';
+					var response = await fetch(recordUrl, {
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							'RequestVerificationToken': token
+						},
+						body: JSON.stringify(payload)
+					});
+
+					if (response.ok) {
+						window.location.href = '/Home/VisitConfirmation';
+						return;
+					}
+
+					var errorText = 'An error occurred while recording the visit.';
+					try {
+						var errorJson = await response.json();
+						if (errorJson && errorJson.error) {
+							errorText = errorJson.error;
+						} else if (errorJson && errorJson.message) {
+							errorText = errorJson.message;
+						}
+					} catch (parseErr) {
+						// ignore JSON parse errors and use generic message
+					}
+
+					alert(errorText);
+				} catch (networkErr) {
+					alert('Network error while recording the visit. Please try again.');
+				}
+			});
+		})();
+	</script>
+}
