@@ -147,8 +147,9 @@ public class HomeController(FoodTourContext context) : Controller {
             return BadRequest("Invalid request.");
         }
 
-        int actualSupplierSelectionCount = confirmation.SelectedSupplierIds?.Count ?? 0;
-        if (confirmation.SelectedSupplierIds == null || actualSupplierSelectionCount != MAX_SUPPLIER_SELECTIONS) {
+        var selectedSupplierIds = confirmation.SelectedSupplierIds;
+        int actualSupplierSelectionCount = selectedSupplierIds?.Count ?? 0;
+        if (selectedSupplierIds == null || actualSupplierSelectionCount != MAX_SUPPLIER_SELECTIONS) {
             Log.Warning("Invalid supplier selection in confirmation data: {ActualCount}, expected: {ExpectedCount}", actualSupplierSelectionCount, MAX_SUPPLIER_SELECTIONS);
             string result = $"Invalid supplier selection. Expected {MAX_SUPPLIER_SELECTIONS} supplier selections, but received {actualSupplierSelectionCount}.";
             return BadRequest(result);
@@ -156,12 +157,12 @@ public class HomeController(FoodTourContext context) : Controller {
 
         // Validate that all supplier IDs exist in the database before creating BookingSupplier records
         var existingSupplierIds = await context.Suppliers
-            .Where(s => confirmation.SelectedSupplierIds.Contains(s.Id) && s.IsActive)
+            .Where(s => selectedSupplierIds.Contains(s.Id) && s.IsActive)
             .Select(s => s.Id)
             .ToListAsync();
 
-        if (existingSupplierIds.Count != confirmation.SelectedSupplierIds.Count) {
-            Log.Warning("One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", confirmation.SelectedSupplierIds, existingSupplierIds);
+        if (existingSupplierIds.Count != selectedSupplierIds.Count) {
+            Log.Warning("One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", selectedSupplierIds, existingSupplierIds);
             return BadRequest("One or more selected suppliers are invalid.");
         }
 
@@ -169,18 +170,26 @@ public class HomeController(FoodTourContext context) : Controller {
             TourDate = confirmation.TourDate,
             CustomerEmail = confirmation.CustomerEmail,
             PurchaseCode = confirmation.PurchaseCode,
-            SelectedSupplierIds = confirmation.SelectedSupplierIds,
+            SelectedSupplierIds = selectedSupplierIds,
             CreatedAt = DateTime.UtcNow
         };
 
-        booking.BookingSuppliers = [.. existingSupplierIds.Select(id =>
+        booking.BookingSuppliers = [.. selectedSupplierIds.Select(id =>
             new BookingSupplier {
                 Booking = booking,
                 SupplierId = id
             })];
 
+        var visits = selectedSupplierIds.Select(id =>
+            new Visit {
+                Booking = booking,
+                SupplierId = id,
+                IsClaimed = false
+            }).ToList();
+
         try {
             await context.Bookings.AddAsync(booking);
+            await context.Visits.AddRangeAsync(visits);
             await context.SaveChangesAsync();
 
             Log.Information("Saved booking id {BookingId} for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", booking.Id, booking.CustomerEmail, booking.TourDate);
@@ -190,10 +199,12 @@ public class HomeController(FoodTourContext context) : Controller {
             TempData["BookingSaved"] = "Your booking has been saved.";
 
             return Ok(new { success = true, nextAction = "Confirmation" });
+
         } catch (Exception ex) {
             const string BOOKING_SAVE_ERROR_MESSAGE = "Unable to save your booking due to a system error. Please try again or contact support if the problem persists.";
             Log.Error(ex, "Failed to save booking to database.");
             TempData["BookingSaveError"] = BOOKING_SAVE_ERROR_MESSAGE;
+
             return StatusCode(500, new { success = false, nextAction = "BookingSummary", message = BOOKING_SAVE_ERROR_MESSAGE });
         }
     }
@@ -209,39 +220,77 @@ public class HomeController(FoodTourContext context) : Controller {
             .ThenInclude(bs => bs.Supplier)
             .FirstOrDefault(b => b.Id == bookingId);
 
-        if (booking == null) {
-            Log.Warning("SupplierVisit action could not find booking with id {BookingId}.", bookingId);
+        if (booking == null || booking.BookingSuppliers == null) {
+            Log.Warning("Booking or BookingSuppliers is null for bookingId {BookingId}.", bookingId);
             return RedirectToAction("Error");
         }
+        var claimedSupplierIds = context.Visits
+            .Where(v => v.BookingId == bookingId && v.IsClaimed)
+            .Select(v => v.SupplierId)
+            .ToList();
+
+        var unclaimedSuppliers = booking.BookingSuppliers
+            .Where(bs => !claimedSupplierIds.Contains(bs.SupplierId))
+            .Select(bs => bs.Supplier)
+            .ToList();
+
+        Log.Debug("Found {ClaimedCount} claimed suppliers and {UnclaimedCount} unclaimed suppliers for bookingId {BookingId}.",
+        claimedSupplierIds.Count, unclaimedSuppliers.Count, bookingId);
+
+        if (unclaimedSuppliers.Count == 0) {
+            Log.Information("All suppliers already visited for booking {BookingId}. Redirecting to confirmation.", bookingId);
+            TempData["VisitMessage"] = "You have already confirmed your visit to all suppliers for this tour. Thank you!";
+            //TODO FT-22 Redirect to a dedicated "Tour Completed" page that thanks the user and provides any next steps or feedback options.
+            return RedirectToAction("Error");
+        }
+
         var model = new SupplierVisitVM() {
-            Suppliers = [.. booking.BookingSuppliers.Select(bs => bs.Supplier)],
+            BookingId = bookingId,
+            Suppliers = unclaimedSuppliers,
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
         };
         return View(model);
     }
 
-    public record RecordVisitDTO(int SelectedSupplierId);
+    public record RecordVisitDTO(int BookingId, int SelectedSupplierId);
 
     [HttpPut]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDTO? payload) {
-        if (payload == null || payload.SelectedSupplierId <= 0) {
-            Log.Warning("RecordVisit called without a selectedSupplierId.");
-            return BadRequest(new { error = "No supplier selected." });
+        if (payload == null || payload.SelectedSupplierId <= 0 || payload.BookingId <= 0) {
+            Log.Warning("RecordVisit called with invalid parameters.");
+            return BadRequest(new { error = "Invalid booking or supplier information." });
         }
 
         int selectedSupplierId = payload.SelectedSupplierId;
+        int bookingId = payload.BookingId;
 
-        bool supplierExists = await context.Suppliers.AnyAsync(s => s.Id == selectedSupplierId);
-        if (!supplierExists) {
-            Log.Warning("RecordVisit called with invalid supplier id {SupplierId}.", selectedSupplierId);
-            return BadRequest(new { error = "Invalid supplier selected." });
+        var visit = await context.Visits
+            .FirstOrDefaultAsync(v => v.BookingId == bookingId && v.SupplierId == selectedSupplierId);
+
+        if (visit == null) {
+            Log.Warning("RecordVisit could not find visit for booking id {BookingId} and supplier id {SupplierId}.", bookingId, selectedSupplierId);
+            return BadRequest(new { error = "Visit not found for this booking and supplier." });
         }
 
-        // TODO: FT-18 Validate that the selected supplier ID is valid and associated with the user's booking and save to db
+        if (visit.IsClaimed) {
+            Log.Warning("RecordVisit called for already claimed visit: booking id {BookingId}, supplier id {SupplierId}.", bookingId, selectedSupplierId);
+            return BadRequest(new { error = "This visit has already been confirmed." });
+        }
 
-        return Ok(new { success = true });
+        visit.IsClaimed = true;
+        visit.ClaimedAt = DateTime.UtcNow;
+        //TODO: Review if this code could have race condition bug if multiple requests are made at same time
+
+        try {
+            await context.SaveChangesAsync();
+            Log.Information("Visit recorded for booking id {BookingId} and supplier id {SupplierId}.", bookingId, selectedSupplierId);
+            return Ok(new { success = true });
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed to save visit record for booking id {BookingId} and supplier id {SupplierId}.", bookingId, selectedSupplierId);
+            return StatusCode(500, new { error = "Unable to record visit due to a system error." });
+        }
     }
 
 

@@ -435,6 +435,55 @@ public class HomeControllerTests {
     }
 
     [Fact]
+    public async Task SaveConfirmedBooking_CreatesVisitRecordsForEachSelectedSupplier_WhenBookingIsConfirmedAsync() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var sut = CreateControllerWithTempData(context);
+        var confirmation = new BookingConfirmationVM {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            PurchaseCode = TestHelper.VALID_CODE,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+
+        var result = await sut.SaveConfirmedBooking(confirmation);
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+
+        var visits = await context.Visits.ToListAsync();
+        visits.Count.ShouldBe(5);
+
+        var booking = await context.Bookings.FirstOrDefaultAsync();
+        booking.ShouldNotBeNull();
+
+        foreach (int supplierId in confirmation.SelectedSupplierIds) {
+            var visit = visits.FirstOrDefault(v => v.SupplierId == supplierId);
+            visit.ShouldNotBeNull();
+            visit.BookingId.ShouldBe(booking.Id);
+            visit.IsClaimed.ShouldBeFalse();
+            visit.ClaimedAt.ShouldBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task SaveConfirmedBooking_CreatesVisitsWithCorrectDefaultValues() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var sut = CreateControllerWithTempData(context);
+        var confirmation = new BookingConfirmationVM {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            PurchaseCode = TestHelper.VALID_CODE,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+
+        await sut.SaveConfirmedBooking(confirmation);
+
+        var visits = await context.Visits.ToListAsync();
+        visits.ShouldAllBe(v => v.IsClaimed == false);
+        visits.ShouldAllBe(v => v.ClaimedAt == null);
+    }
+
+    [Fact]
     public async Task SaveConfirmedBooking_ReturnsServerError_WhenDatabaseSaveThrowsAsync() {
         using var context = TestHelper.CreateContextWithSuppliersFailingOnSave();
         var sut = CreateControllerWithTempData(context);
@@ -512,28 +561,168 @@ public class HomeControllerTests {
     }
 
     [Fact]
-    public async Task RecordVisit_ReturnsOk_WhenSupplierIdIsValidAsync() {
-        var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+    public void SupplierVisit_ReturnsView_WithUnvisitedSuppliersOnly() {
+        var suppliers = new[] {
+            TestHelper.CreateSupplier(1, "Unvisited Supplier 1", true),
+            TestHelper.CreateSupplier(2, "Visited Supplier", true),
+            TestHelper.CreateSupplier(3, "Unvisited Supplier 2", true)
+        };
+        var booking = TestHelper.CreateValidBooking([1, 2, 3]);
+        booking.Id = 1;
+        var context = TestHelper.CreateContextWithSuppliersAndBookings(suppliers, [booking]);
+        var visit = new Visit { BookingId = booking.Id, SupplierId = 2, IsClaimed = true, ClaimedAt = DateTime.UtcNow };
+        context.Visits.Add(visit);
+        context.SaveChanges();
+        var sut = new HomeController(context);
+
+        var result = sut.SupplierVisit(booking.Id);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<SupplierVisitVM>();
+        model.Suppliers.Count.ShouldBe(2);
+        model.Suppliers.ShouldContain(s => s.Id == 1);
+        model.Suppliers.ShouldContain(s => s.Id == 3);
+        model.Suppliers.ShouldNotContain(s => s.Id == 2);
+    }
+
+    [Fact]
+    public void SupplierVisit_RedirectsToError_WhenAllSuppliersAlreadyVisited() {
+        var suppliers = new[] {
+            TestHelper.CreateSupplier(1, "Supplier 1", true),
+            TestHelper.CreateSupplier(2, "Supplier 2", true)
+        };
+        var booking = TestHelper.CreateValidBooking([1, 2]);
+        booking.Id = 1;
+        var context = TestHelper.CreateContextWithSuppliersAndBookings(suppliers, [booking]);
+        var visit1 = new Visit { BookingId = booking.Id, SupplierId = 1, IsClaimed = true, ClaimedAt = DateTime.UtcNow };
+        var visit2 = new Visit { BookingId = booking.Id, SupplierId = 2, IsClaimed = true, ClaimedAt = DateTime.UtcNow };
+        context.Visits.AddRange(visit1, visit2);
+        context.SaveChanges();
+        var sut = CreateControllerWithTempData(context);
+
+        var result = sut.SupplierVisit(booking.Id);
+
+        var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
+        redirectResult.ActionName.ShouldBe(nameof(HomeController.Error));
+        sut.TempData["VisitMessage"].ShouldNotBeNull();
+        string? visitMessage = sut.TempData["VisitMessage"]?.ToString();
+        visitMessage.ShouldNotBeNull();
+        visitMessage.ShouldContain("already confirmed");
+    }
+
+    [Fact]
+    public void SupplierVisit_IncludesBookingId_InViewModel() {
+        var supplier = TestHelper.CreateSupplier(1, "Test Supplier", true);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
         var sut = new HomeController(context);
 
-        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(supplier.Id));
+        var result = sut.SupplierVisit(booking.Id);
 
-        var okResult = result.ShouldBeOfType<OkObjectResult>();
-        okResult.StatusCode.ShouldBe(200);
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<SupplierVisitVM>();
+        model.BookingId.ShouldBe(booking.Id);
+        model.BookingId.ShouldBeGreaterThan(0);
     }
 
     [Fact]
-    public async Task RecordVisit_ReturnsBadRequest_WhenSupplierIdIsInvalidAsync() {
+    public async Task RecordVisit_ReturnsOk_WhenSupplierIdIsValidAsync() {
+        var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+        var booking = TestHelper.CreateValidBooking([1]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        booking.Id = 1;
+        var visit = new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = false };
+        context.Visits.Add(visit);
+        context.SaveChanges();
+        var sut = new HomeController(context);
+
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.Id, supplier.Id));
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+        var updatedVisit = await context.Visits.FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == supplier.Id);
+        updatedVisit.ShouldNotBeNull();
+        updatedVisit.IsClaimed.ShouldBeTrue();
+        updatedVisit.ClaimedAt.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task RecordVisit_ReturnsBadRequest_WhenVisitNotFoundAsync() {
         var sut = new HomeController(TestHelper.CreateInMemoryContext());
 
-        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(999));
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(1, 999));
 
         var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
         badRequestResult.StatusCode.ShouldBe(400);
         badRequestResult.Value.ShouldNotBeNull();
-        badRequestResult.Value.ToString()!.ShouldContain("Invalid supplier selected");
+        badRequestResult.Value.ToString()!.ShouldContain("Visit not found");
+    }
+
+    [Fact]
+    public async Task RecordVisit_ReturnsBadRequest_WhenVisitAlreadyClaimedAsync() {
+        var supplier = TestHelper.CreateSupplier(1, "Already Visited", true);
+        var booking = TestHelper.CreateValidBooking([1]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        booking.Id = 1;
+        var visit = new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = true, ClaimedAt = DateTime.UtcNow };
+        context.Visits.Add(visit);
+        context.SaveChanges();
+        var sut = new HomeController(context);
+
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.Id, supplier.Id));
+
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        badRequestResult.Value.ShouldNotBeNull();
+        badRequestResult.Value.ToString()!.ShouldContain("already been confirmed");
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(-1, 1)]
+    [InlineData(1, 0)]
+    [InlineData(1, -1)]
+    [InlineData(0, 0)]
+    public async Task RecordVisit_ReturnsBadRequest_WhenBookingIdOrSupplierIdIsInvalid(int bookingId, int supplierId) {
+        var sut = new HomeController(TestHelper.CreateInMemoryContext());
+
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(bookingId, supplierId));
+
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        badRequestResult.Value.ShouldNotBeNull();
+        badRequestResult.Value.ToString()!.ShouldContain("Invalid booking or supplier information");
+    }
+
+    [Fact]
+    public async Task RecordVisit_ReturnsBadRequest_WhenPayloadIsNull() {
+        var sut = new HomeController(TestHelper.CreateInMemoryContext());
+
+        var result = await sut.RecordVisit(null);
+
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+    }
+
+    [Fact]
+    public async Task RecordVisit_SetsClaimedAtTimestamp_WhenVisitRecordedSuccessfully() {
+        var supplier = TestHelper.CreateSupplier(1, "Test Supplier", true);
+        var booking = TestHelper.CreateValidBooking([1]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        booking.Id = 1;
+        var visit = new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = false };
+        context.Visits.Add(visit);
+        context.SaveChanges();
+        var sut = new HomeController(context);
+        var beforeClaim = DateTime.UtcNow;
+
+        await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.Id, supplier.Id));
+
+        var updatedVisit = await context.Visits.FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == supplier.Id);
+        updatedVisit.ShouldNotBeNull();
+        updatedVisit.ClaimedAt.ShouldNotBeNull();
+        updatedVisit.ClaimedAt!.Value.ShouldBeGreaterThanOrEqualTo(beforeClaim);
+        updatedVisit.ClaimedAt.Value.ShouldBeLessThanOrEqualTo(DateTime.UtcNow);
     }
 
     [Fact]

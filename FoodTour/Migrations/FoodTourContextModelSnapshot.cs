@@ -137,10 +137,58 @@ namespace FoodTour.Migrations
                     b.ToTable("Suppliers");
                 });
 
+            modelBuilder.Entity("FoodTour.Models.Visit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ClaimedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsClaimed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SupplierId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("Visits");
+                });
+
             modelBuilder.Entity("FoodTour.Models.BookingSupplier", b =>
                 {
                     b.HasOne("FoodTour.Models.Booking", "Booking")
                         .WithMany("BookingSuppliers")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FoodTour.Models.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("FoodTour.Models.Visit", b =>
+                {
+                    b.HasOne("FoodTour.Models.Booking", "Booking")
+                        .WithMany()
                         .HasForeignKey("BookingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
