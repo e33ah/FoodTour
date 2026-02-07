@@ -5,4 +5,5 @@ public class BookingConfirmationVM {
     public string CustomerEmail { get; set; } = string.Empty;
     public string PurchaseCode { get; set; } = string.Empty;
     public List<int> SelectedSupplierIds { get; set; } = [];
+    public int BookingId { get; set; }
 }

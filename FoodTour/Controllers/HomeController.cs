@@ -2,6 +2,7 @@ namespace FoodTour.Controllers;
 
 public class HomeController(FoodTourContext context) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
+    private const int QR_CODE_SIZE = 20;
 
     public async Task<IActionResult> Index() {
         var model = await CreateFoodTourViewModel();
@@ -131,7 +132,8 @@ public class HomeController(FoodTourContext context) : Controller {
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
             PurchaseCode = booking.PurchaseCode,
-            SelectedSupplierIds = booking.SelectedSupplierIds
+            SelectedSupplierIds = booking.SelectedSupplierIds,
+            BookingId = booking.Id
         };
 
         return View(model);
@@ -198,12 +200,9 @@ public class HomeController(FoodTourContext context) : Controller {
 
     public IActionResult SupplierVisit(int bookingId) {
         if (bookingId <= 0) {
-#if DEBUG
-            bookingId = 17; // For test purposes only, needs removing. FT-14
-#else
+
             Log.Warning("SupplierVisit action called with invalid bookingId: {BookingId}.", bookingId);
             return RedirectToAction("Error");
-#endif
         }
         var booking = context.Bookings
             .Include(b => b.BookingSuppliers)
@@ -226,10 +225,8 @@ public class HomeController(FoodTourContext context) : Controller {
 
     [HttpPut]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDTO? payload)
-    {
-        if (payload == null || payload.SelectedSupplierId <= 0)
-        {
+    public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDTO? payload) {
+        if (payload == null || payload.SelectedSupplierId <= 0) {
             Log.Warning("RecordVisit called without a selectedSupplierId.");
             return BadRequest(new { error = "No supplier selected." });
         }
@@ -237,8 +234,7 @@ public class HomeController(FoodTourContext context) : Controller {
         int selectedSupplierId = payload.SelectedSupplierId;
 
         bool supplierExists = await context.Suppliers.AnyAsync(s => s.Id == selectedSupplierId);
-        if (!supplierExists)
-        {
+        if (!supplierExists) {
             Log.Warning("RecordVisit called with invalid supplier id {SupplierId}.", selectedSupplierId);
             return BadRequest(new { error = "Invalid supplier selected." });
         }
@@ -294,5 +290,27 @@ public class HomeController(FoodTourContext context) : Controller {
             return false;
         }
         return true;
+    }
+
+    [HttpGet("[controller]/qr")]
+    public IActionResult QrImage(int bookingId) {
+        if (bookingId <= 0) {
+            Log.Warning("QrImage action called with invalid bookingId: {BookingId}.", bookingId);
+            return BadRequest("Booking ID is required.");
+        }
+        string? url = Url.Action(
+                "SupplierVisit",
+                "Home",
+                new { bookingId },
+                Request.Scheme
+            );
+        if (string.IsNullOrEmpty(url)) {
+            Log.Error("Failed to generate URL for QR code with bookingId {BookingId}.", bookingId);
+            return BadRequest("Unable to generate QR code due to a system error.");
+        }
+
+        byte[] qrCodeImage = PngByteQRCodeHelper.GetQRCode(url, QRCodeGenerator.ECCLevel.Q, QR_CODE_SIZE);
+
+        return File(qrCodeImage, "image/png");
     }
 }

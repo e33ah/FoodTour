@@ -5,4 +5,5 @@ global using FoodTour.Models;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Design;
+global using QRCoder;
 global using Serilog;

@@ -541,8 +541,62 @@ public class HomeControllerTests {
         var sut = CreateController();
 
         var result = sut.VisitConfirmation();
-        
+
         result.ShouldBeOfType<ViewResult>();
+    }
+
+    [Fact]
+    public void QrImage_ReturnsFileResult_WithPngContentType() {
+        const int BOOKINGID = 1;
+        var sut = CreateController();
+        sut.ControllerContext = new ControllerContext {
+            HttpContext = new DefaultHttpContext()
+        };
+        // mock Url helper to return a usable URL without requiring routing
+        sut.Url = Mock.Of<IUrlHelper>(u =>
+            u.Action(It.Is<UrlActionContext>(ctx =>
+                ctx.Action == "SupplierVisit" &&
+                ctx.Controller == "Home" &&
+                ctx.Values != null &&
+                ctx.Values.GetType().GetProperty("bookingId") != null &&
+                Equals(ctx.Values.GetType().GetProperty("bookingId")!.GetValue(ctx.Values, null), BOOKINGID)
+            )) == "http://localhost/Home/SupplierVisit?bookingId=1");
+
+        var result = sut.QrImage(BOOKINGID);
+        var fileResult = result.ShouldBeOfType<FileContentResult>();
+        fileResult.ContentType.ShouldBe("image/png");
+        fileResult.FileContents.Length.ShouldBeGreaterThan(0);
+    }
+
+    [Fact]
+    public void QrImage_ReturnsBadRequest_WhenUrlIsNull() {
+        var sut = CreateController();
+        sut.ControllerContext = new ControllerContext {
+            HttpContext = new DefaultHttpContext()
+        };
+        sut.Url = Mock.Of<IUrlHelper>(u =>
+            u.Action(It.IsAny<UrlActionContext>()) == null);
+
+        var result = sut.QrImage(42);
+
+        result.ShouldBeOfType<BadRequestObjectResult>();
+        var badRequest = result as BadRequestObjectResult;
+        badRequest.ShouldNotBeNull();
+        badRequest.Value.ShouldBe("Unable to generate QR code due to a system error.");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void QrImage_ReturnsBadRequest_WhenBookingIdIsInvalid(int invalidBookingId) {
+        var sut = CreateController();
+
+        var result = sut.QrImage(invalidBookingId);
+
+        result.ShouldBeOfType<BadRequestObjectResult>();
+        var badRequest = result as BadRequestObjectResult;
+        badRequest.ShouldNotBeNull();
+        badRequest.Value.ShouldBe("Booking ID is required.");
     }
 
     private static async Task<(ViewResult viewResult, FoodTourVM model)> GetIndexViewModel(params Supplier[] suppliers) {
