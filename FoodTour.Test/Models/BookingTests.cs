@@ -12,6 +12,7 @@ public class BookingTests {
         sut.IsCancelled.ShouldBeFalse();
         sut.CustomerEmail.ShouldBe(string.Empty);
         sut.PurchaseCode.ShouldBe(string.Empty);
+        sut.QrToken.ShouldNotBe(Guid.Empty);
     }
 
     [Fact]

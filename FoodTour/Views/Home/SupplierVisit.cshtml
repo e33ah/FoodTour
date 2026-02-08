@@ -6,10 +6,6 @@
 <div class="container text-center mt-5">
 	<h1>Food Tour Visit</h1>
 	<p>Thank you for participating in Weymouth FoodTour!</p>
-	<p>
-		Customer email: <strong>@Model.CustomerEmail</strong> <br />
-		Tour Date: <strong>@Model.TourDate.ToString("d")</strong>
-	</p>
 	<div>
 		<form id="supplierVisitForm" asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
 			@Html.AntiForgeryToken()
@@ -58,7 +54,7 @@
 				var token = tokenInput ? tokenInput.value : '';
 
 				var payload = {
-					bookingId: @Model.BookingId,
+					qrToken: '@Model.QrToken',
 					selectedSupplierId: Number(selectedValue)
 				};
 

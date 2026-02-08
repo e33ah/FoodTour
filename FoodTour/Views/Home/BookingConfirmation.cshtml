@@ -22,7 +22,7 @@
 		<div class="col-md-8 col-lg-6 align-content-center">
 			<p> If you wish to change or cancel your tour, please contact <a href="mailto:admin@foodtour.com">admin@foodtour.com</a></p>
 			<div>
-				<img src="@Url.Action("QrImage", "Home", new { bookingId = Model.BookingId })" alt="Booking QR Code" class="img-fluid" style="max-width: 300px;" />
+				<img src="@Url.Action("QrImage", "Home", new { qrToken = Model.QrToken })" alt="Booking QR Code" class="img-fluid" style="max-width: 300px;" />
 				<p>Show this QR code to each food stop on your tour to claim your Tasting Experience</p>
 			</div>
 		</div>

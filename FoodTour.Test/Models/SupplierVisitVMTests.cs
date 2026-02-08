@@ -9,7 +9,7 @@ public class SupplierVisitVMTests {
         sut.Suppliers.Count.ShouldBe(0);
         sut.TourDate.ShouldBe(default);
         sut.CustomerEmail.ShouldBe(string.Empty);
-        sut.SelectedSupplierId.ShouldBeNull();
+        sut.SelectedSupplierId.ShouldBe(0);
     }
 
     [Fact]

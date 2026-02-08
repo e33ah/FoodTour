@@ -2,7 +2,7 @@ namespace FoodTour.Controllers;
 
 public class HomeController(FoodTourContext context) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
-    private const int QR_CODE_SIZE = 20;
+    private readonly QrImageService qrImageService = new();
 
     public async Task<IActionResult> Index() {
         var model = await CreateFoodTourViewModel();
@@ -133,7 +133,8 @@ public class HomeController(FoodTourContext context) : Controller {
             CustomerEmail = booking.CustomerEmail,
             PurchaseCode = booking.PurchaseCode,
             SelectedSupplierIds = booking.SelectedSupplierIds,
-            BookingId = booking.Id
+            BookingId = booking.Id,
+            QrToken = booking.QrToken
         };
 
         return View(model);
@@ -209,25 +210,27 @@ public class HomeController(FoodTourContext context) : Controller {
         }
     }
 
-    public IActionResult SupplierVisit(int bookingId) {
-        if (bookingId <= 0) {
-
-            Log.Warning("SupplierVisit action called with invalid bookingId: {BookingId}.", bookingId);
+    [HttpGet]
+    public async Task<IActionResult> SupplierVisit(Guid qrToken) {
+        if (qrToken == Guid.Empty) {
+            Log.Warning("SupplierVisit action called with invalid token: {QrToken}.", qrToken);
             return RedirectToAction("Error");
         }
-        var booking = context.Bookings
+
+        var booking = await context.Bookings
             .Include(b => b.BookingSuppliers)
             .ThenInclude(bs => bs.Supplier)
-            .FirstOrDefault(b => b.Id == bookingId);
+            .FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
 
         if (booking == null || booking.BookingSuppliers == null) {
-            Log.Warning("Booking or BookingSuppliers is null for bookingId {BookingId}.", bookingId);
+            Log.Warning("Booking or BookingSuppliers is null for token {QrToken}.", qrToken);
             return RedirectToAction("Error");
         }
-        var claimedSupplierIds = context.Visits
-            .Where(v => v.BookingId == bookingId && v.IsClaimed)
+
+        var claimedSupplierIds = await context.Visits
+            .Where(v => v.BookingId == booking.Id && v.IsClaimed)
             .Select(v => v.SupplierId)
-            .ToList();
+            .ToListAsync();
 
         var unclaimedSuppliers = booking.BookingSuppliers
             .Where(bs => !claimedSupplierIds.Contains(bs.SupplierId))
@@ -235,17 +238,18 @@ public class HomeController(FoodTourContext context) : Controller {
             .ToList();
 
         Log.Debug("Found {ClaimedCount} claimed suppliers and {UnclaimedCount} unclaimed suppliers for bookingId {BookingId}.",
-        claimedSupplierIds.Count, unclaimedSuppliers.Count, bookingId);
+            claimedSupplierIds.Count, unclaimedSuppliers.Count, booking.Id);
 
         if (unclaimedSuppliers.Count == 0) {
-            Log.Information("All suppliers already visited for booking {BookingId}. Redirecting to confirmation.", bookingId);
+            Log.Information("All suppliers already visited for booking {BookingId}. Redirecting to confirmation.", booking.Id);
             TempData["VisitMessage"] = "You have already confirmed your visit to all suppliers for this tour. Thank you!";
             //TODO FT-22 Redirect to a dedicated "Tour Completed" page that thanks the user and provides any next steps or feedback options.
             return RedirectToAction("Error");
         }
 
         var model = new SupplierVisitVM() {
-            BookingId = bookingId,
+            BookingId = booking.Id,
+            QrToken = booking.QrToken,
             Suppliers = unclaimedSuppliers,
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
@@ -253,29 +257,32 @@ public class HomeController(FoodTourContext context) : Controller {
         return View(model);
     }
 
-    public record RecordVisitDTO(int BookingId, int SelectedSupplierId);
+    public record RecordVisitDTO(Guid QrToken, int SelectedSupplierId);
 
     [HttpPut]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDTO? payload) {
-        if (payload == null || payload.SelectedSupplierId <= 0 || payload.BookingId <= 0) {
+        if (payload == null || payload.SelectedSupplierId <= 0 || payload.QrToken == Guid.Empty) {
             Log.Warning("RecordVisit called with invalid parameters.");
             return BadRequest(new { error = "Invalid booking or supplier information." });
         }
 
-        int selectedSupplierId = payload.SelectedSupplierId;
-        int bookingId = payload.BookingId;
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == payload.QrToken && !b.IsCancelled);
+        if (booking == null) {
+            Log.Warning("RecordVisit could not find active booking with QrToken: {QrToken}.", payload.QrToken);
+            return BadRequest(new { error = "Booking not found." });
+        }
 
         var visit = await context.Visits
-            .FirstOrDefaultAsync(v => v.BookingId == bookingId && v.SupplierId == selectedSupplierId);
+            .FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == payload.SelectedSupplierId);
 
         if (visit == null) {
-            Log.Warning("RecordVisit could not find visit for booking id {BookingId} and supplier id {SupplierId}.", bookingId, selectedSupplierId);
+            Log.Warning("RecordVisit could not find visit for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
             return BadRequest(new { error = "Visit not found for this booking and supplier." });
         }
 
         if (visit.IsClaimed) {
-            Log.Warning("RecordVisit called for already claimed visit: booking id {BookingId}, supplier id {SupplierId}.", bookingId, selectedSupplierId);
+            Log.Warning("RecordVisit called for already claimed visit: booking id {BookingId}, supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
             return BadRequest(new { error = "This visit has already been confirmed." });
         }
 
@@ -285,14 +292,38 @@ public class HomeController(FoodTourContext context) : Controller {
 
         try {
             await context.SaveChangesAsync();
-            Log.Information("Visit recorded for booking id {BookingId} and supplier id {SupplierId}.", bookingId, selectedSupplierId);
+            Log.Information("Visit recorded for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
             return Ok(new { success = true });
         } catch (Exception ex) {
-            Log.Error(ex, "Failed to save visit record for booking id {BookingId} and supplier id {SupplierId}.", bookingId, selectedSupplierId);
+            Log.Error(ex, "Failed to save visit record for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
             return StatusCode(500, new { error = "Unable to record visit due to a system error." });
         }
     }
 
+    [HttpGet("[controller]/qr")]
+    public async Task<IActionResult> QrImage(Guid qrToken) {
+        if (qrToken == Guid.Empty) {
+            Log.Warning("QrImage action called with invalid token: {QrToken}.", qrToken);
+            return BadRequest("QR Token is required.");
+        }
+
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        if (booking == null) {
+            Log.Warning("QrImage action could not find booking with token {QrToken}.", qrToken);
+            return NotFound("Booking not found or cancelled.");
+        }
+
+        string? url = Url.Action("SupplierVisit", "Home", new { qrToken }, Request.Scheme);
+
+        if (string.IsNullOrEmpty(url)) {
+            Log.Error("Failed to generate URL for QR code with token {QrToken}.", qrToken);
+            return BadRequest("Unable to generate QR code due to a system error.");
+        }
+
+        byte[] qrCodeBytes = qrImageService.GenerateQrForUrl(url);
+
+        return File(qrCodeBytes, "image/png");
+    }
 
     public IActionResult VisitConfirmation() {
         return View();
@@ -339,27 +370,5 @@ public class HomeController(FoodTourContext context) : Controller {
             return false;
         }
         return true;
-    }
-
-    [HttpGet("[controller]/qr")]
-    public IActionResult QrImage(int bookingId) {
-        if (bookingId <= 0) {
-            Log.Warning("QrImage action called with invalid bookingId: {BookingId}.", bookingId);
-            return BadRequest("Booking ID is required.");
-        }
-        string? url = Url.Action(
-                "SupplierVisit",
-                "Home",
-                new { bookingId },
-                Request.Scheme
-            );
-        if (string.IsNullOrEmpty(url)) {
-            Log.Error("Failed to generate URL for QR code with bookingId {BookingId}.", bookingId);
-            return BadRequest("Unable to generate QR code due to a system error.");
-        }
-
-        byte[] qrCodeImage = PngByteQRCodeHelper.GetQRCode(url, QRCodeGenerator.ECCLevel.Q, QR_CODE_SIZE);
-
-        return File(qrCodeImage, "image/png");
     }
 }

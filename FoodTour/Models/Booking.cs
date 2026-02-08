@@ -14,6 +14,7 @@ public class Booking {
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public bool IsCancelled { get; set; } = false;
     public DateTime? CancelledAt { get; set; }
+    public Guid QrToken { get; set; } = Guid.NewGuid();
 
     // Join collection for persistence of selected suppliers
     public ICollection<BookingSupplier> BookingSuppliers { get; set; } = [];

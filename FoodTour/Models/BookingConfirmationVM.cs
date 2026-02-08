@@ -6,4 +6,5 @@ public class BookingConfirmationVM {
     public string PurchaseCode { get; set; } = string.Empty;
     public List<int> SelectedSupplierIds { get; set; } = [];
     public int BookingId { get; set; }
+    public Guid QrToken { get; set; } = Guid.Empty;
 }

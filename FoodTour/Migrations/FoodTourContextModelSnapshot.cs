@@ -47,6 +47,9 @@ namespace FoodTour.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("QrToken")
+                        .HasColumnType("uniqueidentifier");
+
                     b.PrimitiveCollection<string>("SelectedSupplierIds")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
