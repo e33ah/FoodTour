@@ -31,4 +31,13 @@ public class HomeControllerMiscTests : HomeControllerTestBase {
 
         result.ShouldBeOfType<ViewResult>();
     }
+
+    [Fact]
+    public void TourCompleted_ReturnsViewResult() {
+        var sut = CreateController();
+
+        var result = sut.TourCompleted();
+
+        result.ShouldBeOfType<ViewResult>();
+    }
 }

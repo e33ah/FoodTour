@@ -81,7 +81,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
     }
 
     [Fact]
-    public async Task SupplierVisit_RedirectsToError_WhenAllSuppliersAlreadyVisited() {
+    public async Task SupplierVisit_RedirectsToTourComplete_WhenAllSuppliersAlreadyVisited() {
         var suppliers = new[] {
             TestHelper.CreateSupplier(1, "Supplier 1", true),
             TestHelper.CreateSupplier(2, "Supplier 2", true)
@@ -98,11 +98,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
         var result = await sut.SupplierVisit(booking.QrToken);
 
         var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
-        redirectResult.ActionName.ShouldBe(nameof(HomeController.Error));
-        sut.TempData["VisitMessage"].ShouldNotBeNull();
-        string? visitMessage = sut.TempData["VisitMessage"]?.ToString();
-        visitMessage.ShouldNotBeNull();
-        visitMessage.ShouldContain("already confirmed");
+        redirectResult.ActionName.ShouldBe(nameof(HomeController.TourCompleted));
     }
 
     [Fact]

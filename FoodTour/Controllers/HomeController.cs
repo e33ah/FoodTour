@@ -241,10 +241,8 @@ public class HomeController(FoodTourContext context) : Controller {
             claimedSupplierIds.Count, unclaimedSuppliers.Count, booking.Id);
 
         if (unclaimedSuppliers.Count == 0) {
-            Log.Information("All suppliers already visited for booking {BookingId}. Redirecting to confirmation.", booking.Id);
-            TempData["VisitMessage"] = "You have already confirmed your visit to all suppliers for this tour. Thank you!";
-            //TODO FT-22 Redirect to a dedicated "Tour Completed" page that thanks the user and provides any next steps or feedback options.
-            return RedirectToAction("Error");
+            Log.Information("All suppliers already visited for booking {BookingId}. Redirecting to tour completed.", booking.Id);
+            return RedirectToAction("TourCompleted");
         }
 
         var model = new SupplierVisitVM() {
@@ -326,6 +324,11 @@ public class HomeController(FoodTourContext context) : Controller {
     }
 
     public IActionResult VisitConfirmation() {
+        return View();
+    }
+
+    [HttpGet]
+    public IActionResult TourCompleted() {
         return View();
     }
 
