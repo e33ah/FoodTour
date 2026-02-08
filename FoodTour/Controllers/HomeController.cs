@@ -195,9 +195,7 @@ public class HomeController(FoodTourContext context) : Controller {
 
             Log.Information("Saved booking id {BookingId} for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", booking.Id, booking.CustomerEmail, booking.TourDate);
 
-            // Store booking identifier so the BookingConfirmation view can load full details from the database
             TempData["BookingId"] = booking.Id;
-            TempData["BookingSaved"] = "Your booking has been saved.";
 
             return Ok(new { success = true, nextAction = "Confirmation" });
 
@@ -252,6 +250,30 @@ public class HomeController(FoodTourContext context) : Controller {
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
         };
+        return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> FoodTourCode(Guid qrToken) {
+        if (qrToken == Guid.Empty) {
+            Log.Warning("FoodTourCode action called with invalid token: {QrToken}.", qrToken);
+            return RedirectToAction("Error");
+        }
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        if (booking == null) {
+            Log.Warning("FoodTourCode action could not find booking with token {QrToken}.", qrToken);
+            return RedirectToAction("Error");
+        }
+        var tourSuppliers = await context.Suppliers
+            .Where(s => booking.SelectedSupplierIds.Contains(s.Id))
+            .ToListAsync();
+
+        var model = new FoodTourCodeVM {
+            TourDate = booking.TourDate,
+            TourSuppliers = tourSuppliers,
+            QrToken = qrToken
+        };
+
         return View(model);
     }
 

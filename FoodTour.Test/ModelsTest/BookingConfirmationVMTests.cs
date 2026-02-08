@@ -18,5 +18,6 @@ public class BookingConfirmationVMTests {
         sut.SelectedSupplierIds.ShouldNotBeNull();
         sut.SelectedSupplierIds.ShouldBeEmpty();
         sut.BookingId.ShouldBe(0);
+        sut.QrToken.ShouldBe(Guid.Empty);
     }
 }

@@ -1,0 +1,41 @@
+@model FoodTour.Models.FoodTourCodeVM
+
+@{
+	ViewData["Title"] = "Food Tour Code";
+}
+<div class="text-center">
+	<h1 class="display-4 my-5">Weymouth Self-Guided Tasting Tour</h1>
+	<div class="container">
+		<div class="row justify-content-center text-center">
+			<div class="col-md-8 col-lg-6">
+				<div class="card mb-4">
+					<div class="card-body">
+						<h3 class="card-title">
+							<i class="bi bi-card-checklist"></i> Tour Summary
+						</h3>
+						<ul class="list-group list-group-flush">
+							<li class="list-group-item">
+								<strong>Tour Date:</strong> @Model.TourDate.ToString("D")
+							</li>
+							<li class="list-group-item">
+								<strong>Selected Tasting Experiences:</strong>
+								<ul>
+									@foreach (var supplier in Model.TourSuppliers) {
+										<li>@supplier.Name - @supplier.Address</li>
+									}
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+
+			<p>Navigate round the tour using <a href="https://storymaps.arcgis.com/stories/9da596d25952432eabd8551889bfee9e">this map and guide</a>.</p>
+
+			<p>Show this QR code to each food stop on your tour to claim your Tasting Experience:</p>
+
+			<img src="@Url.Action("QrImage", "Home", new { qrToken = Model.QrToken })" alt="QR Code" class="img-fluid" style="max-width: 300px;" />
+
+		</div>
+	</div>
+</div>
