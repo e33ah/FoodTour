@@ -28,17 +28,32 @@ public class Program {
             builder.Services.AddDbContext<FoodTourContext>(options =>
                 options.UseSqlServer(connectionString));
 
+            // Define a persistent location for the key ring
+            string keyPath = Path.Combine(builder.Environment.ContentRootPath, "keys");
+
+            // Configure Data Protection to use that folder and a shared application name
+            builder.Services.AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(keyPath))
+                .SetApplicationName("FoodTour");
+
             var app = builder.Build();
 
             // Apply EF Core migrations on start-up
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<FoodTourContext>();
+
             try {
-                db.Database.Migrate();
-                Log.Information("Database migrations applied successfully.");
+                var pendingMigrations = db.Database.GetPendingMigrations();
+
+                if (pendingMigrations.Any()) {
+                    db.Database.Migrate();
+                    Log.Information("Database migrations applied successfully.");
+                } else {
+                    Log.Information("No pending database migrations.");
+                }   
             } catch (Exception ex) {
-                Log.Fatal(ex, "Failed to apply database migrations");
-                throw;
+                Log.Fatal(ex, "An error occurred while applying database migrations.");
+                throw new ApplicationException("Failed to apply database migrations.", ex);
             }
 
             Log.Information("Application started - Application: {Application}, Environment: {Environment}, MachineName: {MachineName}",
@@ -61,6 +76,7 @@ public class Program {
                 .WithStaticAssets();
 
             app.Run();
+
         } catch (Exception ex) {
             Log.Fatal(ex, "Host terminated unexpectedly");
             throw;

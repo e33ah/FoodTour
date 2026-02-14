@@ -408,3 +408,6 @@ FodyWeavers.xsd
 # NUKE generated editor schema
 /.nuke/build.schema.json
 /.nuke/temp/*
+
+# Data Protection keys directory
+keys/
