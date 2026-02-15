@@ -22,7 +22,6 @@ public class SmtpEmailSenderTests {
     public async Task SendEmailAsync_ShouldThrowArgumentException_WhenSubjectIsNull() {
         var emailSettings = TestHelper.testEmailSettings;
         var options = Options.Create(emailSettings);
-
         var sut = new SmtpEmailSender(options);
 
         var exception = await Should.ThrowAsync<ArgumentException>(async () =>
@@ -36,6 +35,7 @@ public class SmtpEmailSenderTests {
         var emailSettings = TestHelper.testEmailSettings;
         var options = Options.Create(emailSettings);
         var sut = new SmtpEmailSender(options);
+
         var exception = await Should.ThrowAsync<ArgumentException>(async () =>
             await sut.SendEmailAsync(TO_EMAIL, EMAIL_SUBJECT, null!)
             );
@@ -48,6 +48,7 @@ public class SmtpEmailSenderTests {
         emailSettings.Host = null!;
         var options = Options.Create(emailSettings);
         var sut = new SmtpEmailSender(options);
+
         await Should.ThrowAsync<InvalidOperationException>(async () =>
             await sut.SendEmailAsync(TO_EMAIL, EMAIL_SUBJECT, HTML_BODY)
             );
@@ -59,6 +60,7 @@ public class SmtpEmailSenderTests {
         emailSettings.Port = 0;
         var options = Options.Create(emailSettings);
         var sut = new SmtpEmailSender(options);
+
         await Should.ThrowAsync<InvalidOperationException>(async () =>
             await sut.SendEmailAsync(TO_EMAIL, EMAIL_SUBJECT, HTML_BODY)
             );
@@ -70,6 +72,7 @@ public class SmtpEmailSenderTests {
         emailSettings.FromEmail = null!;
         var options = Options.Create(emailSettings);
         var sut = new SmtpEmailSender(options);
+
         await Should.ThrowAsync<InvalidOperationException>(async () =>
             await sut.SendEmailAsync(TO_EMAIL, EMAIL_SUBJECT, HTML_BODY)
             );
@@ -81,6 +84,32 @@ public class SmtpEmailSenderTests {
         emailSettings.Host = "invalid.smtp.host";
         var options = Options.Create(emailSettings);
         var sut = new SmtpEmailSender(options);
+
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
+            await sut.SendEmailAsync(TO_EMAIL, EMAIL_SUBJECT, HTML_BODY)
+            );
+    }
+
+    [Fact]
+    public async Task SendEmailAsync_ShouldThrowInvalidOperationException_WhenPasswordIsNotConfigured() {
+        var emailSettings = TestHelper.testEmailSettings;
+        emailSettings.Username = "valid_user";
+        var options = Options.Create(emailSettings);
+        var sut = new SmtpEmailSender(options);
+
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
+            await sut.SendEmailAsync(TO_EMAIL, EMAIL_SUBJECT, HTML_BODY)
+            );
+    }
+
+    [Fact]
+    public async Task SendEmailAsync_ShouldThrowInvalidOperationException_WhenAuthenticationFails() {
+        var emailSettings = TestHelper.testEmailSettings;
+        emailSettings.Username = "invalid_user";
+        emailSettings.Password = "invalid_password";
+        var options = Options.Create(emailSettings);
+        var sut = new SmtpEmailSender(options);
+
         await Should.ThrowAsync<InvalidOperationException>(async () =>
             await sut.SendEmailAsync(TO_EMAIL, EMAIL_SUBJECT, HTML_BODY)
             );

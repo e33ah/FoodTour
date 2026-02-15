@@ -17,12 +17,14 @@ public class SmtpEmailSender(IOptions<EmailSettings> options) : IEmailSender {
         try {
             var socketOptions = settings.UseSsl
                 ? MailKit.Security.SecureSocketOptions.SslOnConnect
-                : MailKit.Security.SecureSocketOptions.None;
+                : MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable;
 
             await client.ConnectAsync(settings.Host, settings.Port, socketOptions);
 
             if (!string.IsNullOrWhiteSpace(settings.Username)) {
-                //TODO add password validation
+                if (string.IsNullOrWhiteSpace(settings.Password)) {
+                    throw new InvalidOperationException("EmailSettings.Password is required when Username is provided.");
+                }
                 await client.AuthenticateAsync(settings.Username, settings.Password);
             }
 

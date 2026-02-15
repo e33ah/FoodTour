@@ -19,12 +19,23 @@ public abstract class HomeControllerTestBase {
     }
 
     protected static (HomeController controller, Mock<IEmailSender> emailSenderMock) CreateConfiguredControllerWithEmailSenderMock(FoodTourContext context) {
-        var emailSenderMock = CreateMockEmailSender();
         string urlPath = "FoodTourCode?qrToken=abc";
-        var controller = CreateConfiguredControllerWithUrl(context, urlPath);
+        var emailSenderMock = CreateMockEmailSender();
+        var emailSender = emailSenderMock.Object;
+        var bookingEmailService = new BookingEmailService();
+
+        var controller = new HomeController(context, emailSender, bookingEmailService) {
+            TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>()),
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+
+        string urlActionResult = $"{BASE_URL}/{urlPath}";
+        controller.Url = Mock.Of<IUrlHelper>(u => u.Action(It.IsAny<UrlActionContext>()) == urlActionResult);
+        controller.ControllerContext.HttpContext.Request.Scheme = "https";
 
         return (controller, emailSenderMock);
     }
+
     protected static HomeController CreateConfiguredControllerWithUrl(FoodTourContext context, string? urlPath) {
         string? fullUrl;
         if (string.IsNullOrEmpty(urlPath)) {

@@ -154,4 +154,26 @@ public class HomeControllerSaveConfirmedBookingTests : HomeControllerTestBase {
         okResult.Value.ToString()!.ShouldContain("Confirmation");
         sut.TempData.ContainsKey("BookingEmailError").ShouldBeTrue();
     }
+
+    [Fact]
+    public async Task SaveConfirmedBooking_SendsEmail_WhenBookingIsSavedAsync() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var (sut, emailSenderMock) = CreateConfiguredControllerWithEmailSenderMock(context);
+
+        var confirmation = new BookingConfirmationVM {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            PurchaseCode = TestHelper.VALID_CODE,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+
+        var result = await sut.SaveConfirmedBooking(confirmation);
+
+        result.ShouldBeOfType<OkObjectResult>();
+        emailSenderMock.Verify(sender => sender.SendEmailAsync(
+            TestHelper.VALID_EMAIL,
+            It.IsAny<string>(),
+            It.IsAny<string>()),
+            Times.Once);
+    }
 }
