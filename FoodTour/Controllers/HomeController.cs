@@ -2,6 +2,7 @@ namespace FoodTour.Controllers;
 
 public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
+    private const string EMAIL_SEND_FAILED_MESSAGE = "Your booking was saved, but we were unable to send a confirmation email. Please contact support for assistance.";
     private readonly QrImageService qrImageService = new();
 
     public async Task<IActionResult> Index() {
@@ -195,17 +196,6 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
             Log.Information("Saved booking id {BookingId} for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", booking.Id, booking.CustomerEmail, booking.TourDate);
 
-            TempData["BookingId"] = booking.Id;
-
-            await SendBookingConfirmationEmailAsync(booking);
-
-            return Ok(new { success = true, nextAction = "Confirmation" });
-
-        } catch (InvalidOperationException emailEx) {
-            const string EMAIL_ERROR_MESSAGE = "Your booking was saved, but we were unable to send a confirmation email. Please contact support for assistance.";
-            Log.Error(emailEx, "Booking saved but failed to send confirmation email to {CustomerEmail}.", booking.CustomerEmail);
-            TempData["BookingSaveError"] = EMAIL_ERROR_MESSAGE;
-            return StatusCode(500, new { success = false, nextAction = "BookingSummary", message = EMAIL_ERROR_MESSAGE });
         } catch (Exception ex) {
             const string BOOKING_SAVE_ERROR_MESSAGE = "Unable to save your booking due to a system error. Please try again or contact support if the problem persists.";
             Log.Error(ex, "Failed to save booking to database.");
@@ -213,6 +203,17 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
             return StatusCode(500, new { success = false, nextAction = "BookingSummary", message = BOOKING_SAVE_ERROR_MESSAGE });
         }
+
+        TempData["BookingId"] = booking.Id;
+
+        try {
+            await SendBookingConfirmationEmailAsync(booking);
+        } catch (Exception emailEx) {
+            Log.Error(emailEx, "Booking saved but failed to send confirmation email to {CustomerEmail}.", booking.CustomerEmail);
+            TempData["BookingEmailError"] = EMAIL_SEND_FAILED_MESSAGE;
+        }
+
+        return Ok(new { success = true, nextAction = "Confirmation" });
     }
 
     [HttpGet]

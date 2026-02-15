@@ -67,6 +67,15 @@ dotnet run
 
 The application will be available at `https://localhost:5001` (or the port specified in launchSettings.json).
 
+### Email Settings
+
+FoodTour sends booking confirmation emails via SMTP using the `EmailSettings` configuration section.
+
+For local development, `EmailSettings` are configured in `FoodTour/appsettings.Development.json`. 
+You can use a local SMTP server such as `smtp4dev` to view emails without sending them externally.
+
+If email sending fails (or SMTP is not configured), the booking will still be saved and the user will still be taken to the booking confirmation page, but a warning message will be shown.
+
 ### Running Unit Tests
 
 Tests are located in the `FoodTour.Tests` project. To run the tests, use the following command:

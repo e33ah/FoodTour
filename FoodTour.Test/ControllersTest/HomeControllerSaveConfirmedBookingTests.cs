@@ -136,7 +136,7 @@ public class HomeControllerSaveConfirmedBookingTests : HomeControllerTestBase {
     }
 
     [Fact]
-    public async Task SaveConfirmedBooking_ReturnsServerError_WhenSaveEmailThrowsAsync() {
+    public async Task SaveConfirmedBooking_ReturnsOk_WhenSaveEmailThrowsAsync() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
         var sut = CreateConfiguredControllerWithUrl(context, null);
         var confirmation = new BookingConfirmationVM {
@@ -145,12 +145,13 @@ public class HomeControllerSaveConfirmedBookingTests : HomeControllerTestBase {
             PurchaseCode = TestHelper.VALID_CODE,
             SelectedSupplierIds = [1, 2, 3, 4, 5]
         };
-        var result = await sut.SaveConfirmedBooking(confirmation);
-        var objectResult = result.ShouldBeOfType<ObjectResult>();
-        objectResult.StatusCode.ShouldBe(500);
-        objectResult.Value.ShouldNotBeNull();
-        objectResult.Value.ToString()!.ShouldContain("BookingSummary");
-        objectResult.Value.ToString()!.ShouldContain("unable to send a confirmation email");
-    }
 
+        var result = await sut.SaveConfirmedBooking(confirmation);
+        
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+        okResult.Value.ShouldNotBeNull();
+        okResult.Value.ToString()!.ShouldContain("Confirmation");
+        sut.TempData.ContainsKey("BookingEmailError").ShouldBeTrue();
+    }
 }

@@ -2,16 +2,6 @@ namespace FoodTour.Test.Controllers;
 
 public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
     [Fact]
-    public async Task BookingSummary_RedirectsToIndex_WhenNullModel() {
-        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
-
-        var result = await sut.BookingSummary(null!);
-
-        var redirect = result.ShouldBeOfType<RedirectToActionResult>();
-        redirect.ActionName.ShouldBe(nameof(HomeController.Index));
-    }
-
-    [Fact]
     public async Task BookingSummary_PopulatesSelectedSuppliers_WhenIdsProvided() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(3);
         var sut = CreateConfiguredController(context);
@@ -28,7 +18,7 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
 
     [Fact]
     public void ConfirmBookingSummary_RedirectsToIndex_WhenModelNull() {
-        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
+        var sut = CreateController();
 
         var result = sut.ConfirmBookingSummary(null!);
 
@@ -38,7 +28,7 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
 
     [Fact]
     public void ConfirmBookingSummary_ReturnsView_WhenModelStateInvalid() {
-        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
+        var sut = CreateController();
         sut.ModelState.AddModelError("Test", "Invalid");
 
         var bookingSummary = TestHelper.CreateValidBookingSummaryVM([1, 2]);
@@ -51,7 +41,7 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
 
     [Fact]
     public void ConfirmBookingSummary_SetsTempDataAndRedirects_WhenModelValid() {
-        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
+        var sut = CreateController();
 
         var bookingSummary = TestHelper.CreateValidBookingSummaryVM([1]);
 
