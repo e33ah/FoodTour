@@ -35,9 +35,18 @@ FoodTour allows users to browse and select from a list of active food suppliers 
 }
 ```
 
-2. Apply migrations to create the database:
+2. Apply migrations to create the database.
+
+This solution uses two EF Core contexts:
+- `FoodTourContext` for application data
+- `DataProtectionKeyContext` for ASP.NET Core data protection keys
+
+On application start-up, pending migrations are applied automatically for both contexts.
+
+If you prefer to apply migrations manually, use the following commands to apply migrations for both contexts:
 ```bash
-dotnet ef database update --project FoodTour/FoodTour.csproj
+dotnet ef database update --project FoodTour/FoodTour.csproj --context FoodTourContext
+dotnet ef database update --project FoodTour/FoodTour.csproj --context DataProtectionKeyContext
 ```
 
 3. Add Sample Data (optional):
@@ -58,15 +67,18 @@ dotnet run
 
 The application will be available at `https://localhost:5001` (or the port specified in launchSettings.json).
 
-### Running Tests
+### Running Unit Tests
 
+Tests are located in the `FoodTour.Tests` project. To run the tests, use the following command:
 ```
 dotnet test
 ```
 
 ## CI/CD
 
-To run the build pipeline locally using NUKE, use the following commands based on your operating system:
+The  project uses NUKE for build automation. The build CI pipeline is set to run as the default.
+
+To run the CI pipeline locally using NUKE, use the following commands based on your operating system:
 
 ```
 # Windows
@@ -79,10 +91,9 @@ To run the build pipeline locally using NUKE, use the following commands based o
 nuke
 ```
 
-The project uses GitHub Actions for continuous integration and continuous deployment.
-
-To run the CI/CD pipeline locally with the Nuke global tool, add `FtpHost`, `FtpUser`, and `FtpPassword` to user secrets.
+To run the CD pipeline locally with the Nuke global tool, add `FtpHost`, `FtpUser`, and `FtpPassword` to user secrets.
 Run:
 ```
 nuke Release
 ```
+The project uses GitHub Actions for continuous integration and continuous deployment.

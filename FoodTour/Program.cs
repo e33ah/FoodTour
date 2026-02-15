@@ -28,12 +28,11 @@ public class Program {
             builder.Services.AddDbContext<FoodTourContext>(options =>
                 options.UseSqlServer(connectionString));
 
-            // Define a persistent location for the key ring
-            string keyPath = Path.Combine(builder.Environment.ContentRootPath, "keys");
+            builder.Services.AddDbContext<DataProtectionKeyContext>(options =>
+                options.UseSqlServer(connectionString));
 
-            // Configure Data Protection to use that folder and a shared application name
             builder.Services.AddDataProtection()
-                .PersistKeysToFileSystem(new DirectoryInfo(keyPath))
+                .PersistKeysToDbContext<DataProtectionKeyContext>()
                 .SetApplicationName("FoodTour");
 
             // Add Email Settings
@@ -48,16 +47,11 @@ public class Program {
             // Apply EF Core migrations on start-up
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<FoodTourContext>();
+            var dataProtectionDb = scope.ServiceProvider.GetRequiredService<DataProtectionKeyContext>();
 
             try {
-                var pendingMigrations = db.Database.GetPendingMigrations();
-
-                if (pendingMigrations.Any()) {
-                    db.Database.Migrate();
-                    Log.Information("Database migrations applied successfully.");
-                } else {
-                    Log.Information("No pending database migrations.");
-                }
+                ApplyMigrations(dataProtectionDb, "Data Protection");
+                ApplyMigrations(db, "Application");
             } catch (Exception ex) {
                 Log.Fatal(ex, "An error occurred while applying database migrations.");
                 throw new ApplicationException("Failed to apply database migrations.", ex);
@@ -90,6 +84,16 @@ public class Program {
         } finally {
             Log.Information("Shutting down FoodTour application...");
             Log.CloseAndFlush();
+        }
+    }
+
+    private static void ApplyMigrations(DbContext context, string name) {
+        var pendingMigrations = context.Database.GetPendingMigrations();
+        if (pendingMigrations.Any()) {
+            context.Database.Migrate();
+            Log.Information("{Name} database migrations applied successfully.", name);
+        } else {
+            Log.Information("No pending {Name} database migrations were found.", name);
         }
     }
 }
