@@ -2,13 +2,13 @@ namespace FoodTour.Test.Controllers;
 
 public class HomeControllerBookingConfirmationTests : HomeControllerTestBase {
     [Fact]
-    public async Task BookingConfirmation_RedirectsToIndex_WhenNoTempData() {
-        var sut = CreateControllerWithTempData(TestHelper.CreateInMemoryContext());
+    public async Task BookingConfirmation_RedirectsToError_WhenNoTempData() {
+        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
 
         var result = await sut.BookingConfirmation();
 
         var redirect = result.ShouldBeOfType<RedirectToActionResult>();
-        redirect.ActionName.ShouldBe(nameof(HomeController.Index));
+        redirect.ActionName.ShouldBe(nameof(HomeController.Error));
     }
 
     [Fact]
@@ -22,7 +22,7 @@ public class HomeControllerBookingConfirmationTests : HomeControllerTestBase {
         };
         context.Bookings.Add(booking);
         context.SaveChanges();
-        var sut = CreateControllerWithTempData(context);
+        var sut = CreateConfiguredController(context);
         sut.TempData["BookingId"] = booking.Id;
 
         var result = await sut.BookingConfirmation();

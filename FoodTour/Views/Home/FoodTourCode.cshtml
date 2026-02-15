@@ -6,6 +6,12 @@
 <div class="text-center">
 	<h1 class="display-4 my-5">Weymouth Self-Guided Tasting Tour</h1>
 	<div class="container">
+		<p>Navigate round the tour using <a href="https://storymaps.arcgis.com/stories/9da596d25952432eabd8551889bfee9e" target="_blank" rel="noopener noreferrer">this map and guide</a>.</p>
+
+		<p>Show this QR code to each food stop on your tour to claim your Tasting Experience:</p>
+
+		<img src="@Url.Action("QrImage", "Home", new { qrToken = Model.QrToken })" alt="QR Code" class="img-fluid" style="max-width: 300px;" />
+
 		<div class="row justify-content-center">
 			<div class="col-md-8 col-lg-6">
 				<div class="card mb-4">
@@ -29,13 +35,6 @@
 					</div>
 				</div>
 			</div>
-
-			<p>Navigate round the tour using <a href="https://storymaps.arcgis.com/stories/9da596d25952432eabd8551889bfee9e" target="_blank" rel="noopener noreferrer">this map and guide</a>.</p>
-
-			<p>Show this QR code to each food stop on your tour to claim your Tasting Experience:</p>
-
-			<img src="@Url.Action("QrImage", "Home", new { qrToken = Model.QrToken })" alt="QR Code" class="img-fluid" style="max-width: 300px;" />
-
 		</div>
 	</div>
 </div>

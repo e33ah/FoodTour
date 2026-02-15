@@ -8,8 +8,17 @@ public static class TestHelper {
     public const string NO_SUPPLIERS_MESSAGE_KEY = "NoSuppliersMessage";
     public const string INSUFFICIENT_SUPPLIERS_WARNING_KEY = "InsufficientSuppliersWarning";
     public const string EXPECTED_NO_SUPPLIERS_MESSAGE = "No tasting experiences are currently available for the tour. Please check back later.";
+    public const string SUPPLIER_NAME_1 = "Tasty Treats";
+    public const string SUPPLIER_ADDRESS_1 = "123 Food Street";
     public static readonly int nextYear = DateTime.Today.AddYears(1).Year;
     public static readonly DateTime validTourDate = new(nextYear, 6, 16);
+    public static readonly EmailSettings testEmailSettings = new() {
+        Host = "smtp.test",
+        Port = 25,
+        UseSsl = false,
+        FromEmail = "dev@localhost",
+        FromName = "Test Sender"
+    };
 
     public static FoodTourContext CreateInMemoryContext() {
         var options = new DbContextOptionsBuilder<FoodTourContext>()
@@ -19,14 +28,16 @@ public static class TestHelper {
         return new FoodTourContext(options);
     }
 
-    public static Supplier CreateSupplier(int id, string name, bool isActive = true, string? address = null) {
+    public static Supplier CreateSupplier(int id, string? name = null, bool isActive = true, string? address = null) {
+        string supplierName = name ?? $"{SUPPLIER_NAME_1} {id}";
+        string supplierAddress = address ?? $"{SUPPLIER_ADDRESS_1}";
         return new Supplier {
             Id = id,
-            Name = name,
+            Name = supplierName,
             ContactName = "Mrs Test",
             ContactEmail = $"contact{id}@test.com",
             IsActive = isActive,
-            Address = address
+            Address = supplierAddress
         };
     }
 

@@ -10,7 +10,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var visit = new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = false };
         context.Visits.Add(visit);
         context.SaveChanges();
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id));
 
@@ -27,7 +27,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, 999));
 
@@ -45,7 +45,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var visit = new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = true, ClaimedAt = DateTime.UtcNow };
         context.Visits.Add(visit);
         context.SaveChanges();
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id));
 
@@ -72,7 +72,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
 
     [Fact]
     public async Task RecordVisit_ReturnsBadRequest_WhenBookingNotFound() {
-        var sut = new HomeController(TestHelper.CreateInMemoryContext());
+        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
         var qrToken = Guid.NewGuid();
 
         var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(qrToken, 1));
@@ -101,7 +101,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var cancelledBooking = TestHelper.CreateValidBooking([1]);
         cancelledBooking.IsCancelled = true;
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [cancelledBooking]);
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
 
         var payload = new HomeController.RecordVisitDTO(cancelledBooking.QrToken, 1);
 
@@ -131,7 +131,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var visit = new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = false };
         context.Visits.Add(visit);
         context.SaveChanges();
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
         var beforeClaim = DateTime.UtcNow;
 
         await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id));

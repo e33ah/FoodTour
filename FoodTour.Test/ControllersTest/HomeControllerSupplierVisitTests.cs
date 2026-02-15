@@ -9,7 +9,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
         var supplier = TestHelper.CreateSupplier(supplierId, supplierName, true);
         var booking = TestHelper.CreateValidBooking([bookingId]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.SupplierVisit(booking.QrToken);
 
@@ -21,7 +21,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
 
     [Fact]
     public async Task SupplierVisit_RedirectsToError_WhenBookingNotFound() {
-        var sut = new HomeController(TestHelper.CreateInMemoryContext());
+        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
 
         var result = await sut.SupplierVisit(Guid.NewGuid());
 
@@ -35,7 +35,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
         var supplier2 = TestHelper.CreateSupplier(2, "Fisherman's Table", true);
         var booking = TestHelper.CreateValidBooking([1, 2]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier1, supplier2], [booking]);
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.SupplierVisit(booking.QrToken);
 
@@ -47,7 +47,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
 
     [Fact]
     public async Task SupplierVisit_RedirectsToError_WhenQrTokenIsEmpty() {
-        var sut = new HomeController(TestHelper.CreateInMemoryContext());
+        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
         var emptyToken = Guid.Empty;
 
         var result = await sut.SupplierVisit(emptyToken);
@@ -68,7 +68,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
         var visit = new Visit { BookingId = booking.Id, SupplierId = 2, IsClaimed = true, ClaimedAt = DateTime.UtcNow };
         context.Visits.Add(visit);
         context.SaveChanges();
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.SupplierVisit(booking.QrToken);
 
@@ -93,7 +93,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
         var visit2 = new Visit { BookingId = booking.Id, SupplierId = 2, IsClaimed = true, ClaimedAt = DateTime.UtcNow };
         context.Visits.AddRange(visit1, visit2);
         context.SaveChanges();
-        var sut = CreateControllerWithTempData(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.SupplierVisit(booking.QrToken);
 
@@ -107,7 +107,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
         var cancelledBooking = TestHelper.CreateValidBooking([1]);
         cancelledBooking.IsCancelled = true;
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [cancelledBooking]);
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.SupplierVisit(cancelledBooking.QrToken);
 
@@ -121,7 +121,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
         var supplier = TestHelper.CreateSupplier(1, "Test Supplier", true);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.SupplierVisit(booking.QrToken);
 

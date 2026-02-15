@@ -82,7 +82,9 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
         var context = suppliers.Length > 0
             ? TestHelper.CreateContextWithSuppliers(suppliers)
             : TestHelper.CreateInMemoryContext();
-        var sut = new HomeController(context);
+        var emailSender = Mock.Of<IEmailSender>();
+        var bookingEmailService = new BookingEmailService();
+        var sut = new HomeController(context, emailSender, bookingEmailService);
 
         var result = await sut.Index();
 

@@ -3,14 +3,11 @@ namespace FoodTour.Test.Controllers;
 public class HomeControllerQrImageTests : HomeControllerTestBase {
     [Fact]
     public async Task QrImage_ReturnsFileResult_WithPngContentType() {
-        var supplier = TestHelper.CreateSupplier(1, "Already Visited", true);
+        var supplier = TestHelper.CreateSupplier(1);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = new HomeController(context) {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
-            Url = Mock.Of<IUrlHelper>(u =>
-                u.Action(It.IsAny<UrlActionContext>()) == $"http://localhost/Home/SupplierVisit?qrtoken={booking.QrToken}")
-        };
+        string urlPath = $"SupplierVisit?qrtoken={booking.QrToken}";
+        var sut = CreateConfiguredControllerWithUrl(context, urlPath);
 
         var result = await sut.QrImage(booking.QrToken);
 
@@ -21,13 +18,10 @@ public class HomeControllerQrImageTests : HomeControllerTestBase {
 
     [Fact]
     public async Task QrImage_ReturnsBadRequest_WhenUrlIsNull() {
-        var supplier = TestHelper.CreateSupplier(1, "Already Visited", true);
+        var supplier = TestHelper.CreateSupplier(1);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = new HomeController(context) {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
-            Url = Mock.Of<IUrlHelper>(u => u.Action(It.IsAny<UrlActionContext>()) == null)
-        };
+        var sut = CreateConfiguredControllerWithUrl(context, null);
 
         var result = await sut.QrImage(booking.QrToken);
 
@@ -66,7 +60,7 @@ public class HomeControllerQrImageTests : HomeControllerTestBase {
         var booking = TestHelper.CreateValidBooking([1]);
         booking.IsCancelled = true;
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = new HomeController(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.QrImage(booking.QrToken);
 

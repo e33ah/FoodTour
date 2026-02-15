@@ -6,7 +6,7 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
         var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = CreateControllerWithTempData(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.FoodTourCode(booking.QrToken);
 
@@ -46,7 +46,7 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
         booking.IsCancelled = true;
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
 
-        var sut = CreateControllerWithTempData(context);
+        var sut = CreateConfiguredController(context);
 
         var result = await sut.FoodTourCode(booking.QrToken);
         var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();

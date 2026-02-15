@@ -36,6 +36,13 @@ public class Program {
                 .PersistKeysToFileSystem(new DirectoryInfo(keyPath))
                 .SetApplicationName("FoodTour");
 
+            // Add Email Settings
+            builder.Services.Configure<EmailSettings>(
+                builder.Configuration.GetSection("EmailSettings"));
+
+            builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+            builder.Services.AddScoped<BookingEmailService>();
+
             var app = builder.Build();
 
             // Apply EF Core migrations on start-up
@@ -50,7 +57,7 @@ public class Program {
                     Log.Information("Database migrations applied successfully.");
                 } else {
                     Log.Information("No pending database migrations.");
-                }   
+                }
             } catch (Exception ex) {
                 Log.Fatal(ex, "An error occurred while applying database migrations.");
                 throw new ApplicationException("Failed to apply database migrations.", ex);

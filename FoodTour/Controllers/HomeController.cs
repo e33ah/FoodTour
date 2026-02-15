@@ -1,6 +1,6 @@
 namespace FoodTour.Controllers;
 
-public class HomeController(FoodTourContext context) : Controller {
+public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
     private readonly QrImageService qrImageService = new();
 
@@ -108,7 +108,7 @@ public class HomeController(FoodTourContext context) : Controller {
     public async Task<IActionResult> BookingConfirmation() {
         object? bookingIdObj = TempData.Peek("BookingId"); // Peek to retain TempData for subsequent requests
         if (bookingIdObj == null) {
-            return RedirectToAction("Index");
+            return RedirectToAction("Error");
         }
 
         int bookingId;
@@ -119,13 +119,13 @@ public class HomeController(FoodTourContext context) : Controller {
 
         } else {
             Log.Warning("Confirmation action received unexpected BookingId type: {Type}.", bookingIdObj.GetType().FullName);
-            return RedirectToAction("Index");
+            return RedirectToAction("Error");
         }
 
         var booking = await context.Bookings.FirstOrDefaultAsync(b => b.Id == bookingId);
         if (booking == null) {
             Log.Warning("Confirmation action could not find booking with id {BookingId}.", bookingId);
-            return RedirectToAction("Index");
+            return RedirectToAction("Error");
         }
 
         var model = new BookingConfirmationVM() {
@@ -197,8 +197,15 @@ public class HomeController(FoodTourContext context) : Controller {
 
             TempData["BookingId"] = booking.Id;
 
+            await SendBookingConfirmationEmailAsync(booking);
+
             return Ok(new { success = true, nextAction = "Confirmation" });
 
+        } catch (InvalidOperationException emailEx) {
+            const string EMAIL_ERROR_MESSAGE = "Your booking was saved, but we were unable to send a confirmation email. Please contact support for assistance.";
+            Log.Error(emailEx, "Booking saved but failed to send confirmation email to {CustomerEmail}.", booking.CustomerEmail);
+            TempData["BookingSaveError"] = EMAIL_ERROR_MESSAGE;
+            return StatusCode(500, new { success = false, nextAction = "BookingSummary", message = EMAIL_ERROR_MESSAGE });
         } catch (Exception ex) {
             const string BOOKING_SAVE_ERROR_MESSAGE = "Unable to save your booking due to a system error. Please try again or contact support if the problem persists.";
             Log.Error(ex, "Failed to save booking to database.");
@@ -395,5 +402,26 @@ public class HomeController(FoodTourContext context) : Controller {
             return false;
         }
         return true;
+    }
+    private async Task SendBookingConfirmationEmailAsync(Booking booking) {
+        try {
+            var supplierIds = booking.SelectedSupplierIds;
+            var suppliers = await context.Suppliers
+                .Where(supplier => supplierIds.Contains(supplier.Id))
+                .ToListAsync();
+
+            string? foodTourCodeUrl = Url.Action(nameof(FoodTourCode), "Home", new { booking.QrToken }, Request.Scheme);
+            if (string.IsNullOrWhiteSpace(foodTourCodeUrl)) {
+                throw new InvalidOperationException("Unable to generate Food Tour Code URL.");
+            }
+
+            var (subject, body) = bookingEmailService.GenerateBookingConfirmationEmail(booking, suppliers, foodTourCodeUrl);
+            await emailSender.SendEmailAsync(booking.CustomerEmail, subject, body);
+
+            Log.Information("Sent booking confirmation email to {CustomerEmail}.", booking.CustomerEmail);
+        } catch (Exception emailEx) {
+            Log.Error(emailEx, "Failed to send booking confirmation email to {CustomerEmail}.", booking.CustomerEmail);
+            throw new InvalidOperationException("Booking saved, but we were unable to send a confirmation email. Please contact support.", emailEx);
+        }
     }
 }

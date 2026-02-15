@@ -16,7 +16,7 @@ public class HomeControllerSaveConfirmedBookingTests : HomeControllerTestBase {
     [Fact]
     public async Task SaveConfirmedBooking_ReturnsBadRequest_WhenInvalidSuppliersAsync() {
         var context = TestHelper.CreateInMemoryContext();
-        var sut = CreateControllerWithTempData(context);
+        var sut = CreateConfiguredController(context);
         var confirmation = new BookingConfirmationVM {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
@@ -35,7 +35,8 @@ public class HomeControllerSaveConfirmedBookingTests : HomeControllerTestBase {
     [Fact]
     public async Task SaveConfirmedBooking_SavesBookingAndReturnsOkAsync() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
-        var sut = CreateControllerWithTempData(context);
+        string urlPath = $"FoodTourCode?qrtoken={new Guid()}";
+        var sut = CreateConfiguredControllerWithUrl(context, urlPath);
         var confirmation = new BookingConfirmationVM {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
@@ -65,7 +66,9 @@ public class HomeControllerSaveConfirmedBookingTests : HomeControllerTestBase {
     [Fact]
     public async Task SaveConfirmedBooking_CreatesVisitRecordsForEachSelectedSupplier_WhenBookingIsConfirmedAsync() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
-        var sut = CreateControllerWithTempData(context);
+        string urlPath = $"FoodTourCode?qrtoken={new Guid()}";
+        var sut = CreateConfiguredControllerWithUrl(context, urlPath);
+
         var confirmation = new BookingConfirmationVM {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
@@ -96,7 +99,7 @@ public class HomeControllerSaveConfirmedBookingTests : HomeControllerTestBase {
     [Fact]
     public async Task SaveConfirmedBooking_CreatesVisitsWithCorrectDefaultValues() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
-        var sut = CreateControllerWithTempData(context);
+        var sut = CreateConfiguredController(context);
         var confirmation = new BookingConfirmationVM {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
@@ -114,7 +117,7 @@ public class HomeControllerSaveConfirmedBookingTests : HomeControllerTestBase {
     [Fact]
     public async Task SaveConfirmedBooking_ReturnsServerError_WhenDatabaseSaveThrowsAsync() {
         using var context = TestHelper.CreateContextWithSuppliersFailingOnSave();
-        var sut = CreateControllerWithTempData(context);
+        var sut = CreateConfiguredController(context);
 
         var confirmation = new BookingConfirmationVM {
             TourDate = TestHelper.validTourDate,
@@ -129,5 +132,25 @@ public class HomeControllerSaveConfirmedBookingTests : HomeControllerTestBase {
         objectResult.StatusCode.ShouldBe(500);
         objectResult.Value.ShouldNotBeNull();
         objectResult.Value.ToString()!.ShouldContain("BookingSummary");
+        objectResult.Value.ToString()!.ShouldContain("due to a system error");
     }
+
+    [Fact]
+    public async Task SaveConfirmedBooking_ReturnsServerError_WhenSaveEmailThrowsAsync() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var sut = CreateConfiguredControllerWithUrl(context, null);
+        var confirmation = new BookingConfirmationVM {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            PurchaseCode = TestHelper.VALID_CODE,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+        var result = await sut.SaveConfirmedBooking(confirmation);
+        var objectResult = result.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(500);
+        objectResult.Value.ShouldNotBeNull();
+        objectResult.Value.ToString()!.ShouldContain("BookingSummary");
+        objectResult.Value.ToString()!.ShouldContain("unable to send a confirmation email");
+    }
+
 }

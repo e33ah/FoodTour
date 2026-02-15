@@ -3,7 +3,7 @@ namespace FoodTour.Test.Controllers;
 public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
     [Fact]
     public async Task BookingSummary_RedirectsToIndex_WhenNullModel() {
-        var sut = CreateControllerWithTempData(TestHelper.CreateInMemoryContext());
+        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
 
         var result = await sut.BookingSummary(null!);
 
@@ -14,7 +14,7 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
     [Fact]
     public async Task BookingSummary_PopulatesSelectedSuppliers_WhenIdsProvided() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(3);
-        var sut = CreateControllerWithTempData(context);
+        var sut = CreateConfiguredController(context);
 
         var bookingSummary = new BookingSummaryVM { SelectedSupplierIds = [1, 3] };
 
@@ -28,7 +28,7 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
 
     [Fact]
     public void ConfirmBookingSummary_RedirectsToIndex_WhenModelNull() {
-        var sut = CreateControllerWithTempData(TestHelper.CreateInMemoryContext());
+        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
 
         var result = sut.ConfirmBookingSummary(null!);
 
@@ -38,7 +38,7 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
 
     [Fact]
     public void ConfirmBookingSummary_ReturnsView_WhenModelStateInvalid() {
-        var sut = CreateControllerWithTempData(TestHelper.CreateInMemoryContext());
+        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
         sut.ModelState.AddModelError("Test", "Invalid");
 
         var bookingSummary = TestHelper.CreateValidBookingSummaryVM([1, 2]);
@@ -51,7 +51,7 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
 
     [Fact]
     public void ConfirmBookingSummary_SetsTempDataAndRedirects_WhenModelValid() {
-        var sut = CreateControllerWithTempData(TestHelper.CreateInMemoryContext());
+        var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
 
         var bookingSummary = TestHelper.CreateValidBookingSummaryVM([1]);
 

@@ -179,7 +179,9 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
 
     private static async Task<IActionResult> PostIndex(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(contextSupplierCount);
-        var sut = new HomeController(context);
+        var emailSender = Mock.Of<IEmailSender>();
+        var bookingEmailService = new BookingEmailService();
+        var sut = new HomeController(context, emailSender, bookingEmailService);
         return await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
     }
 
@@ -189,7 +191,9 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
 
     private static async Task<(IActionResult result, HomeController controller)> PostIndexWithController(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(contextSupplierCount);
-        var sut = new HomeController(context);
+        var emailSender = Mock.Of<IEmailSender>();
+        var bookingEmailService = new BookingEmailService();
+        var sut = new HomeController(context, emailSender, bookingEmailService);
         var result = await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
         return (result, sut);
     }
