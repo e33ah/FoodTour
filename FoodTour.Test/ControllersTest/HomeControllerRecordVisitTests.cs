@@ -1,6 +1,8 @@
 namespace FoodTour.Test.Controllers;
 
 public class HomeControllerRecordVisitTests : HomeControllerTestBase {
+    private const string SUPPLIER_CODE = "CODE";
+
     [Fact]
     public async Task RecordVisit_ReturnsOk_WhenSupplierIdIsValidAsync() {
         var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
@@ -12,7 +14,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         context.SaveChanges();
         var sut = CreateConfiguredController(context);
 
-        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id));
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
@@ -23,13 +25,28 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
     }
 
     [Fact]
+    public async Task RecordVisit_ReturnsBadRequest_WhenSupplierNotFoundAsync() {
+        var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+        var booking = TestHelper.CreateValidBooking([1]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        var sut = CreateConfiguredController(context);
+
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, 999, supplier.ConfirmationCode));
+
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        badRequestResult.Value.ShouldNotBeNull();
+        badRequestResult.Value.ToString()!.ShouldContain("Business not found");
+    }
+
+    [Fact]
     public async Task RecordVisit_ReturnsBadRequest_WhenVisitNotFoundAsync() {
         var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
         var sut = CreateConfiguredController(context);
 
-        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, 999));
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, 1, supplier.ConfirmationCode));
 
         var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
         badRequestResult.StatusCode.ShouldBe(400);
@@ -47,7 +64,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         context.SaveChanges();
         var sut = CreateConfiguredController(context);
 
-        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id));
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
 
         var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
         badRequestResult.StatusCode.ShouldBe(400);
@@ -62,12 +79,12 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var sut = CreateController();
         var qrToken = Guid.NewGuid();
 
-        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(qrToken, supplierId));
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(qrToken, supplierId, SUPPLIER_CODE));
 
         var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
         badRequestResult.StatusCode.ShouldBe(400);
         badRequestResult.Value.ShouldNotBeNull();
-        badRequestResult.Value.ToString()!.ShouldContain("Invalid booking or supplier information");
+        badRequestResult.Value.ToString()!.ShouldContain("Invalid booking or business information");
     }
 
     [Fact]
@@ -75,24 +92,12 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(TestHelper.CreateInMemoryContext());
         var qrToken = Guid.NewGuid();
 
-        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(qrToken, 1));
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(qrToken, 1, SUPPLIER_CODE));
 
         var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
         badRequestResult.StatusCode.ShouldBe(400);
         badRequestResult.Value.ShouldNotBeNull();
         badRequestResult.Value.ToString()!.ShouldContain("Booking not found.");
-    }
-
-    [Fact]
-    public async Task RecordVisit_ReturnsBadRequest_WhenQrTokenIsEmpty() {
-        var sut = CreateController();
-
-        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(Guid.Empty, 1));
-
-        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
-        badRequestResult.StatusCode.ShouldBe(400);
-        badRequestResult.Value.ShouldNotBeNull();
-        badRequestResult.Value.ToString()!.ShouldContain("Invalid booking or supplier information");
     }
 
     [Fact]
@@ -103,7 +108,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [cancelledBooking]);
         var sut = CreateConfiguredController(context);
 
-        var payload = new HomeController.RecordVisitDTO(cancelledBooking.QrToken, 1);
+        var payload = new HomeController.RecordVisitDTO(cancelledBooking.QrToken, 1, supplier.ConfirmationCode);
 
         var result = await sut.RecordVisit(payload);
 
@@ -134,7 +139,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
         var beforeClaim = DateTime.UtcNow;
 
-        await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id));
+        await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
 
         var updatedVisit = await context.Visits.FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == supplier.Id);
         updatedVisit.ShouldNotBeNull();
@@ -143,4 +148,29 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         updatedVisit.ClaimedAt.Value.ShouldBeLessThanOrEqualTo(DateTime.UtcNow);
     }
 
+    [Fact]
+    public async Task RecordVisit_ReturnsBadRequest_WhenSupplierConfirmationCodeIsIncorrect() {
+        var supplier = TestHelper.CreateSupplier(1, "Test Supplier", true);
+        var booking = TestHelper.CreateValidBooking([1]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        var sut = CreateConfiguredController(context);
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, "WRONGCODE"));
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        badRequestResult.Value.ShouldNotBeNull();
+        badRequestResult.Value.ToString()!.ShouldContain("Invalid business code provided");
+    }
+
+    [Theory]
+    [InlineData("00000000-0000-0000-0000-000000000000", 1, SUPPLIER_CODE)]
+    [InlineData("e4f50c60-4d42-11ec-81d3-0242ac130003", 0, SUPPLIER_CODE)]
+    [InlineData("e4f50c60-4d42-11ec-81d3-0242ac130003", 1, "")]
+    public async Task RecordVisit_ReturnsBadRequest_WhenParametersAreInvalid(Guid qrToken, int selectedSupplierId, string supplierCode) {
+        var sut = CreateController();
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(qrToken, selectedSupplierId, supplierCode));
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        badRequestResult.Value.ShouldNotBeNull();
+        badRequestResult.Value.ToString()!.ShouldContain("Invalid booking or business information");
+    }
 }

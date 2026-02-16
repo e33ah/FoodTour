@@ -10,6 +10,7 @@ public class SupplierVisitVMTests {
         sut.TourDate.ShouldBe(default);
         sut.CustomerEmail.ShouldBe(string.Empty);
         sut.SelectedSupplierId.ShouldBe(0);
+        sut.SupplierCode.ShouldBe(string.Empty);
     }
 
     [Fact]

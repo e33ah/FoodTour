@@ -37,7 +37,8 @@ public static class TestHelper {
             ContactName = "Mrs Test",
             ContactEmail = $"contact{id}@test.com",
             IsActive = isActive,
-            Address = supplierAddress
+            Address = supplierAddress,
+            ConfirmationCode = $"CODE{id}"
         };
     }
 

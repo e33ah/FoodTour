@@ -20,6 +20,8 @@
 						}
 					}
 				</select>
+				<label for="supplierCode" class="form-label mt-3">Enter your Code:</label>
+				<input id="supplierCode" name="supplierCode" type="text" class="form-control" autocomplete="off" />
 				<button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
 			</div>
 			<div id="supplierErrorRegion" class="text-danger d-none"></div>
@@ -40,6 +42,8 @@
 
 				var select = form.querySelector('select[name="SelectedSupplierId"]');
 				var selectedValue = select ? select.value : '';
+				var supplierCodeInput = form.querySelector('input[name="supplierCode"]');
+				var supplierCode = supplierCodeInput ? supplierCodeInput.value.trim() : '';
 
 				if (!selectedValue) {
 					var errorRegion = document.getElementById('supplierErrorRegion');
@@ -50,12 +54,28 @@
 					return;
 				}
 
+				if (!supplierCode) {
+					var errorRegion = document.getElementById('supplierErrorRegion');
+					if (errorRegion) {
+						errorRegion.textContent = 'Please enter your business\'s code to confirm the visit.';
+						errorRegion.classList.remove('d-none');
+					}
+					return;
+				}
+
+				var errorRegion = document.getElementById('supplierErrorRegion');
+				if (errorRegion) {
+					errorRegion.classList.add('d-none');
+					errorRegion.textContent = '';
+				}
+
 				var tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
 				var token = tokenInput ? tokenInput.value : '';
 
 				var payload = {
 					qrToken: '@Model.QrToken',
-					selectedSupplierId: Number(selectedValue)
+					selectedSupplierId: Number(selectedValue),
+					supplierCode: supplierCode
 				};
 
 				try {

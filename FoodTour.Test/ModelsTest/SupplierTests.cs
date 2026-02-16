@@ -155,7 +155,8 @@ public class SupplierTests {
             Tag1 = "Bakery",
             Tag2 = "Organic",
             Tag3 = "Local",
-            Tag4 = "Artisan"
+            Tag4 = "Artisan",
+            ConfirmationCode = "venue123"
         };
 
         sut.Address.ShouldBe("123 Test Street");
@@ -164,5 +165,6 @@ public class SupplierTests {
         sut.Tag2.ShouldBe("Organic");
         sut.Tag3.ShouldBe("Local");
         sut.Tag4.ShouldBe("Artisan");
+        sut.ConfirmationCode.ShouldBe("venue123");
     }
 }

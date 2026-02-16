@@ -35,4 +35,6 @@ public class Supplier {
     
     [MaxLength(50)]
     public string? Tag4 { get; set; }
+    [MaxLength(50)]
+    public string ConfirmationCode { get; set; } = null!;
 }

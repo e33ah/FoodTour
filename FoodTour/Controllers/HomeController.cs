@@ -285,14 +285,14 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return View(model);
     }
 
-    public record RecordVisitDTO(Guid QrToken, int SelectedSupplierId);
+    public record RecordVisitDTO(Guid QrToken, int SelectedSupplierId, string SupplierCode);
 
     [HttpPut]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDTO? payload) {
-        if (payload == null || payload.SelectedSupplierId <= 0 || payload.QrToken == Guid.Empty) {
+        if (payload == null || payload.SelectedSupplierId <= 0 || payload.QrToken == Guid.Empty || string.IsNullOrEmpty(payload.SupplierCode)) {
             Log.Warning("RecordVisit called with invalid parameters.");
-            return BadRequest(new { error = "Invalid booking or supplier information." });
+            return BadRequest(new { error = "Invalid booking or business information." });
         }
 
         var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == payload.QrToken && !b.IsCancelled);
@@ -301,12 +301,22 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             return BadRequest(new { error = "Booking not found." });
         }
 
+        var supplier = await context.Suppliers.FirstOrDefaultAsync(s => s.Id == payload.SelectedSupplierId && s.IsActive);
+        if (supplier == null) {
+            Log.Warning("RecordVisit could not find active supplier with id {SupplierId}.", payload.SelectedSupplierId);
+            return BadRequest(new { error = "Business not found in Food Tour." });
+        }
+        if (supplier.ConfirmationCode != payload.SupplierCode) {
+            Log.Warning("RecordVisit supplier passcode mismatch for supplier id {SupplierId}.", payload.SelectedSupplierId);
+            return BadRequest(new { error = "Invalid business code provided." });
+        }
+
         var visit = await context.Visits
             .FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == payload.SelectedSupplierId);
 
         if (visit == null) {
             Log.Warning("RecordVisit could not find visit for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
-            return BadRequest(new { error = "Visit not found for this booking and supplier." });
+            return BadRequest(new { error = "Visit not found for this booking and business." });
         }
 
         if (visit.IsClaimed) {

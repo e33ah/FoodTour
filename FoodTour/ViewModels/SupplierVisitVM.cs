@@ -7,5 +7,5 @@ public class SupplierVisitVM {
     public DateTime TourDate { get; set; }
     public string CustomerEmail { get; set; } = string.Empty;
     public int SelectedSupplierId { get; set; }
+    public string SupplierCode { get; set; } = string.Empty;
 }
-
