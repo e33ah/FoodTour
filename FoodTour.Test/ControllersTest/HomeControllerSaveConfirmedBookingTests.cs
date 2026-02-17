@@ -152,7 +152,7 @@ public class HomeControllerSaveConfirmedBookingTests : HomeControllerTestBase {
         okResult.StatusCode.ShouldBe(200);
         okResult.Value.ShouldNotBeNull();
         okResult.Value.ToString()!.ShouldContain("Confirmation");
-        sut.TempData.ContainsKey("BookingEmailError").ShouldBeTrue();
+        okResult.Value.ToString()!.ShouldContain("unable to send");
     }
 
     [Fact]

@@ -100,9 +100,14 @@
 					})
 					.then(function (result) {
 						var json = result && result.json ? result.json : null;
+						var emailWarningMessage = (json && json.warningMessage) ? json.warningMessage : null;
 
 						// If server indicates nextAction "Confirmation" or explicit success, navigate to Confirmation page
 						if (json && (json.nextAction === 'Confirmation' || json.success === true)) {
+							if (emailWarningMessage) {
+								window.location.href = confirmationUrl + '?emailWarningMessage=' + encodeURIComponent(emailWarningMessage);
+								return;
+							}
 							window.location.href = confirmationUrl;
 							return;
 						}

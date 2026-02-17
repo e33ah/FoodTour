@@ -2,6 +2,7 @@ namespace FoodTour.Test.Controllers;
 
 public class HomeControllerRecordVisitTests : HomeControllerTestBase {
     private const string SUPPLIER_CODE = "CODE";
+    private const string INVALID_CODE = "WRONGCODE";
 
     [Fact]
     public async Task RecordVisit_ReturnsOk_WhenSupplierIdIsValidAsync() {
@@ -154,7 +155,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
         var sut = CreateConfiguredController(context);
-        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, "WRONGCODE"));
+        var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, INVALID_CODE));
         var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
         badRequestResult.StatusCode.ShouldBe(400);
         badRequestResult.Value.ShouldNotBeNull();
