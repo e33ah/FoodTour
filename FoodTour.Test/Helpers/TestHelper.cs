@@ -20,6 +20,14 @@ public static class TestHelper {
         FromName = "Test Sender"
     };
 
+    public static IOptions<SupportSettings> CreateSupportOptions() {
+        return Options.Create(new SupportSettings {
+            PhoneNumberDisplay = "01234 567890",
+            PhoneNumberDial = "+441234567890",
+            EmailAddress = "admin@foodtour.com"
+        });
+    }
+
     public static FoodTourContext CreateInMemoryContext() {
         var options = new DbContextOptionsBuilder<FoodTourContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())

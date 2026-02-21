@@ -1,4 +1,5 @@
-﻿@{
+﻿@model FoodTour.Models.UserSupportVM;
+@{
 	ViewData["Title"] = "Support";
 }
 <div class="container py-5">
@@ -17,10 +18,14 @@
 								If you need help during your tour, please contact our support team and we will do our best to respond promptly.
 							</p>
 
-							<div class="d-grid gap-2 mb-0 justify-content-center">
-								<a class="btn btn-outline-primary" href="tel:+447809150081">
+							<div class="d-grid d-sm-flex gap-2 mb-0 justify-content-center">
+								<a class="btn btn-outline-primary" href="tel:@Model.SupportPhoneNumberDial">
 									<i class="bi bi-telephone" aria-hidden="true"></i>
-									Call 07809 150081
+									Call @Model.SupportPhoneNumberDisplay
+								</a>
+								<a class="btn btn-outline-primary" href="mailto:@Model.SupportEmailAddress">
+									<i class="bi bi-envelope" aria-hidden="true"></i>
+									Email @Model.SupportEmailAddress
 								</a>
 							</div>
 						</div>

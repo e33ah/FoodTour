@@ -1,9 +1,10 @@
 namespace FoodTour.Controllers;
 
-public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService) : Controller {
+public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
     private const string EMAIL_SEND_FAILED_MESSAGE = "Your booking was saved, but we were unable to send a confirmation email. Please save the link below with your tour details and contact support for assistance.";
     private readonly QrImageService qrImageService = new();
+    private readonly SupportSettings supportSettings = supportOptions.Value;
 
     public async Task<IActionResult> Index() {
         var model = await CreateFoodTourViewModel();
@@ -74,6 +75,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     [HttpGet]
     public async Task<IActionResult> BookingSummary(BookingSummaryVM bookingSummary) {
+        Log.Debug("Loading booking summary page.");
         if (bookingSummary == null) {
             return RedirectToAction("Index");
         }
@@ -278,6 +280,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     [HttpGet]
     public async Task<IActionResult> FoodTourCode(Guid qrToken) {
+        Log.Debug("Loading FoodTourCode for qrtoken {qrToken}.", qrToken);
         if (qrToken == Guid.Empty) {
             Log.Warning("FoodTourCode action called with invalid token: {QrToken}.", qrToken);
             return RedirectToAction("Error");
@@ -389,7 +392,13 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     [HttpGet]
     public IActionResult UserSupport() {
-        return View();
+        var result = new UserSupportVM {
+            SupportPhoneNumberDial = supportSettings.PhoneNumberDial,
+            SupportPhoneNumberDisplay = supportSettings.PhoneNumberDisplay,
+            SupportEmailAddress = supportSettings.EmailAddress
+        };
+
+        return View(result);
     }
 
     public IActionResult Privacy() {

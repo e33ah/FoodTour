@@ -186,7 +186,8 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         await context.SaveChangesAsync();
         var emailSender = Mock.Of<IEmailSender>();
         var bookingEmailService = new BookingEmailService();
-        var sut = new HomeController(context, emailSender, bookingEmailService);
+        var supportOptions = TestHelper.CreateSupportOptions();
+        var sut = new HomeController(context, emailSender, bookingEmailService, supportOptions);
         return await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
     }
 
@@ -198,7 +199,8 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(contextSupplierCount);
         var emailSender = Mock.Of<IEmailSender>();
         var bookingEmailService = new BookingEmailService();
-        var sut = new HomeController(context, emailSender, bookingEmailService);
+        var supportOptions = TestHelper.CreateSupportOptions();
+        var sut = new HomeController(context, emailSender, bookingEmailService, supportOptions);
         var result = await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
         return (result, sut);
     }

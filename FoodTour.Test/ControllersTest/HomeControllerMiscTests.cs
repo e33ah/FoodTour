@@ -47,6 +47,7 @@ public class HomeControllerMiscTests : HomeControllerTestBase {
 
         var result = sut.UserSupport();
 
-        result.ShouldBeOfType<ViewResult>();
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        viewResult.Model.ShouldBeOfType<UserSupportVM>();
     }
 }

@@ -37,6 +37,10 @@ public class Program {
                 .PersistKeysToDbContext<DataProtectionKeyContext>()
                 .SetApplicationName("FoodTour");
 
+            // Add User Support Settings
+            builder.Services.Configure<SupportSettings>(
+                builder.Configuration.GetSection("SupportSettings"));
+
             // Add Email Settings
             builder.Services.Configure<EmailSettings>(
                 builder.Configuration.GetSection("EmailSettings"));

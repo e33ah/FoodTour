@@ -84,7 +84,8 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
             : TestHelper.CreateInMemoryContext();
         var emailSender = Mock.Of<IEmailSender>();
         var bookingEmailService = new BookingEmailService();
-        var sut = new HomeController(context, emailSender, bookingEmailService);
+        var supportOptions = TestHelper.CreateSupportOptions();
+        var sut = new HomeController(context, emailSender, bookingEmailService, supportOptions);
 
         var result = await sut.Index();
 
