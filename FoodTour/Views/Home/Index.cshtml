@@ -20,7 +20,10 @@
 							<i class="bi bi-exclamation-triangle"></i> @ViewBag.InsufficientSuppliersWarning
 						</div>
 					}
-					<form id="tourForm" asp-action="Index" method="post" data-max-selections="@Model.MaxSelections">
+					<form id="tourForm" asp-action="Index" method="post"
+						  data-max-selections="@Model.MaxSelections"
+						  data-selected-suppliers='@Html.Raw(JsonSerializer.Serialize(ViewBag.SelectedSuppliers ?? new List<int>()))'
+						  data-focus-purchase-code='@JsonSerializer.Serialize((bool?)ViewBag.FocusPurchaseCode == true)'>
 						<h2 class="lead mb-3 fs-3">Select @Model.MaxSelections tasting experiences to create your personalised food tasting tour</h2>
 						<p class="mb-1">
 							All samples are served with a glass of wine, soft drink, tea or coffee.
@@ -75,7 +78,7 @@
 								<div class="form-group">
 									<label asp-for="PurchaseCode" class="form-label visually-hidden">Purchase Code</label>
 									<div class="d-flex justify-content-center">
-										<input asp-for="PurchaseCode" type="text" class="form-control w-auto" style="max-width: 220px;" />
+										<input asp-for="PurchaseCode" type="text" class="form-control w-auto" style="max-width: 220px;" id="purchaseCode" />
 									</div>
 									<span asp-validation-for="PurchaseCode" class="text-danger"></span>
 								</div>

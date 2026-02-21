@@ -255,6 +255,51 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add form validation on submit
     const tourForm = document.querySelector('form[data-max-selections]');
     if (tourForm) {
+        const restorePostedSelections = () => {
+            const selectedSuppliersJson = tourForm.dataset.selectedSuppliers;
+            if (!selectedSuppliersJson || selectedSuppliersJson.trim() === '') {
+                return;
+            }
+
+            let selectedSuppliers;
+            try {
+                selectedSuppliers = JSON.parse(selectedSuppliersJson);
+            } catch {
+                return;
+            }
+
+            if (!Array.isArray(selectedSuppliers)) {
+                return;
+            }
+
+            selectedSuppliers.forEach(id => {
+                const checkbox = document.getElementById(`supplier-${id}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    const card = checkbox.closest('.supplier-card');
+                    if (card) {
+                        card.classList.add('selected');
+                    }
+                }
+            });
+
+            updateButtonState();
+        };
+
+        const focusPurchaseCodeIfRequested = () => {
+            const focusFlag = tourForm.dataset.focusPurchaseCode;
+            if (focusFlag !== 'true') {
+                return;
+            }
+
+            if (!purchaseCodeInput) {
+                return;
+            }
+
+            purchaseCodeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            purchaseCodeInput.focus();
+        };
+
         tourForm.addEventListener('submit', function (event) {
             let hasError = false;
             // Validate tour date before submitting
@@ -287,6 +332,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 event.preventDefault();
             }
         });
+
+        restorePostedSelections();
+        focusPurchaseCodeIfRequested();
     }
 
     // Initialise

@@ -9,11 +9,11 @@
     <Import_RootNamespace>_Dependencies</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)Sample_Data\PurchaseCode.sql" />
     <None Include="$(MSBuildThisFileDirectory)Sample_Data\Suppliers.sql" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Publish_Support\" />
-    <Folder Include="$(MSBuildThisFileDirectory)Sample_Data\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="$(MSBuildThisFileDirectory)publish_support\app_offline.htm" />

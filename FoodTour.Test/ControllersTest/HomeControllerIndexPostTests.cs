@@ -162,11 +162,14 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         result.ShouldBeOfType<RedirectToActionResult>();
     }
 
-    [Fact]
-    public async Task IndexPost_ReturnsViewWithError_WhenCodeMissing() {
+    [Theory]
+    [InlineData("")]
+    [InlineData("invalid")]
+    [InlineData(null)]
+    public async Task IndexPost_ReturnsViewWithError_WhenCodeMissingOrInvalid(string? purchaseCode) {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS);
 
-        var (result, controller) = await PostIndexWithController(TestHelper.validTourDate, selectedSuppliers, TestHelper.EXPECTED_MAX_SELECTIONS, TestHelper.VALID_EMAIL, "");
+        var (result, controller) = await PostIndexWithController(TestHelper.validTourDate, selectedSuppliers, TestHelper.EXPECTED_MAX_SELECTIONS, TestHelper.VALID_EMAIL, purchaseCode!);
 
         result.ShouldBeOfType<ViewResult>();
         controller.ModelState.IsValid.ShouldBeFalse();
@@ -179,6 +182,8 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
 
     private static async Task<IActionResult> PostIndex(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(contextSupplierCount);
+        context.PurchaseCodes.Add(new PurchaseCode { Code = TestHelper.VALID_CODE });
+        await context.SaveChangesAsync();
         var emailSender = Mock.Of<IEmailSender>();
         var bookingEmailService = new BookingEmailService();
         var sut = new HomeController(context, emailSender, bookingEmailService);

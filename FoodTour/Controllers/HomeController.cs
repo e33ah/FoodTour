@@ -35,8 +35,14 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
         if (string.IsNullOrWhiteSpace(purchaseCode)) {
             ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter your purchase code.");
+        } else {
+            bool purchaseCodeExists = await context.PurchaseCodes
+                .AnyAsync(pc => pc.Code == purchaseCode && pc.IsActive);
+            if (!purchaseCodeExists) {
+                ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter a valid purchase code.");
+                Log.Information("Purchase code validation failed: code '{PurchaseCode}' does not exist or is inactive.", purchaseCode);
+            }
         }
-        // TODO: FT-12 Validate purchase code
 
         if (selectedSuppliers.Count != MAX_SUPPLIER_SELECTIONS) {
             ModelState.AddModelError(string.Empty, $"You must select {MAX_SUPPLIER_SELECTIONS} tasting experiences for your tour.");
@@ -45,6 +51,14 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         if (!ModelState.IsValid) {
             var model = await CreateFoodTourViewModel();
             model.TourDate = tourDate;
+            model.CustomerEmail = customerEmail;
+            model.PurchaseCode = purchaseCode;
+
+            ViewBag.SelectedSuppliers = selectedSuppliers;
+
+            if (ModelState.ContainsKey(nameof(FoodTourVM.PurchaseCode)) && ModelState[nameof(FoodTourVM.PurchaseCode)]?.Errors.Count > 0) {
+                ViewBag.FocusPurchaseCode = true;
+            }
             return View(model);
         }
         var bookingSummaryModel = new BookingSummaryVM {
