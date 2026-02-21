@@ -23,7 +23,11 @@
 			@if (Context.Request.Query["emailWarningMessage"] is { Count: > 0 } emailWarningMessage && !string.IsNullOrWhiteSpace(emailWarningMessage.ToString())) {
 				<div class="alert alert-warning" role="alert">@Html.Encode(emailWarningMessage.ToString())</div>
 			}
-			<p> If you wish to change or cancel your tour, please contact <a href="mailto:admin@foodtour.com">admin@foodtour.com</a></p>
+			<p>
+				If you wish to change or cancel your tour, please visit our
+				<a asp-controller="Home" asp-action="UserSupport">Support</a>
+				page.
+			</p>
 			<div>
 				<a href="@Url.Action("FoodTourCode", "Home", new { qrToken = Model.QrToken })" class="btn btn-primary">View Tour Details</a>
 			</div>

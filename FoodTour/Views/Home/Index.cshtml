@@ -21,6 +21,14 @@
 						</div>
 					}
 					<form id="tourForm" asp-action="Index" method="post" data-max-selections="@Model.MaxSelections">
+						<h2 class="lead mb-3 fs-3">Select @Model.MaxSelections tasting experiences to create your personalised food tasting tour</h2>
+						<p class="mb-1">
+							All samples are served with a glass of wine, soft drink, tea or coffee.
+						</p>
+						<p class="mb-4">
+							Some venues are designed for quick visits and may not include seating.
+						</p>
+
 						<div class="card mb-4">
 							<div class="card-body">
 								<h3 class="card-title mb-3">
@@ -38,9 +46,6 @@
 								</div>
 							</div>
 						</div>
-
-						<p class="lead mb-4">Select @Model.MaxSelections tasting experiences to create your personalised food tasting tour</p>
-
 						@foreach (var item in Model.Suppliers) {
 							<partial name="_SupplierCard" model="item" />
 						}

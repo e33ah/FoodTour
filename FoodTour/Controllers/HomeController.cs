@@ -373,6 +373,11 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return View();
     }
 
+    [HttpGet]
+    public IActionResult UserSupport() {
+        return View();
+    }
+
     public IActionResult Privacy() {
         return View();
     }

@@ -40,4 +40,13 @@ public class HomeControllerMiscTests : HomeControllerTestBase {
 
         result.ShouldBeOfType<ViewResult>();
     }
+
+    [Fact]
+    public void UserSupport_ReturnsViewResult() {
+        var sut = CreateController();
+
+        var result = sut.UserSupport();
+
+        result.ShouldBeOfType<ViewResult>();
+    }
 }
