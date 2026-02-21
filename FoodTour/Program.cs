@@ -12,9 +12,11 @@ public class Program {
 
             // Configure logging
             builder.Host.UseSerilog((context, services, configuration) => {
+                var ukTimeZoneInfo = GetUkTimeZoneInfo();
                 configuration
                     .ReadFrom.Configuration(context.Configuration)
                     .ReadFrom.Services(services)
+                    .Enrich.WithProperty("UkTimestamp", () => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ukTimeZoneInfo))
                     .Enrich.FromLogContext();
             });
 
@@ -94,6 +96,14 @@ public class Program {
             Log.Information("{Name} database migrations applied successfully.", name);
         } else {
             Log.Information("No pending {Name} database migrations were found.", name);
+        }
+    }
+
+    private static TimeZoneInfo GetUkTimeZoneInfo() {
+        try {
+            return TimeZoneInfo.FindSystemTimeZoneById("Europe/London");
+        } catch (TimeZoneNotFoundException) {
+            return TimeZoneInfo.FindSystemTimeZoneById("GMT Standard Time");
         }
     }
 }
