@@ -16,11 +16,9 @@ public class Program {
                 configuration
                     .ReadFrom.Configuration(context.Configuration)
                     .ReadFrom.Services(services)
-                    .Enrich.WithProperty("UkTimestamp", () => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ukTimeZoneInfo))
+                    .Enrich.With(new UkTimestampEnricher(ukTimeZoneInfo))
                     .Enrich.FromLogContext();
             });
-
-            Log.Information("Starting FoodTour application...");
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
@@ -49,6 +47,8 @@ public class Program {
             builder.Services.AddScoped<BookingEmailService>();
 
             var app = builder.Build();
+
+            Log.Information("Starting FoodTour application...");
 
             // Apply EF Core migrations on start-up
             using var scope = app.Services.CreateScope();
@@ -108,6 +108,16 @@ public class Program {
             return TimeZoneInfo.FindSystemTimeZoneById("Europe/London");
         } catch (TimeZoneNotFoundException) {
             return TimeZoneInfo.FindSystemTimeZoneById("GMT Standard Time");
+        }
+    }
+
+    private sealed class UkTimestampEnricher(TimeZoneInfo ukTimeZoneInfo) : ILogEventEnricher {
+        private const string PROPERTY_NAME = "UkTimestamp";
+
+        public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory) {
+            var ukDateTime = TimeZoneInfo.ConvertTimeFromUtc(logEvent.Timestamp.UtcDateTime, ukTimeZoneInfo);
+            var property = propertyFactory.CreateProperty(PROPERTY_NAME, ukDateTime);
+            logEvent.AddOrUpdateProperty(property);
         }
     }
 }

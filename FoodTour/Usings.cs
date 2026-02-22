@@ -13,3 +13,5 @@ global using Microsoft.Extensions.Options;
 global using MimeKit;
 global using QRCoder;
 global using Serilog;
+global using Serilog.Core;
+global using Serilog.Events;
