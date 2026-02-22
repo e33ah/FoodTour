@@ -1,5 +1,6 @@
 ﻿global using System.ComponentModel.DataAnnotations;
 global using System.Diagnostics;
+global using System.Net;
 global using System.Text.Json;
 global using FoodTour.Models;
 global using FoodTour.Services;

@@ -10,6 +10,7 @@ public static class TestHelper {
     public const string EXPECTED_NO_SUPPLIERS_MESSAGE = "No tasting experiences are currently available for the tour. Please check back later.";
     public const string SUPPLIER_NAME_1 = "Tasty Treats";
     public const string SUPPLIER_ADDRESS_1 = "123 Food Street";
+    public const string ADMIN_EMAIL = "admin@test.com";
     public static readonly int nextYear = DateTime.Today.AddYears(1).Year;
     public static readonly DateTime validTourDate = new(nextYear, 6, 16);
     public static readonly EmailSettings testEmailSettings = new() {
@@ -24,7 +25,14 @@ public static class TestHelper {
         return Options.Create(new SupportSettings {
             PhoneNumberDisplay = "01234 567890",
             PhoneNumberDial = "+441234567890",
-            EmailAddress = "admin@foodtour.com"
+            EmailAddress = ADMIN_EMAIL
+        });
+    }
+
+    public static IOptions<AdminNotificationSettings> CreateAdminNotificationOptions() {
+        return Options.Create(new AdminNotificationSettings {
+            AdminEmail = ADMIN_EMAIL,
+            NotifyOnVisitRecorded = true
         });
     }
 
@@ -112,13 +120,22 @@ public static class TestHelper {
         }
     }
 
-    public static Booking CreateValidBooking(List<int> selectedSupplierIds) {
+    public static Booking CreateValidBooking(List<int>? selectedSupplierIds = null) {
+        selectedSupplierIds ??= [1, 2, 3, 4, 5];
         return new Booking {
             TourDate = validTourDate,
             CustomerEmail = VALID_EMAIL,
             PurchaseCode = VALID_CODE,
             SelectedSupplierIds = selectedSupplierIds,
             BookingSuppliers = [.. selectedSupplierIds.Select(id => new BookingSupplier { SupplierId = id })]
+        };
+    }
+
+    public static Visit CreateVisit(int bookingId = 1, int supplierId = 1) {
+        return new Visit {
+            BookingId = bookingId,
+            SupplierId = supplierId,
+            ClaimedAt = validTourDate
         };
     }
 }

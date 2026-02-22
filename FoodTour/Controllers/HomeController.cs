@@ -1,6 +1,6 @@
 namespace FoodTour.Controllers;
 
-public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions) : Controller {
+public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, AdminNotificationService adminNotificationService, IOptions<SupportSettings> supportOptions) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
     private const string EMAIL_SEND_FAILED_MESSAGE = "Your booking was saved, but we were unable to send a confirmation email. Please save the link below with your tour details and contact support for assistance.";
     private readonly QrImageService qrImageService = new();
@@ -349,6 +349,14 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         try {
             await context.SaveChangesAsync();
             Log.Information("Visit recorded for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
+
+            try {
+                await adminNotificationService.NotifyVisitRecordedAsync(booking, supplier, visit);
+                Log.Information("Admin notification email sent for visit ID {VisitId}", visit.Id);
+            } catch (Exception emailEx) {
+                Log.Error(emailEx, "Visit recorded but failed to notify admin. VisitId {VisitId}, BookingId {BookingId}, SupplierId {SupplierId}.", visit.Id, booking.Id, payload.SelectedSupplierId);
+            }
+
             return Ok(new { success = true });
         } catch (Exception ex) {
             Log.Error(ex, "Failed to save visit record for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);

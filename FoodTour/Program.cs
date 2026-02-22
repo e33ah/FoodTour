@@ -43,8 +43,13 @@ public class Program {
             builder.Services.Configure<EmailSettings>(
                 builder.Configuration.GetSection("EmailSettings"));
 
+            // Add Admin Notification Settings
+            builder.Services.Configure<AdminNotificationSettings>(
+                builder.Configuration.GetSection("AdminNotificationSettings"));
+
             builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
             builder.Services.AddScoped<BookingEmailService>();
+            builder.Services.AddScoped<AdminNotificationService>();
 
             var app = builder.Build();
 
