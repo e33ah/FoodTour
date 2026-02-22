@@ -9,7 +9,7 @@
 			<div class="card mb-4">
 				<div class="card-body">
 					<h3 class="card-title">
-						<i class="bi bi-check-circle"></i> Booking Confirmed
+						<i class="bi bi-check-circle text-success" aria-hidden="true"></i> Booking Confirmed
 					</h3>
 					<p class="mt-3">Thank you, <strong>@Model.CustomerEmail</strong>, for booking your Weymouth Self-Guided Tasting Tour!</p>
 				</div>
@@ -20,14 +20,18 @@
 <div class="container text-center">
 	<div class="row justify-content-center">
 		<div class="col-md-8 col-lg-6 align-content-center">
-			@if (Context.Request.Query["emailWarningMessage"] is { Count: > 0 } emailWarningMessage && !string.IsNullOrWhiteSpace(emailWarningMessage.ToString())) {
-				<div class="alert alert-warning" role="alert">@Html.Encode(emailWarningMessage.ToString())</div>
-			}
 			<p>
 				If you wish to change or cancel your tour, please visit our
 				<a asp-controller="Home" asp-action="UserSupport">Support</a>
 				page.
 			</p>
+			@if (Context.Request.Query["emailWarningMessage"] is { Count: > 0 } emailWarningMessage && !string.IsNullOrWhiteSpace(emailWarningMessage.ToString())) {
+				<div class="alert alert-warning" role="alert">
+					The email address entered appears to be incorrect.<br />
+					Your booking has been saved, but you won’t receive a confirmation email.<br />
+					Please save the tour link below to use on the day, or contact <a asp-controller="Home" asp-action="UserSupport">Support</a>, if you’d like us to resend your confirmation.
+				</div>
+			}
 			<div>
 				<a href="@Url.Action("FoodTourCode", "Home", new { qrToken = Model.QrToken })" class="btn btn-primary">View Tour Details</a>
 			</div>

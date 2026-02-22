@@ -1,19 +1,21 @@
 @model FoodTour.Models.FoodTourCodeVM
-
 @{
 	ViewData["Title"] = "Food Tour Code";
 }
 <div class="text-center">
-	<h1 class="display-4 my-5">Weymouth Self-Guided Tasting Tour</h1>
+	<h1 class="display-4 my-4">Weymouth Self-Guided Tasting Tour</h1>
 	<div class="container">
-		<p>Navigate round the tour using <a href="https://storymaps.arcgis.com/stories/9da596d25952432eabd8551889bfee9e" target="_blank" rel="noopener noreferrer">this map and guide</a>.</p>
-
-		<p>Show this QR code to each food stop on your tour to claim your Tasting Experience:</p>
-
-		<img src="@Url.Action("QrImage", "Home", new { qrToken = Model.QrToken })" alt="QR Code" class="img-fluid" style="max-width: 300px;" />
-
 		<div class="row justify-content-center">
 			<div class="col-md-8 col-lg-6">
+				<p>Use this <a href="https://storymaps.arcgis.com/stories/9da596d25952432eabd8551889bfee9e" target="_blank" rel="noopener noreferrer"> map and guide</a> to explore the tour.</p>
+				<p>Your starting location for the self-guided tour will be <i class="bi bi-geo-alt-fill" aria-hidden="true"></i><strong>Weymouth Town Bridge</strong>.</p>
+
+				<p>Show this QR code at each food stop on your tour to claim your Tasting Experience:</p>
+
+				<img src="@Url.Action("QrImage", "Home", new { qrToken = Model.QrToken })" alt="QR Code" class="img-fluid" style="max-width: 300px;" />
+
+				<p>Explore the tasting experiences at your own pace - you can visit them in any order from 10am to 5pm.</p>
+
 				<div class="card mb-4">
 					<div class="card-body text-start">
 						<h3 class="card-title text-center">

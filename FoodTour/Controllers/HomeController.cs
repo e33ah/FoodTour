@@ -369,10 +369,11 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             return NotFound("Booking not found or cancelled.");
         }
 
-        string? url = Url.Action("SupplierVisit", "Home", new { qrToken }, Request.Scheme);
-
-        if (string.IsNullOrEmpty(url)) {
-            Log.Error("Failed to generate URL for QR code with token {QrToken}.", qrToken);
+        string url;
+        try {
+            url = GenerateUrl("SupplierVisit", new { qrToken });
+        } catch (InvalidOperationException ex) {
+            Log.Error(ex, "Failed to generate URL for QR code with token {QrToken}.", qrToken);
             return BadRequest("Unable to generate QR code due to a system error.");
         }
 
@@ -450,12 +451,10 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
                 .Where(supplier => supplierIds.Contains(supplier.Id))
                 .ToListAsync();
 
-            string? foodTourCodeUrl = Url.Action(nameof(FoodTourCode), "Home", new { booking.QrToken }, Request.Scheme);
-            if (string.IsNullOrWhiteSpace(foodTourCodeUrl)) {
-                throw new InvalidOperationException("Unable to generate Food Tour Code URL.");
-            }
+            string foodTourCodeUrl = GenerateUrl("FoodTourCode", new { qrToken = booking.QrToken });
+            string userSupportUrl = GenerateUrl("UserSupport");
 
-            var (subject, body) = bookingEmailService.GenerateBookingConfirmationEmail(booking, suppliers, foodTourCodeUrl);
+            var (subject, body) = bookingEmailService.GenerateBookingConfirmationEmail(booking, suppliers, foodTourCodeUrl, userSupportUrl);
             await emailSender.SendEmailAsync(booking.CustomerEmail, subject, body);
 
             Log.Information("Sent booking confirmation email to {CustomerEmail}.", booking.CustomerEmail);
@@ -463,5 +462,14 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             Log.Error(emailEx, "Failed to send booking confirmation email to {CustomerEmail}.", booking.CustomerEmail);
             throw new InvalidOperationException("Booking saved, but we were unable to send a confirmation email. Please contact support.", emailEx);
         }
+    }
+
+    private string GenerateUrl(string actionName, object? urlValues = null) {
+        string? generatedUrl = Url.Action(actionName, "Home", values: urlValues, protocol: Request.Scheme);
+        if (string.IsNullOrWhiteSpace(generatedUrl)) {
+            throw new InvalidOperationException($"Unable to generate {actionName} URL.");
+        }
+
+        return generatedUrl;
     }
 }

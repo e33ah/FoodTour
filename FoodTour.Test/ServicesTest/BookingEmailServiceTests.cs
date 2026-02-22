@@ -1,6 +1,9 @@
 namespace FoodTour.Test.ServicesTest;
 
 public class BookingEmailServiceTests {
+    private const string FOOD_TOUR_CODE_URL = "https://example.test/Home/FoodTourCode?qrToken=abc";
+    private const string USER_SUPPORT_URL = "https://example.test/Home/UserSupport";
+
     [Fact]
     public void GenerateBookingConfirmationEmail_IncludesFoodTourCodeLinkAndSupplierDetails_WhenUrlProvided() {
         var sut = new BookingEmailService();
@@ -12,13 +15,13 @@ public class BookingEmailServiceTests {
             TestHelper.CreateSupplier(2)
         };
 
-        const string FOOD_TOUR_CODE_URL = "https://example.test/Home/FoodTourCode?qrToken=abc";
 
-        var (subject, body) = sut.GenerateBookingConfirmationEmail(booking, suppliers, FOOD_TOUR_CODE_URL);
+        var (subject, body) = sut.GenerateBookingConfirmationEmail(booking, suppliers, FOOD_TOUR_CODE_URL, USER_SUPPORT_URL);
 
-        subject.ShouldContain("Weymouth Food Tour Booking Confirmation");
+        subject.ShouldContain("Booking Confirmation");
         body.ShouldContain("font-family: Arial");
         body.ShouldContain(FOOD_TOUR_CODE_URL);
+        body.ShouldContain(USER_SUPPORT_URL);
         body.ShouldContain(TestHelper.SUPPLIER_NAME_1);
         body.ShouldContain(TestHelper.SUPPLIER_ADDRESS_1);
         body.ShouldContain("present your QR code");
@@ -26,12 +29,11 @@ public class BookingEmailServiceTests {
 
     [Fact]
     public void GenerateBookingConfirmationEmail_IncludesNoSelectionsMessage_WhenNoSuppliersProvided() {
-        const string FOOD_TOUR_CODE_URL = "https://example.test/Home/FoodTourCode?qrToken=abc";
         var sut = new BookingEmailService();
         var booking = TestHelper.CreateValidBooking([]);
         var suppliers = Array.Empty<Supplier>();
 
-        var (_, body) = sut.GenerateBookingConfirmationEmail(booking, suppliers, FOOD_TOUR_CODE_URL);
+        var (_, body) = sut.GenerateBookingConfirmationEmail(booking, suppliers, FOOD_TOUR_CODE_URL, USER_SUPPORT_URL);
 
         body.ShouldContain("No tasting experiences selected");
     }

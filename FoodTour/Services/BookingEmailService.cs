@@ -1,34 +1,77 @@
 namespace FoodTour.Services;
 
 public class BookingEmailService {
-    public (string Subject, string Body) GenerateBookingConfirmationEmail(Booking booking, IReadOnlyCollection<Supplier> suppliers, string foodTourCodeUrl) {
+    public (string Subject, string Body) GenerateBookingConfirmationEmail(Booking booking, IReadOnlyCollection<Supplier> suppliers, string foodTourCodeUrl, string userSupportUrl) {
 
-        string subject = $"Weymouth Food Tour Booking Confirmation - {booking.TourDate:dd/MM/yyyy}";
+        string subject = $"Weymouth Self-Guided Tasting Tour Booking Confirmation - {booking.TourDate:dd/MM/yyyy}";
 
         string selectedTastingExperiencesHtml = suppliers.Count == 0
             ? "<li>No tasting experiences selected.</li>"
             : string.Join("", suppliers.Select(supplier => $"<li>{supplier.Name} - {supplier.Address}</li>"));
 
-        string body = $@"<div style=""font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4;"">
-            <p>Dear {booking.CustomerEmail},</p>
-            <p>Thank you for booking your Food Tasting Tour! Here are your booking details:</p>
-            <ul>
-                <li><strong>Tour Date:</strong> {booking.TourDate:dd/MM/yyyy}</li>
-                <li><strong>Selected Tasting Experiences:</strong>
-                    <ul>
-                        {selectedTastingExperiencesHtml}
-                    </ul>
-                </li>
-            </ul>
-            <p>Please present your QR code on the day of your tour. You can access it using the link below:</p>
-            <p>
-                <a href=""{foodTourCodeUrl}"" style=""display: inline-block; padding: 10px 14px; background-color: #0d6efd; color: #ffffff; text-decoration: none; border-radius: 6px;"">Open your Food Tour Code Details</a>
-            </p>
-            <p>If the button does not work, copy and paste this link into your browser:</p>
-            <p><a href=""{foodTourCodeUrl}"">{foodTourCodeUrl}</a></p>
-            <p>We look forward to seeing you!</p>
-            <p>Best regards,<br>Kabincraft Adventures</p>
-        </div>";
+        string body = $@"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset=""utf-8"" />
+                <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+                <title>{subject}</title>
+            </head>
+            <body style=""margin: 0; padding: 0; background-color: #f8f9fa;"">
+                <table style=""width: 100%; background-color: #f8f9fa; border-collapse: collapse; border-spacing: 0;"">
+                    <tbody>
+                        <tr>
+                            <td style=""padding: 24px 12px; text-align: center;"">
+                                <table style=""width: 600px; max-width: 600px; background-color: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; border-collapse: collapse; border-spacing: 0;"">
+                                    <tbody>
+                                        <tr>
+                                            <td style=""padding: 24px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; color: #212529; text-align: left;"">
+                                        <p style=""margin: 0 0 12px 0;"">Dear {booking.CustomerEmail},</p>
+                                        <p style=""margin: 0 0 12px 0;"">Thank you for booking your Weymouth Self-Guided Tasting Tour!<br />Here are your tour details:</p>
+
+                                        <p style=""margin: 0 0 8px 0;""><strong>Tour Date:</strong> {booking.TourDate:dd/MM/yyyy}</p>
+                                        <p style=""margin: 0 0 8px 0;""><strong>Selected Tasting Experiences:</strong></p>
+
+                                        <table style=""width: 100%; margin: 0 0 12px 0; border-collapse: collapse; border-spacing: 0; text-align: left;"">
+                                            <tr>
+                                                <td style=""padding-left: 18px;"">
+                                                    <ul style=""margin: 0; padding: 0; list-style-position: outside; text-align: left;"">
+                                                        {selectedTastingExperiencesHtml}
+                                                    </ul>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <p style=""margin: 0 0 12px 0;"">On the day of your tour, use the button below to access your map and QR code.<br />
+                                            Please present your QR code as proof of purchase at each Tasting Experience.</p>
+
+                                        <table style=""margin: 0 auto 12px auto; border-collapse: collapse; border-spacing: 0;"">
+                                            <tr>
+                                                <td style=""border-radius: 6px; background-color: #0d6efd; text-align: center;"">
+                                                    <a href=""{foodTourCodeUrl}"" style=""display: inline-block; padding: 10px 14px; font-family: Arial, sans-serif; font-size: 12px; color: #ffffff; text-decoration: none; border-radius: 6px;"">Start your Tour</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <p style=""margin: 0 0 8px 0;"">If the button does not work, copy and paste this link into your browser:</p>
+                                        <p style=""margin: 0 0 12px 0; word-break: break-word;""><a href=""{foodTourCodeUrl}"" style=""color: #0d6efd;"">{foodTourCodeUrl}</a></p>
+
+                                        <p style=""margin: 0 0 12px 0;"">We look forward to seeing you!</p>
+                                        <p style=""margin: 0 0 16px 0;"">Best regards,<br /><strong>Kabincraft Adventures</strong></p>
+
+                                        <hr style=""margin: 16px 0; border: 0; border-top: 1px solid #e5e5e5;"" />
+                                        <p style=""margin: 0 0 8px 0;"">Need help? Visit our <a href=""{userSupportUrl}"" style=""color: #0d6efd;"">Support</a> page.</p>
+                                        <p style=""margin: 0; color: #6c757d; font-size: 11px;"">This email was sent from an unattended mailbox. Please do not reply.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </body>
+            </html>";
 
         return (subject, body);
     }
