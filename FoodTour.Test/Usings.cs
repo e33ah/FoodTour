@@ -7,6 +7,7 @@ global using Microsoft.AspNetCore.Http;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.Mvc.Routing;
 global using Microsoft.AspNetCore.Mvc.ViewFeatures;
+global using Microsoft.Data.Sqlite;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Options;
 global using Moq;

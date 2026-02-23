@@ -11,8 +11,11 @@ public static class TestHelper {
     public const string SUPPLIER_NAME_1 = "Tasty Treats";
     public const string SUPPLIER_ADDRESS_1 = "123 Food Street";
     public const string ADMIN_EMAIL = "admin@test.com";
+    public const string SUPPORT_URL = "http://localhost/Home/UserSupport";
+    private const string DATE_TIME_FORMAT = "HH:mm dd/MM/yyyy";
     public static readonly int nextYear = DateTime.Today.AddYears(1).Year;
-    public static readonly DateTime validTourDate = new(nextYear, 6, 16);
+    public static readonly DateTime validTourDate = new(nextYear, 6, 16, 15, 32, 0);
+    public static readonly string formattedTourDate = validTourDate.ToString(DATE_TIME_FORMAT);
     public static readonly EmailSettings testEmailSettings = new() {
         Host = "smtp.test",
         Port = 25,
@@ -37,11 +40,17 @@ public static class TestHelper {
     }
 
     public static FoodTourContext CreateInMemoryContext() {
+        var connection = new SqliteConnection("DataSource=:memory:");
+        connection.OpenAsync();
+
         var options = new DbContextOptionsBuilder<FoodTourContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseSqlite(connection)
             .Options;
 
-        return new FoodTourContext(options);
+        var context = new FoodTourContext(options);
+        context.Database.EnsureCreated();
+
+        return context;
     }
 
     public static Supplier CreateSupplier(int id, string? name = null, bool isActive = true, string? address = null) {

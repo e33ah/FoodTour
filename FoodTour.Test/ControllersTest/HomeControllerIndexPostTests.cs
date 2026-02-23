@@ -188,7 +188,8 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         var bookingEmailService = new BookingEmailService();
         var supportOptions = TestHelper.CreateSupportOptions();
         var adminNotificationService = new AdminNotificationService(emailSender, TestHelper.CreateAdminNotificationOptions());
-        var sut = new HomeController(context, emailSender, bookingEmailService, adminNotificationService, supportOptions);
+        var supplierNotificationService = new SupplierNotificationService(emailSender);
+        var sut = new HomeController(context, emailSender, bookingEmailService, adminNotificationService, supplierNotificationService, supportOptions);
         return await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
     }
 
@@ -202,7 +203,8 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         var bookingEmailService = new BookingEmailService();
         var supportOptions = TestHelper.CreateSupportOptions();
         var adminNotificationService = new AdminNotificationService(emailSender, TestHelper.CreateAdminNotificationOptions());
-        var sut = new HomeController(context, emailSender, bookingEmailService, adminNotificationService, supportOptions);
+        var supplierNotificationService = new SupplierNotificationService(emailSender);
+        var sut = new HomeController(context, emailSender, bookingEmailService, adminNotificationService, supplierNotificationService, supportOptions);
         var result = await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
         return (result, sut);
     }

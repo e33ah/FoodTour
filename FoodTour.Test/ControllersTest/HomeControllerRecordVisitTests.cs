@@ -13,12 +13,13 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var visit = new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = false };
         context.Visits.Add(visit);
         context.SaveChanges();
-        var sut = CreateConfiguredController(context);
+        var sut = CreateConfiguredControllerWithUrl(context, "/UserSupport");
 
         var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
+        context.ChangeTracker.Clear();
         var updatedVisit = await context.Visits.FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == supplier.Id);
         updatedVisit.ShouldNotBeNull();
         updatedVisit.IsClaimed.ShouldBeTrue();
@@ -27,10 +28,10 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
 
     [Fact]
     public async Task RecordVisit_ReturnsBadRequest_WhenSupplierNotFoundAsync() {
-        var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+        var supplier = TestHelper.CreateSupplier(1);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = CreateConfiguredController(context);
+        var sut = CreateConfiguredControllerWithUrl(context, "/UserSupport");
 
         var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, 999, supplier.ConfirmationCode));
 
@@ -42,10 +43,10 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
 
     [Fact]
     public async Task RecordVisit_ReturnsBadRequest_WhenVisitNotFoundAsync() {
-        var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+        var supplier = TestHelper.CreateSupplier(1);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = CreateConfiguredController(context);
+        var sut = CreateConfiguredControllerWithUrl(context, "/UserSupport");
 
         var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, 1, supplier.ConfirmationCode));
 
@@ -63,7 +64,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var visit = new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = true, ClaimedAt = DateTime.UtcNow };
         context.Visits.Add(visit);
         context.SaveChanges();
-        var sut = CreateConfiguredController(context);
+        var sut = CreateConfiguredControllerWithUrl(context, "/UserSupport");
 
         var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
 
@@ -107,7 +108,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var cancelledBooking = TestHelper.CreateValidBooking([1]);
         cancelledBooking.IsCancelled = true;
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [cancelledBooking]);
-        var sut = CreateConfiguredController(context);
+        var sut = CreateConfiguredControllerWithUrl(context, "/UserSupport");
 
         var payload = new HomeController.RecordVisitDTO(cancelledBooking.QrToken, 1, supplier.ConfirmationCode);
 
@@ -137,11 +138,12 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var visit = new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = false };
         context.Visits.Add(visit);
         context.SaveChanges();
-        var sut = CreateConfiguredController(context);
+        var sut = CreateConfiguredControllerWithUrl(context, "/UserSupport");
         var beforeClaim = DateTime.UtcNow;
 
         await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
 
+        context.ChangeTracker.Clear();
         var updatedVisit = await context.Visits.FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == supplier.Id);
         updatedVisit.ShouldNotBeNull();
         updatedVisit.ClaimedAt.ShouldNotBeNull();
@@ -154,7 +156,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         var supplier = TestHelper.CreateSupplier(1, "Test Supplier", true);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = CreateConfiguredController(context);
+        var sut = CreateConfiguredControllerWithUrl(context, "/UserSupport");
         var result = await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, INVALID_CODE));
         var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
         badRequestResult.StatusCode.ShouldBe(400);

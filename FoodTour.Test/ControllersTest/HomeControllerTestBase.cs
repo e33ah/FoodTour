@@ -12,9 +12,10 @@ public abstract class HomeControllerTestBase {
         var emailSender = emailSenderMock.Object;
         var bookingEmailService = new BookingEmailService();
         var adminNotificationService = new AdminNotificationService(emailSender, TestHelper.CreateAdminNotificationOptions());
+        var supplierNotificationService = new SupplierNotificationService(emailSender);
         var supportOptions = TestHelper.CreateSupportOptions();
 
-        return new HomeController(context, emailSender, bookingEmailService, adminNotificationService, supportOptions) {
+        return new HomeController(context, emailSender, bookingEmailService, adminNotificationService, supplierNotificationService, supportOptions) {
             TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>()),
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };
@@ -26,9 +27,10 @@ public abstract class HomeControllerTestBase {
         var emailSender = emailSenderMock.Object;
         var bookingEmailService = new BookingEmailService();
         var adminNotificationService = new AdminNotificationService(emailSender, TestHelper.CreateAdminNotificationOptions());
+        var supplierNotificationService = new SupplierNotificationService(emailSender);
         var supportOptions = TestHelper.CreateSupportOptions();
 
-        var controller = new HomeController(context, emailSender, bookingEmailService, adminNotificationService, supportOptions) {
+        var controller = new HomeController(context, emailSender, bookingEmailService, adminNotificationService, supplierNotificationService, supportOptions) {
             TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>()),
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };

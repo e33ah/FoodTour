@@ -50,6 +50,7 @@ public class Program {
             builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
             builder.Services.AddScoped<BookingEmailService>();
             builder.Services.AddScoped<AdminNotificationService>();
+            builder.Services.AddScoped<SupplierNotificationService>();
 
             var app = builder.Build();
 

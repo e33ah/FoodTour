@@ -37,4 +37,6 @@ public class Supplier {
     public string? Tag4 { get; set; }
     [MaxLength(50)]
     public string ConfirmationCode { get; set; } = null!;
+
+    public bool EmailNotificationsEnabled { get; set; }
 }

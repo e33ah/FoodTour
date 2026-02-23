@@ -41,8 +41,6 @@ public class AdminNotificationServiceTests {
         var booking = TestHelper.CreateValidBooking();
         var supplier = TestHelper.CreateSupplier(1);
         var visit = TestHelper.CreateVisit();
-        var claimedAt = new DateTime(2026, 6, 22, 15, 16, 39, DateTimeKind.Utc);
-        visit.ClaimedAt = claimedAt;
         var emailSenderMock = new Mock<IEmailSender>();
         var options = Options.Create(new AdminNotificationSettings {
             AdminEmail = TestHelper.ADMIN_EMAIL,
@@ -50,13 +48,12 @@ public class AdminNotificationServiceTests {
         });
         var sut = new AdminNotificationService(emailSenderMock.Object, options);
 
-
         await sut.NotifyVisitRecordedAsync(booking, supplier, visit);
 
         emailSenderMock.Verify(x => x.SendEmailAsync(
             TestHelper.ADMIN_EMAIL,
             It.Is<string>(subject => subject.Contains(supplier.Name)),
-            It.Is<string>(body => body.Contains("15:16 22/06/2026"))
+            It.Is<string>(body => body.Contains(TestHelper.formattedTourDate))
         ), Times.Once);
     }
 }

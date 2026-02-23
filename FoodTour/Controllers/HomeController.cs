@@ -1,6 +1,6 @@
 namespace FoodTour.Controllers;
 
-public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, AdminNotificationService adminNotificationService, IOptions<SupportSettings> supportOptions) : Controller {
+public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, AdminNotificationService adminNotificationService, SupplierNotificationService supplierNotificationService, IOptions<SupportSettings> supportOptions) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
     private const string EMAIL_SEND_FAILED_MESSAGE = "Your booking was saved, but we were unable to send a confirmation email. Please save the link below with your tour details and contact support for assistance.";
     private readonly QrImageService qrImageService = new();
@@ -305,62 +305,89 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     public record RecordVisitDTO(Guid QrToken, int SelectedSupplierId, string SupplierCode);
 
+    private static bool TryValidateRecordVisitPayload(RecordVisitDTO? payload, out string errorMessage) {
+        if (payload == null || payload.SelectedSupplierId <= 0 || payload.QrToken == Guid.Empty || string.IsNullOrEmpty(payload.SupplierCode)) {
+            errorMessage = "Invalid booking or business information.";
+            return false;
+        }
+
+        errorMessage = string.Empty;
+        return true;
+    }
+
     [HttpPut]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDTO? payload) {
-        if (payload == null || payload.SelectedSupplierId <= 0 || payload.QrToken == Guid.Empty || string.IsNullOrEmpty(payload.SupplierCode)) {
+        IActionResult BadRequestError(string message) {
+            return BadRequest(new { error = message });
+        }
+
+        if (!TryValidateRecordVisitPayload(payload, out string errorMessage)) {
             Log.Warning("RecordVisit called with invalid parameters.");
-            return BadRequest(new { error = "Invalid booking or business information." });
+            return BadRequestError(errorMessage);
         }
 
-        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == payload.QrToken && !b.IsCancelled);
+        var booking = await context.Bookings.SingleOrDefaultAsync(b => b.QrToken == payload!.QrToken && !b.IsCancelled);
         if (booking == null) {
-            Log.Warning("RecordVisit could not find active booking with QrToken: {QrToken}.", payload.QrToken);
-            return BadRequest(new { error = "Booking not found." });
+            Log.Warning("RecordVisit could not find active booking with QrToken: {QrToken}.", payload!.QrToken);
+            return BadRequestError("Booking not found.");
         }
 
-        var supplier = await context.Suppliers.FirstOrDefaultAsync(s => s.Id == payload.SelectedSupplierId && s.IsActive);
+        var supplier = await context.Suppliers.SingleOrDefaultAsync(s => s.Id == payload!.SelectedSupplierId && s.IsActive);
         if (supplier == null) {
-            Log.Warning("RecordVisit could not find active supplier with id {SupplierId}.", payload.SelectedSupplierId);
-            return BadRequest(new { error = "Business not found in Food Tour." });
+            Log.Warning("RecordVisit could not find active supplier with id {SupplierId}.", payload!.SelectedSupplierId);
+            return BadRequestError("Business not found in Food Tour.");
         }
-        if (supplier.ConfirmationCode != payload.SupplierCode) {
+        if (supplier.ConfirmationCode != payload!.SupplierCode) {
             Log.Warning("RecordVisit supplier passcode mismatch for supplier id {SupplierId}.", payload.SelectedSupplierId);
-            return BadRequest(new { error = "Invalid business code provided." });
+            return BadRequestError("Invalid business code provided.");
         }
 
         var visit = await context.Visits
-            .FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == payload.SelectedSupplierId);
+            .SingleOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == payload.SelectedSupplierId);
 
         if (visit == null) {
             Log.Warning("RecordVisit could not find visit for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
-            return BadRequest(new { error = "Visit not found for this booking and business." });
+            return BadRequestError("Visit not found for this booking and business.");
         }
-
-        if (visit.IsClaimed) {
-            Log.Warning("RecordVisit called for already claimed visit: booking id {BookingId}, supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
-            return BadRequest(new { error = "This visit has already been confirmed." });
-        }
-
-        visit.IsClaimed = true;
-        visit.ClaimedAt = DateTime.UtcNow;
-        //TODO: Review if this code could have race condition bug if multiple requests are made at same time
 
         try {
-            await context.SaveChangesAsync();
+            int rows = await context.Visits
+                .Where(v => v.Id == visit.Id && !v.IsClaimed)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(v => v.IsClaimed, true)
+                    .SetProperty(v => v.ClaimedAt, v => DateTime.UtcNow));
+            if (rows == 0) {
+                Log.Warning("RecordVisit called for already claimed visit: booking id {BookingId}, supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
+                return BadRequestError("This visit has already been confirmed.");
+            }
+
             Log.Information("Visit recorded for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
 
-            try {
-                await adminNotificationService.NotifyVisitRecordedAsync(booking, supplier, visit);
-                Log.Information("Admin notification email sent for visit ID {VisitId}", visit.Id);
-            } catch (Exception emailEx) {
-                Log.Error(emailEx, "Visit recorded but failed to notify admin. VisitId {VisitId}, BookingId {BookingId}, SupplierId {SupplierId}.", visit.Id, booking.Id, payload.SelectedSupplierId);
-            }
+            await context.Entry(visit).ReloadAsync();
+            await TrySendVisitRecordedNotificationsAsync(booking, supplier, visit);
 
             return Ok(new { success = true });
         } catch (Exception ex) {
             Log.Error(ex, "Failed to save visit record for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
             return StatusCode(500, new { error = "Unable to record visit due to a system error." });
+        }
+    }
+
+    private async Task TrySendVisitRecordedNotificationsAsync(Booking booking, Supplier supplier, Visit visit) {
+        try {
+            await adminNotificationService.NotifyVisitRecordedAsync(booking, supplier, visit);
+            Log.Information("Admin notification email sent for visit ID {VisitId}", visit.Id);
+        } catch (Exception emailEx) {
+            Log.Error(emailEx, "Visit recorded but failed to notify admin. VisitId {VisitId}, BookingId {BookingId}, SupplierId {SupplierId}.", visit.Id, booking.Id, supplier.Id);
+        }
+
+        try {
+            string supportUrl = GenerateUrl("UserSupport");
+            await supplierNotificationService.NotifyVisitRecordedAsync(booking, supplier, visit, supportUrl);
+            Log.Information("Supplier notification email sent for visit ID {VisitId}", visit.Id);
+        } catch (Exception emailEx) {
+            Log.Error(emailEx, "Visit recorded but failed to notify supplier. VisitId {VisitId}, BookingId {BookingId}, SupplierId {SupplierId}.", visit.Id, booking.Id, supplier.Id);
         }
     }
 
