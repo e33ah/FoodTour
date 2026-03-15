@@ -21,7 +21,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string purchaseCode) {
+    public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string customerEmailConfirmation, string purchaseCode) {
         if (!tourDate.HasValue) {
             ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Please select a date for your tour.");
         } else if (!IsValidTourDate(tourDate.Value)) {
@@ -32,6 +32,14 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter your email address.");
         } else if (!new EmailAddressAttribute().IsValid(customerEmail)) {
             ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter a valid email address.");
+        }
+
+        if (string.IsNullOrWhiteSpace(customerEmailConfirmation)) {
+            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "Please confirm your email address.");
+        } else if (!new EmailAddressAttribute().IsValid(customerEmailConfirmation)) {
+            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "Please enter a valid email address.");
+        } else if (!string.Equals(customerEmail, customerEmailConfirmation, StringComparison.Ordinal)) {
+            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "The email addresses do not match.");
         }
 
         if (string.IsNullOrWhiteSpace(purchaseCode)) {
@@ -53,6 +61,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             var model = await CreateFoodTourViewModel();
             model.TourDate = tourDate;
             model.CustomerEmail = customerEmail;
+            model.CustomerEmailConfirmation = customerEmailConfirmation;
             model.PurchaseCode = purchaseCode;
 
             ViewBag.SelectedSuppliers = selectedSuppliers;

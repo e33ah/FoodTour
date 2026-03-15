@@ -190,19 +190,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Email validation helpers
     const emailInput = document.querySelector('input[type="email"][name$="CustomerEmail"]');
+    const emailConfirmationInput = document.querySelector('input[type="email"][name$="CustomerEmailConfirmation"]');
 
     const isValidEmail = (email) => {
         // Simple email regex for client-side validation
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     };
 
-    const showEmailError = (message) => {
-        clearEmailError();
-        if (emailInput) {
-            const formGroup = emailInput.closest('.form-group');
+    const showEmailError = (message, isConfirmation = false) => {
+        clearEmailError(isConfirmation);
+        const targetInput = isConfirmation ? emailConfirmationInput : emailInput;
+        if (targetInput) {
+            const formGroup = targetInput.closest('.form-group');
             if (formGroup) {
                 const errorElement = document.createElement('div');
-                errorElement.className = 'text-danger small mt-1 email-validation-error';
+                errorElement.className = `text-danger small mt-1 ${isConfirmation ? 'email-confirmation' : 'email'}-validation-error`;
                 errorElement.textContent = message;
                 errorElement.setAttribute('tabindex', '-1');
                 formGroup.parentNode.insertBefore(errorElement, formGroup.nextSibling);
@@ -210,16 +212,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const clearEmailError = () => {
-        if (emailInput) {
-            const formGroup = emailInput.closest('.form-group');
+    const clearEmailError = (isConfirmation = false) => {
+        const targetInput = isConfirmation ? emailConfirmationInput : emailInput;
+        if (targetInput) {
+            const formGroup = targetInput.closest('.form-group');
             if (formGroup) {
+                const errorClass = isConfirmation ? 'email-confirmation-validation-error' : 'email-validation-error';
                 const nextSibling = formGroup.nextSibling;
-                if (nextSibling && nextSibling.classList && nextSibling.classList.contains('email-validation-error')) {
+                if (nextSibling && nextSibling.classList && nextSibling.classList.contains(errorClass)) {
                     nextSibling.remove();
                 }
             }
         }
+    };
+
+    const validateEmailMatch = () => {
+        if (emailInput && emailConfirmationInput && emailInput.value && emailConfirmationInput.value) {
+            if (emailInput.value !== emailConfirmationInput.value) {
+                showEmailError('The email addresses do not match.', true);
+                return false;
+            }
+            clearEmailError(true);
+            return true;
+        }
+        return true;
     };
 
     // Purchase code validation helpers
@@ -319,6 +335,18 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 clearEmailError();
             }
+
+            // Validate email confirmation before submitting
+            if (!emailConfirmationInput || !emailConfirmationInput.value.trim() || !isValidEmail(emailConfirmationInput.value.trim())) {
+                event.preventDefault();
+                showEmailError('Please confirm your email address.', true);
+                hasError = true;
+            } else if (!validateEmailMatch()) {
+                event.preventDefault();
+                hasError = true;
+            } else {
+                clearEmailError(true);
+            }
             // Validate purchase code before submitting
             if (!purchaseCodeInput || !purchaseCodeInput.value.trim()) {
                 event.preventDefault();
@@ -347,6 +375,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (purchaseCodeInput) {
         purchaseCodeInput.addEventListener('input', clearPurchaseCodeError);
         purchaseCodeInput.addEventListener('change', clearPurchaseCodeError);
+    }
+
+    if (emailInput) {
+        emailInput.addEventListener('input', () => {
+            clearEmailError();
+            validateEmailMatch();
+        });
+        emailInput.addEventListener('change', () => {
+            clearEmailError();
+            validateEmailMatch();
+        });
+    }
+
+    if (emailConfirmationInput) {
+        emailConfirmationInput.addEventListener('input', () => {
+            clearEmailError(true);
+            validateEmailMatch();
+        });
+        emailConfirmationInput.addEventListener('change', () => {
+            clearEmailError(true);
+            validateEmailMatch();
+        });
     }
     if (emailInput) {
         emailInput.addEventListener('input', clearEmailError);

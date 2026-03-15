@@ -17,6 +17,7 @@ public class FoodTourVMTests {
         sut.SupplierDescription.ShouldBe(string.Empty);
         sut.SupplierAddress.ShouldBe(string.Empty);
         sut.CustomerEmail.ShouldBe(string.Empty);
+        sut.CustomerEmailConfirmation.ShouldBe(string.Empty);
         sut.PurchaseCode.ShouldBe(string.Empty);
     }
 
@@ -57,6 +58,7 @@ public class FoodTourVMTests {
             SupplierDescription = "A great tasting experience",
             SupplierAddress = "123 Main Street",
             CustomerEmail = "Susie@test.com",
+            CustomerEmailConfirmation = "Susie@test.com",
             PurchaseCode = "ABC123"
         };
 
@@ -64,6 +66,7 @@ public class FoodTourVMTests {
         sut.SupplierDescription.ShouldBe("A great tasting experience");
         sut.SupplierAddress.ShouldBe("123 Main Street");
         sut.CustomerEmail.ShouldBe("Susie@test.com");
+        sut.CustomerEmailConfirmation.ShouldBe("Susie@test.com");
         sut.PurchaseCode.ShouldBe("ABC123");
     }
 }
