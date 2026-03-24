@@ -1,6 +1,38 @@
 ﻿@{
     ViewData["Title"] = "Privacy Policy";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <h1 class="display-4 text-center mb-4">@ViewData["Title"]</h1>
+
+            <div class="card">
+                <div class="card-body text-center">
+                    <h2 class="card-title mb-3">
+                        <i class="bi bi-shield-check"></i> Your Privacy Matters
+                    </h2>
+                    <p class="card-text mb-4">
+                        We are committed to protecting your privacy when using Weymouth Self-Guided Tasting Tour service.
+                    </p>
+
+                    <div class="text-center mb-3">
+						<a href="https://kabincraftadventures.com/wp-content/uploads/2026/03/Privacy-policy-PDF-v1.pdf"
+                           class="btn btn-primary " 
+                           target="_blank" 
+                           rel="noopener noreferrer">
+                            <i class="bi bi-file-earmark-pdf"></i> View Privacy Policy (PDF)
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <p class="text-muted">
+                    If you have any questions about our privacy policy, please contact
+					<a asp-controller="Home" asp-action="UserSupport">Support</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
