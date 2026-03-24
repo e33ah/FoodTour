@@ -7,10 +7,19 @@
 	<div class="container">
 		<div class="row justify-content-center">
 			<div class="col-md-8 col-lg-6">
-				<p>Use this <a href="https://storymaps.arcgis.com/stories/9da596d25952432eabd8551889bfee9e" target="_blank" rel="noopener noreferrer"> map and guide</a> to explore the tour.</p>
 				<p>Your starting location for the self-guided tour will be <i class="bi bi-geo-alt-fill" aria-hidden="true"></i><strong>Weymouth Town Bridge</strong>.</p>
 
-				<p>Show this QR code at each food stop on your tour to claim your Tasting Experience:</p>
+				<div class="text-center mb-4">
+					<a href="https://storymaps.arcgis.com/stories/9da596d25952432eabd8551889bfee9e" 
+					   target="_blank" 
+					   rel="noopener noreferrer" 
+					   class="btn btn-primary btn-lg px-4 py-3">
+						<i class="bi bi-map"></i> Start Your Tour Here
+					</a>
+					<p class="text-muted mt-2 small">Click above to launch your interactive map and tour guide</p>
+				</div>
+
+				<p class="mb-0">Show this QR code at each Food Stop on your Tour to claim your Tasting Experience:</p>
 
 				<img src="@Url.Action("QrImage", "Home", new { qrToken = Model.QrToken })" alt="QR Code" class="img-fluid" style="max-width: 300px;" />
 

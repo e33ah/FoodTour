@@ -64,7 +64,7 @@ public class BookingEmailService {
                                                 <p style=""margin: 0 0 16px 0;"">Best regards,<br /><strong>Kabincraft Adventures</strong></p>
 
                                                 <hr style=""margin: 16px 0; border: 0; border-top: 1px solid #e5e5e5;"" />
-                                                <p style=""margin: 0 0 8px 0; font-size: 14px;"">Need help? Visit our <a href=""{userSupportUrl}"" style=""color: #0d6efd;"">Support</a> page.</p>
+                                                <p style=""margin: 0 0 8px 0; font-size: 14px;"">Need help or want to make changes to your tour? Visit our <a href=""{userSupportUrl}"" style=""color: #0d6efd;"">Support</a> page.</p>
                                                 <p style=""margin: 0; color: #6c757d; font-size: 14px;"">This email was sent from an unattended mailbox. Please do not reply.</p>
                                             </td>
                                         </tr>
