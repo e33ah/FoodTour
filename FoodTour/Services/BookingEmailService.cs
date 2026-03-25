@@ -26,7 +26,7 @@ public class BookingEmailService {
                     <tbody>
                         <tr>
                             <td style=""padding: 24px 12px; text-align: center;"">
-                                <table style=""width: 600px; max-width: 600px; background-color: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; border-collapse: separate; border-spacing: 0;"">
+                                <table style=""width: 600px; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; border-collapse: separate; border-spacing: 0;"">
                                     <tbody>
                                         <tr>
                                             <td style=""padding: 24px; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #212529; text-align: left;"">

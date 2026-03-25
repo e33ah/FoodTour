@@ -3,6 +3,8 @@
 	ViewData["Title"] = "BookingSummary";
 }
 
+<img src="~/images/logo_with_wording.jpg" alt="Kabincraft Food Tours Logo" class="img-fluid mb-3 mx-auto d-block" style="max-height: 100px;" />
+
 <div class="container">
 	<div class="row justify-content-center">
 		<div class="col-md-8 col-lg-6">
@@ -58,77 +60,77 @@
 @section Scripts {
 	<script type="text/javascript">
 		(function () {
-			var btn = document.getElementById('btnConfirm');
-			if (!btn) {
-				return;
-			}
+		var btn = document.getElementById('btnConfirm');
+		if (!btn) {
+		return;
+		}
 
-			// URL to navigate to when confirmation is successful
-			var confirmationUrl = '@Url.Action("BookingConfirmation", "Home")';
+		// URL to navigate to when confirmation is successful
+		var confirmationUrl = '@Url.Action("BookingConfirmation", "Home")';
 
-			btn.addEventListener('click', function (e) {
-				e.preventDefault();
+		btn.addEventListener('click', function (e) {
+		e.preventDefault();
 
-				var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-				var token = tokenInput ? tokenInput.value : '';
+		var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+		var token = tokenInput ? tokenInput.value : '';
 
-				var tourDateInput = document.querySelector('input[name="TourDate"]');
-				var customerEmailInput = document.querySelector('input[name="CustomerEmail"]');
-				var purchaseCodeInput = document.querySelector('input[name="PurchaseCode"]');
-				var selectedSupplierInputs = document.querySelectorAll('input[name="SelectedSupplierIds"]');
+		var tourDateInput = document.querySelector('input[name="TourDate"]');
+		var customerEmailInput = document.querySelector('input[name="CustomerEmail"]');
+		var purchaseCodeInput = document.querySelector('input[name="PurchaseCode"]');
+		var selectedSupplierInputs = document.querySelectorAll('input[name="SelectedSupplierIds"]');
 
-				var data = {
-					tourDate: tourDateInput ? tourDateInput.value : '',
-					customerEmail: customerEmailInput ? customerEmailInput.value : '',
-					purchaseCode: purchaseCodeInput ? purchaseCodeInput.value : '',
-					selectedSupplierIds: Array.from(selectedSupplierInputs).map(function (supplierInput) { return parseInt(supplierInput.value, 10); })
-				};
+		var data = {
+		tourDate: tourDateInput ? tourDateInput.value : '',
+		customerEmail: customerEmailInput ? customerEmailInput.value : '',
+		purchaseCode: purchaseCodeInput ? purchaseCodeInput.value : '',
+		selectedSupplierIds: Array.from(selectedSupplierInputs).map(function (supplierInput) { return parseInt(supplierInput.value, 10); })
+		};
 
-				fetch('/Home/SaveConfirmedBooking', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'RequestVerificationToken': token
-					},
-					credentials: 'same-origin',
-					body: JSON.stringify(data)
-				})
-					.then(function (response) {
-						return response.json().catch(function () { return null; }).then(function (json) {
-							return { ok: response.ok, status: response.status, json: json };
-						});
-					})
-					.then(function (result) {
-						var json = result && result.json ? result.json : null;
-						var emailWarningMessage = (json && json.warningMessage) ? json.warningMessage : null;
+		fetch('/Home/SaveConfirmedBooking', {
+		method: 'POST',
+		headers: {
+		'Content-Type': 'application/json',
+		'RequestVerificationToken': token
+		},
+		credentials: 'same-origin',
+		body: JSON.stringify(data)
+		})
+		.then(function (response) {
+		return response.json().catch(function () { return null; }).then(function (json) {
+		return { ok: response.ok, status: response.status, json: json };
+		});
+		})
+		.then(function (result) {
+		var json = result && result.json ? result.json : null;
+		var emailWarningMessage = (json && json.warningMessage) ? json.warningMessage : null;
 
-						// If server indicates nextAction "Confirmation" or explicit success, navigate to Confirmation page
-						if (json && (json.nextAction === 'Confirmation' || json.success === true)) {
-							if (emailWarningMessage) {
-								window.location.href = confirmationUrl + '?emailWarningMessage=' + encodeURIComponent(emailWarningMessage);
-								return;
-							}
-							window.location.href = confirmationUrl;
-							return;
-						}
+		// If server indicates nextAction "Confirmation" or explicit success, navigate to Confirmation page
+		if (json && (json.nextAction === 'Confirmation' || json.success === true)) {
+		if (emailWarningMessage) {
+		window.location.href = confirmationUrl + '?emailWarningMessage=' + encodeURIComponent(emailWarningMessage);
+		return;
+		}
+		window.location.href = confirmationUrl;
+		return;
+		}
 
-						// Fallback to homepage
-						window.location.href = '@Url.Action("Index", "Home")';
-					})
-					.catch(function (err) {
-						console.error(err);
-						var defaultMessage = 'We could not complete your booking. Please check your internet connection and try again. If the problem continues, please contact our support team.';
-						var message = (err && err.message) ? err.message : defaultMessage;
+		// Fallback to homepage
+		window.location.href = '@Url.Action("Index", "Home")';
+		})
+		.catch(function (err) {
+		console.error(err);
+		var defaultMessage = 'We could not complete your booking. Please check your internet connection and try again. If the problem continues, please contact our support team.';
+		var message = (err && err.message) ? err.message : defaultMessage;
 						
-						var errorContainer = document.createElement('div');
-						errorContainer.className = 'alert alert-danger mt-3';
-						errorContainer.textContent = message;
-						var cardBody = document.querySelector('.card-body');
-						if (cardBody) {
-							cardBody.insertBefore(errorContainer, cardBody.firstChild);
-						}
-					});
-			});
+		var errorContainer = document.createElement('div');
+		errorContainer.className = 'alert alert-danger mt-3';
+		errorContainer.textContent = message;
+		var cardBody = document.querySelector('.card-body');
+		if (cardBody) {
+		cardBody.insertBefore(errorContainer, cardBody.firstChild);
+		}
+		});
+		});
 		})();
 	</script>
 }

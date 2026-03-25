@@ -1,38 +1,41 @@
 ﻿@{
-    ViewData["Title"] = "Privacy Policy";
+	ViewData["Title"] = "Privacy Policy";
 }
+<img src="~/images/logo_with_wording.jpg" alt="Kabincraft Food Tours Logo" class="img-fluid mb-3 mx-auto d-block" style="max-height: 100px;" />
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <h1 class="display-4 text-center mb-4">@ViewData["Title"]</h1>
+<div class="container py-1">
+	<div class="row justify-content-center">
+		<div class="col-12 col-md-8 col-lg-6">
+			<div class="card shadow-sm">
+				<div class="card-body p-4 p-md-5">
+					<div class="text-center mb-4">
+						<h1 class="mb-2"><span class="text-primary me-2"><i class="bi bi-shield-check" aria-hidden="true"></i></span>Privacy Policy</h1>
+					</div>
+					<div class="d-flex flex-column align-items-center gap-3 text-center">
+						<div class="flex-grow-1">
+							<p class="mb-3">
+								We are committed to protecting your privacy when using Weymouth Self-Guided Tasting Tour service.
+							</p>
 
-            <div class="card">
-                <div class="card-body text-center">
-                    <h2 class="card-title mb-3">
-                        <i class="bi bi-shield-check"></i> Your Privacy Matters
-                    </h2>
-                    <p class="card-text mb-4">
-                        We are committed to protecting your privacy when using Weymouth Self-Guided Tasting Tour service.
-                    </p>
+							<div class="d-grid d-sm-flex gap-2 mb-0 justify-content-center">
+								<a href="https://kabincraftadventures.com/wp-content/uploads/2026/03/Privacy-policy-PDF-v1.pdf"
+									   class="btn btn-primary "
+									   target="_blank"
+									   rel="noopener noreferrer">
+									<i class="bi bi-file-earmark-pdf"></i> View Privacy Policy (PDF)
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 
-                    <div class="text-center mb-3">
-						<a href="https://kabincraftadventures.com/wp-content/uploads/2026/03/Privacy-policy-PDF-v1.pdf"
-                           class="btn btn-primary " 
-                           target="_blank" 
-                           rel="noopener noreferrer">
-                            <i class="bi bi-file-earmark-pdf"></i> View Privacy Policy (PDF)
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center mt-4">
-                <p class="text-muted">
-                    If you have any questions about our privacy policy, please contact
-					<a asp-controller="Home" asp-action="UserSupport">Support</a>.
-                </p>
-            </div>
-        </div>
-    </div>
+		</div>
+		<div class="text-center mt-4">
+			<p class="text-muted">
+				If you have any questions about our Privacy Policy, please contact
+				<a asp-controller="Home" asp-action="UserSupport">Support</a>.
+			</p>
+		</div>
+	</div>
 </div>
