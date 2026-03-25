@@ -132,6 +132,7 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
 
     [Fact]
     public async Task RecordVisit_SetsClaimedAtTimestamp_WhenVisitRecordedSuccessfully() {
+        var beforeClaim = DateTime.UtcNow.AddMilliseconds(-10); // 10ms buffer
         var supplier = TestHelper.CreateSupplier(1, "Test Supplier", true);
         var booking = TestHelper.CreateValidBooking([1]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
@@ -139,7 +140,6 @@ public class HomeControllerRecordVisitTests : HomeControllerTestBase {
         context.Visits.Add(visit);
         context.SaveChanges();
         var sut = CreateConfiguredControllerWithUrl(context, "/UserSupport");
-        var beforeClaim = DateTime.UtcNow;
 
         await sut.RecordVisit(new HomeController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
 
