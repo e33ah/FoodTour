@@ -1,30 +1,34 @@
 @model FoodTour.Models.Supplier
 
 @{
-    var tags = new[] { Model.Tag1, Model.Tag2, Model.Tag3, Model.Tag4 };
+	var tags = new[] { Model.Tag1, Model.Tag2, Model.Tag3, Model.Tag4 };
 }
 <div class="card mb-3 supplier-card" data-supplier-id="@Model.Id">
-    <div class="card-body">
-        <div class="d-flex align-items-center">
-            <input type="checkbox" name="selectedSuppliers" value="@Model.Id" class="visually-hidden supplier-checkbox" id="supplier-@Model.Id" />
-            <label for="supplier-@Model.Id" class="visually-hidden">Select @Model.Name</label>
-            <div class="flex-grow-1 text-start">
-                <h3 class="card-title mb-1">@Model.Name
-                    @foreach (var tag in tags)
-                    {
-                        if (!string.IsNullOrWhiteSpace(tag))
-                        {
-                            <span class="badge border border-info text-dark fw-normal ms-1" style="font-size: 0.8rem; background-color: transparent;">@tag</span>
-                        }
-                    }
-                </h3>
-                <p class="card-text text-muted small mb-1">
-                    <i class="bi bi-geo-alt-fill"></i> @Model.Address
-                </p>
-                @if (!string.IsNullOrWhiteSpace(Model.Description)) {
-                    <p class="card-text mb-0">@Model.Description</p>
-                }
-            </div>
-        </div>
-    </div>
+	<div class="card-body">
+		<div class="d-flex align-items-center">
+			<input type="checkbox" name="selectedSuppliers" value="@Model.Id" class="visually-hidden supplier-checkbox" id="supplier-@Model.Id" />
+			<label for="supplier-@Model.Id" class="visually-hidden">Select @Model.Name</label>
+			<div class="flex-grow-1 text-start">
+				<h3 class="card-title mb-1">
+					@Model.Name
+					@foreach (var tag in tags) {
+						if (!string.IsNullOrWhiteSpace(tag)) {
+							<span class="badge border border-info text-dark fw-normal ms-1" style="font-size: 0.8rem; background-color: transparent;">@tag</span>
+						}
+					}
+				</h3>
+				<p class="card-text text-muted small mb-1">
+					<i class="bi bi-geo-alt text-primary"></i> @Model.Address
+				</p>
+				@if (!string.IsNullOrWhiteSpace(Model.OpeningTimes)) {
+					<p class="card-text text-muted small mb-1">
+						<i class="bi bi-clock text-primary"></i> @Model.OpeningTimes
+					</p>
+				}
+				@if (!string.IsNullOrWhiteSpace(Model.Description)) {
+					<p class="card-text mb-0">@Model.Description</p>
+				}
+			</div>
+		</div>
+	</div>
 </div>

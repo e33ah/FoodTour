@@ -6,6 +6,7 @@ public class FoodTourVM {
     public string SupplierName { get; set; } = string.Empty;
     public string SupplierDescription { get; set; } = string.Empty;
     public string SupplierAddress { get; set; } = string.Empty;
+    public string SupplierOpeningTimes { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Please select a date for your tour")]
     [DataType(DataType.Date)]
