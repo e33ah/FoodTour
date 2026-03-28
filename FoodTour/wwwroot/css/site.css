@@ -45,3 +45,12 @@ body {
   border-color: #198754;
   background-color: #f8fff9;
 }
+
+/* Logo styles */
+.page-logo {
+  max-height: 100px;
+}
+
+.page-logo-mobile {
+  max-height: 80px;
+}

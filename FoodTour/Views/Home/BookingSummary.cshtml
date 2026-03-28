@@ -3,8 +3,8 @@
 	ViewData["Title"] = "BookingSummary";
 }
 
-<img src="~/images/logo_with_wording.jpg" alt="Kabincraft Food Tours Logo" class="img-fluid mb-3 mx-auto d-block" style="max-height: 100px;" />
 <div class="container mt-5">
+	<img src="~/images/logo_with_wording.jpg" alt="Kabincraft Food Tours Logo" class="img-fluid mb-3 mx-auto d-block page-logo" />
 	<div class="row justify-content-center">
 		<div class="col-md-8 col-lg-6">
 			<div class="card shadow-sm">
@@ -34,7 +34,7 @@
 						</li>
 					</ul>
 					<div class="mt-4 d-flex justify-content-between align-items-center flex-column flex-sm-row">
-						<a href="@Url.Action("Index", "Home")" class="btn btn-secondary mb-2 mb-sm-0">
+						<a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary mb-2 mb-sm-0">
 							<i class="bi bi-arrow-left-circle"></i> Back to Home
 						</a>
 						<form asp-action="ConfirmBookingSummary" method="post" class="d-inline">
