@@ -21,7 +21,7 @@ FoodTour allows users to browse and select from a list of active food suppliers 
 
 - .NET 10 SDK
 - SQL Server (LocalDB or full installation)
-- Visual Studio 2022 or VS Code
+- Visual Studio 2026 or VS Code
 - Nuke global tool (optional)
 
 ### Database Setup
@@ -105,4 +105,6 @@ Run:
 ```
 nuke Release
 ```
+The CD pipeline is configured to deploy to the development environment.
+The release pipeline is configured to deploy to the production environemnt.
 The project uses GitHub Actions for continuous integration and continuous deployment.
