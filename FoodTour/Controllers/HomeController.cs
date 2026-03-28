@@ -339,17 +339,17 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         var booking = await context.Bookings.SingleOrDefaultAsync(b => b.QrToken == payload!.QrToken && !b.IsCancelled);
         if (booking == null) {
             Log.Warning("RecordVisit could not find active booking with QrToken: {QrToken}.", payload!.QrToken);
-            return BadRequestError("Booking not found.");
+            return BadRequestError("Booking not found. Please contact Support.");
         }
 
         var supplier = await context.Suppliers.SingleOrDefaultAsync(s => s.Id == payload!.SelectedSupplierId && s.IsActive);
         if (supplier == null) {
             Log.Warning("RecordVisit could not find active supplier with id {SupplierId}.", payload!.SelectedSupplierId);
-            return BadRequestError("Business not found in Food Tour.");
+            return BadRequestError("Business not found in Food Tour. Please contact Support.");
         }
-        if (supplier.ConfirmationCode != payload!.SupplierCode) {
+        if (!string.Equals(supplier.ConfirmationCode, payload!.SupplierCode, StringComparison.OrdinalIgnoreCase)) {
             Log.Warning("RecordVisit supplier passcode mismatch for supplier id {SupplierId}.", payload.SelectedSupplierId);
-            return BadRequestError("Invalid business code provided.");
+            return BadRequestError("Invalid business code provided. Please try again or contact Support.");
         }
 
         var visit = await context.Visits
@@ -357,7 +357,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
         if (visit == null) {
             Log.Warning("RecordVisit could not find visit for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
-            return BadRequestError("Visit not found for this booking and business.");
+            return BadRequestError("Visit not found for this booking and business. Please contact Support.");
         }
 
         try {
