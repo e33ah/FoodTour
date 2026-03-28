@@ -38,9 +38,7 @@
 						  data-selected-suppliers='@Html.Raw(JsonSerializer.Serialize(ViewBag.SelectedSuppliers ?? new List<int>()))'
 						  data-focus-purchase-code='@JsonSerializer.Serialize((bool?)ViewBag.FocusPurchaseCode == true)'>
 						<h2 class="lead mb-3 fs-3">Select @Model.MaxSelections tasting experiences to create your personalised food tasting tour</h2>
-						<p class="mb-1">
-							All samples are served with a glass of wine, soft drink, tea or coffee.
-						</p>
+
 						<p class="mb-4">
 							Some venues are designed for quick visits and may not include seating.
 						</p>
@@ -48,11 +46,11 @@
 						<div class="card mb-4">
 							<div class="card-body">
 								<h3 class="card-title mb-3">
-									<i class="bi bi-calendar-event"></i> Select Your Tour Date
+									<i class="bi bi-calendar-event text-primary"></i> Select Your Tour Date
 								</h3>
 								<div class="form-group">
 									<small class="form-text text-muted mb-2 mt-2 d-block">
-										Tours are available Monday to Saturday from March to October
+										Tours are available daily from April to November
 									</small>
 									<label asp-for="TourDate" class="form-label visually-hidden">Tour Date</label>
 									<div class="d-flex justify-content-center">
@@ -68,7 +66,7 @@
 						<div class="card mb-4 mt-4">
 							<div class="card-body">
 								<h3 class="card-title">
-									<i class="bi bi-send"></i> Email
+									<i class="bi bi-send text-primary"></i> Email
 								</h3>
 								<small class="form-text text-muted mb-2 mt-2 d-block">
 									Please provide your email address to receive your tour details.
@@ -91,7 +89,7 @@
 						<div class="card mb-4 mt-4">
 							<div class="card-body">
 								<h3 class="card-title">
-									<i class="bi bi-key"></i> Purchase Code
+									<i class="bi bi-key text-primary"></i> Purchase Code
 								</h3>
 								<small class="form-text text-muted mb-2 mt-2 d-block">
 									Please enter the purchase code you received after payment.

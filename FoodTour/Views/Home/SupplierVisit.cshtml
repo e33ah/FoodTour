@@ -3,37 +3,47 @@
 @{
 	ViewData["Title"] = "Food Tour Visit";
 }
-<div class="container text-center mt-5">
-	<img src="~/images/logo_with_wording.jpg" alt="Kabincraft Food Tours Logo" class="img-fluid mb-3" style="max-height: 100px;" />
 
-	<h1>Food Tour Visit</h1>
-	<p>Thank you for participating in Weymouth FoodTour!</p>
-	<div>
-		<form id="supplierVisitForm" asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
-			@Html.AntiForgeryToken()
-			<div class="mb-3 col-12 col-md-8 col-lg-4 py-1">
-				<label asp-for="SelectedSupplierId" class="form-label">Select your business to confirm your customer visit:</label>
-				<span asp-validation-for="SelectedSupplierId" class="text-danger"></span>
-				<select asp-for="SelectedSupplierId" class="form-select">
-					<option value="">-- Select business --</option>
-					@if (Model?.Suppliers != null) {
-						foreach (var supplier in Model.Suppliers) {
-							<option value="@supplier.Id">@supplier.Name</option>
-						}
-					}
-				</select>
-				<label for="supplierCode" class="form-label mt-3">Enter your Code:</label>
-				<input id="supplierCode" name="supplierCode" type="text" class="form-control" autocomplete="off" />
-				<button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
+<img src="~/images/logo_with_wording.jpg" alt="Kabincraft Food Tours Logo" class="img-fluid mb-3 mx-auto d-block" style="max-height: 100px;" />
+<div class="container mt-5">
+	<div class="row justify-content-center text-center">
+		<div class="col-12 col-md-8 col-lg-6">
+			<div class="card shadow-sm">
+				<div class="card-body p-4 p-md-5">
+					<h1 class="card-title mb-4">
+						<i class="bi bi-fork-knife text-primary"></i> Food Tour Visit
+					</h1>
+					<p class="text-muted">Thank you for participating in Weymouth FoodTour!</p>
+					<div>
+						<form id="supplierVisitForm" asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
+							@Html.AntiForgeryToken()
+							<div class="col-12 col-md-10 col-lg-8 py-1">
+								<label asp-for="SelectedSupplierId" class="form-label">Select your business to confirm customer visit:</label>
+								<span asp-validation-for="SelectedSupplierId" class="text-danger"></span>
+								<select asp-for="SelectedSupplierId" class="form-select">
+									<option value="">-- Select business --</option>
+									@if (Model?.Suppliers != null) {
+										foreach (var supplier in Model.Suppliers) {
+											<option value="@supplier.Id">@supplier.Name</option>
+										}
+									}
+								</select>
+								<label for="supplierCode" class="form-label mt-3">Enter your Code:</label>
+								<input id="supplierCode" name="supplierCode" type="text" class="form-control" autocomplete="off" />
+								<button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
+							</div>
+							<div id="supplierErrorRegion" class="text-danger d-none"></div>
+						</form>
+					</div>
+				</div>
 			</div>
-			<div id="supplierErrorRegion" class="text-danger d-none"></div>
-		</form>
+		</div>
+		<p class="text-muted mt-4">
+			Need help? Visit our
+			<a asp-controller="Home" asp-action="UserSupport">Support</a>
+			page.
+		</p>
 	</div>
-	<p class="text-muted mt-4">
-		Need help? Visit our
-		<a asp-controller="Home" asp-action="UserSupport">Support</a>
-		page.
-	</p>
 </div>
 
 @section Scripts {
