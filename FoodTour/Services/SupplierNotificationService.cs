@@ -6,6 +6,7 @@ public class SupplierNotificationService(IEmailSender emailSender) {
 
     public async Task NotifyVisitRecordedAsync(Booking booking, Supplier supplier, Visit visit, string supportUrl) {
         if (!supplier.EmailNotificationsEnabled) {
+            Log.Information("Visit ID {VisitId}: Supplier {SupplierName} opted out of notifications. Email not sent", visit.Id, supplier.Name);
             return;
         }
 

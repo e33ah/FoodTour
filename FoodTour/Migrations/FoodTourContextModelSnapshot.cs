@@ -43,6 +43,9 @@ namespace FoodTour.Migrations
                     b.Property<bool>("IsCancelled")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsConfirmed")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PurchaseCode")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -53,6 +56,9 @@ namespace FoodTour.Migrations
                     b.PrimitiveCollection<string>("SelectedSupplierIds")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalGuests")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("TourDate")
                         .HasColumnType("datetime2");

@@ -13,6 +13,8 @@ public class BookingTests {
         sut.CustomerEmail.ShouldBe(string.Empty);
         sut.PurchaseCode.ShouldBe(string.Empty);
         sut.QrToken.ShouldNotBe(Guid.Empty);
+        sut.IsConfirmed.ShouldBeFalse();
+        sut.TotalGuests.ShouldBe(0);
     }
 
     [Fact]

@@ -2,60 +2,103 @@ namespace FoodTour.Test.Controllers;
 
 public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
     [Fact]
-    public async Task BookingSummary_PopulatesSelectedSuppliers_WhenIdsProvided() {
+    public async Task BookingSummary_ReturnsView_WhenValidBookingExists() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(3);
+        var booking = new Booking {
+            QrToken = Guid.NewGuid(),
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            PurchaseCode = TestHelper.VALID_CODE,
+            SelectedSupplierIds = [1, 3],
+            IsConfirmed = false
+        };
+        await context.Bookings.AddAsync(booking);
+        await context.SaveChangesAsync();
         var sut = CreateConfiguredController(context);
 
-        var bookingSummary = new BookingSummaryVM { SelectedSupplierIds = [1, 3] };
-
-        var result = await sut.BookingSummary(bookingSummary);
+        var result = await sut.BookingSummary(booking.QrToken);
 
         var view = result.ShouldBeOfType<ViewResult>();
         var model = view.Model.ShouldBeOfType<BookingSummaryVM>();
         model.SelectedSuppliers.Count.ShouldBe(2);
         model.SelectedSuppliers.Select(s => s.Id).ShouldBe([1, 3]);
+        model.QrToken.ShouldBe(booking.QrToken);
     }
 
     [Fact]
-    public void ConfirmBookingSummary_RedirectsToIndex_WhenModelNull() {
+    public async Task BookingSummary_RedirectsToIndex_WhenEmptyToken() {
         var sut = CreateController();
 
-        var result = sut.ConfirmBookingSummary(null!);
+        var result = await sut.BookingSummary(Guid.Empty);
 
         var redirect = result.ShouldBeOfType<RedirectToActionResult>();
         redirect.ActionName.ShouldBe(nameof(HomeController.Index));
     }
 
     [Fact]
-    public void ConfirmBookingSummary_ReturnsView_WhenModelStateInvalid() {
+    public async Task ConfirmBookingSummary_RedirectsToIndex_WhenEmptyToken() {
         var sut = CreateController();
-        sut.ModelState.AddModelError("Test", "Invalid");
 
-        var bookingSummary = TestHelper.CreateValidBookingSummaryVM([1, 2]);
+        var result = await sut.ConfirmBookingSummary(Guid.Empty);
 
-        var result = sut.ConfirmBookingSummary(bookingSummary);
-
-        var view = result.ShouldBeOfType<ViewResult>();
-        view.ViewName.ShouldBe("BookingSummary");
+        var redirect = result.ShouldBeOfType<RedirectToActionResult>();
+        redirect.ActionName.ShouldBe(nameof(HomeController.Index));
     }
 
     [Fact]
-    public void ConfirmBookingSummary_SetsTempDataAndRedirects_WhenModelValid() {
-        var sut = CreateController();
+    public async Task ConfirmBookingSummary_UpdatesIsConfirmedAndRedirects_WhenValidBooking() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(3);
+        var booking = new Booking {
+            QrToken = Guid.NewGuid(),
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            PurchaseCode = TestHelper.VALID_CODE,
+            SelectedSupplierIds = [1, 2, 3],
+            IsConfirmed = false
+        };
+        await context.Bookings.AddAsync(booking);
+        await context.SaveChangesAsync();
+        var sut = CreateConfiguredControllerWithUrl(context, "BookingConfirmation");
 
-        var bookingSummary = TestHelper.CreateValidBookingSummaryVM([1]);
-
-        var result = sut.ConfirmBookingSummary(bookingSummary);
+        var result = await sut.ConfirmBookingSummary(booking.QrToken);
 
         var redirect = result.ShouldBeOfType<RedirectToActionResult>();
         redirect.ActionName.ShouldBe(nameof(HomeController.BookingConfirmation));
 
-        sut.TempData.ContainsKey("Confirmation").ShouldBeTrue();
-        string? json = sut.TempData["Confirmation"] as string;
-        json.ShouldNotBeNull();
+        // Verify booking was updated
+        var updatedBooking = await context.Bookings.FirstOrDefaultAsync(b => b.Id == booking.Id);
+        updatedBooking.ShouldNotBeNull();
+        updatedBooking.IsConfirmed.ShouldBeTrue();
+    }
 
-        var confirmation = JsonSerializer.Deserialize<BookingConfirmationVM>(json!);
-        confirmation!.CustomerEmail.ShouldBe(bookingSummary.CustomerEmail);
-        confirmation.TourDate.ShouldBe(bookingSummary.TourDate);
+    [Fact]
+    public async Task CreateBookingSummaryErrorViewAsync_AddsErrorToModelState_WhenCalled() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(3);
+        var booking = new Booking {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            PurchaseCode = TestHelper.VALID_CODE,
+            SelectedSupplierIds = [1, 2],
+            QrToken = Guid.NewGuid()
+        };
+        await context.Bookings.AddAsync(booking);
+        await context.SaveChangesAsync();
+        var controller = CreateConfiguredController(context);
+
+        // Use reflection to call the private method for testing
+        var method = typeof(HomeController).GetMethod("CreateBookingSummaryErrorViewAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+        method.ShouldNotBeNull("Method should exist");
+        object? invokeResult = method.Invoke(controller, [booking, "Test error message"]);
+        invokeResult.ShouldNotBeNull("Method should return a result");
+        var result = await (Task<IActionResult>)invokeResult;
+
+        var view = result.ShouldBeOfType<ViewResult>();
+        view.ViewName.ShouldBe("BookingSummary");
+        var model = view.Model.ShouldBeOfType<BookingSummaryVM>();
+        model.QrToken.ShouldBe(booking.QrToken);
+
+        controller.ModelState.IsValid.ShouldBeFalse();
+        controller.ModelState[string.Empty]!.Errors.ShouldHaveSingleItem();
+        controller.ModelState[string.Empty]!.Errors[0].ErrorMessage.ShouldBe("Test error message");
     }
 }

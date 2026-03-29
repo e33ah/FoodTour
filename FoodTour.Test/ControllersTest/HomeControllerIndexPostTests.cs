@@ -110,7 +110,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
     }
 
     [Theory]
-    [InlineData(3, 15)]
+    [InlineData(4, 15)]
     [InlineData(6, 20)]
     [InlineData(10, 30)]
     public async Task IndexPost_AcceptsValidDatesWithinSeason(int month, int day) {
@@ -227,9 +227,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         var emailSender = Mock.Of<IEmailSender>();
         var bookingEmailService = new BookingEmailService();
         var supportOptions = TestHelper.CreateSupportOptions();
-        var adminNotificationService = new AdminNotificationService(emailSender, TestHelper.CreateAdminNotificationOptions());
-        var supplierNotificationService = new SupplierNotificationService(emailSender);
-        return new HomeController(context, emailSender, bookingEmailService, adminNotificationService, supplierNotificationService, supportOptions);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions);
     }
 
     private static async Task<IActionResult> PostIndex(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {

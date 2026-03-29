@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAX_SELECTIONS = parseInt(document.querySelector('[data-max-selections]')?.dataset.maxSelections || '0');
     const DATE_FORMAT = 'Y-m-d';
     const ALT_DATE_FORMAT = 'd/m/Y';
-    const TOUR_MONTH_START = 3; // March
+    const TOUR_MONTH_START = 4; // April
     const TOUR_MONTH_END = 10; // October
     const SUNDAY = 0;
     const ERROR_TIMEOUT_MS = 5000;
@@ -26,9 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const getTourDateRange = () => {
         const now = new Date();
         const currentYear = now.getFullYear();
-        const marchFirst = new Date(currentYear, TOUR_MONTH_START - 1, 1);
+        const aprilFirst = new Date(currentYear, TOUR_MONTH_START - 1, 1);
         const octoberLast = new Date(currentYear, TOUR_MONTH_END - 1, 31);
-        let minDate = getTomorrow() > marchFirst ? getTomorrow() : marchFirst;
+        let minDate = getTomorrow() > aprilFirst ? getTomorrow() : aprilFirst;
         let maxDate = octoberLast;
         if (now > octoberLast) {
             const nextYear = currentYear + 1;
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (date.getDay() === SUNDAY) {
             showDateError('Tours are not available on Sundays. Please select a different date.');
         } else if (date.getMonth() + 1 < TOUR_MONTH_START || date.getMonth() + 1 > TOUR_MONTH_END) {
-            showDateError('Tours are only available from March to October. Please select a date within this period.');
+            showDateError('Tours are only available from April to October. Please select a date within this period.');
         } else {
             clearDateError();
         }

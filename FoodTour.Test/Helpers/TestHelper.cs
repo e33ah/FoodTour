@@ -101,7 +101,8 @@ public static class TestHelper {
             CustomerEmail = VALID_EMAIL,
             PurchaseCode = VALID_CODE,
             SelectedSupplierIds = selectedSupplierIds,
-            SelectedSuppliers = [.. selectedSupplierIds.Select(id => CreateSupplier(id, $"Supplier {id}"))]
+            SelectedSuppliers = [.. selectedSupplierIds.Select(id => CreateSupplier(id, $"Supplier {id}"))],
+            QrToken = Guid.NewGuid()
         };
     }
 
@@ -148,5 +149,26 @@ public static class TestHelper {
             SupplierId = supplierId,
             ClaimedAt = validTourDate
         };
+    }
+
+    public static VisitsController CreateVisitsController(FoodTourContext context) {
+        var emailSenderMock = new Mock<IEmailSender>();
+        var adminNotificationService = new AdminNotificationService(emailSenderMock.Object, CreateAdminNotificationOptions());
+        var supplierNotificationService = new SupplierNotificationService(emailSenderMock.Object);
+
+        return new VisitsController(context, adminNotificationService, supplierNotificationService);
+    }
+
+    public static Booking CreateBookingWithVisits(FoodTourContext context, int supplierId) {
+        var booking = CreateValidBooking([supplierId]);
+        context.Bookings.Add(booking);
+        context.SaveChanges();
+
+        // Now add the visit with the correct BookingId
+        var visit = new Visit { BookingId = booking.Id, SupplierId = supplierId, IsClaimed = false };
+        context.Visits.Add(visit);
+        context.SaveChanges();
+
+        return booking;
     }
 }

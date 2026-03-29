@@ -1,8 +1,7 @@
 namespace FoodTour.Controllers;
 
-public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, AdminNotificationService adminNotificationService, SupplierNotificationService supplierNotificationService, IOptions<SupportSettings> supportOptions) : Controller {
+public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
-    private const string EMAIL_SEND_FAILED_MESSAGE = "Your booking was saved, but we were unable to send a confirmation email. Please save the link below with your tour details and contact support for assistance.";
     private readonly QrImageService qrImageService = new();
     private readonly SupportSettings supportSettings = supportOptions.Value;
 
@@ -22,192 +21,41 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string customerEmailConfirmation, string purchaseCode) {
-        if (!tourDate.HasValue) {
-            ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Please select a date for your tour.");
-        } else if (!IsValidTourDate(tourDate.Value)) {
-            ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Tours are only available Monday to Saturday between March and October, and only for future dates.");
-        }
-
-        if (string.IsNullOrWhiteSpace(customerEmail)) {
-            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter your email address.");
-        } else if (!new EmailAddressAttribute().IsValid(customerEmail)) {
-            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter a valid email address.");
-        }
-
-        if (string.IsNullOrWhiteSpace(customerEmailConfirmation)) {
-            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "Please confirm your email address.");
-        } else if (!new EmailAddressAttribute().IsValid(customerEmailConfirmation)) {
-            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "Please enter a valid email address.");
-        } else if (!string.Equals(customerEmail, customerEmailConfirmation, StringComparison.Ordinal)) {
-            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "The email addresses do not match.");
-        }
-
-        if (string.IsNullOrWhiteSpace(purchaseCode)) {
-            ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter your purchase code.");
-        } else {
-            bool purchaseCodeExists = await context.PurchaseCodes
-                .AnyAsync(pc => pc.Code == purchaseCode && pc.IsActive);
-            if (!purchaseCodeExists) {
-                ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter a valid purchase code.");
-                Log.Information("Purchase code validation failed: code '{PurchaseCode}' does not exist or is inactive.", purchaseCode);
-            }
-        }
-
-        if (selectedSuppliers.Count != MAX_SUPPLIER_SELECTIONS) {
-            ModelState.AddModelError(string.Empty, $"You must select {MAX_SUPPLIER_SELECTIONS} tasting experiences for your tour.");
-        }
+        await ValidateBookingRequestAsync(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
 
         if (!ModelState.IsValid) {
-            var model = await CreateFoodTourViewModel();
-            model.TourDate = tourDate;
-            model.CustomerEmail = customerEmail;
-            model.CustomerEmailConfirmation = customerEmailConfirmation;
-            model.PurchaseCode = purchaseCode;
-
-            ViewBag.SelectedSuppliers = selectedSuppliers;
-
-            if (ModelState.ContainsKey(nameof(FoodTourVM.PurchaseCode)) && ModelState[nameof(FoodTourVM.PurchaseCode)]?.Errors.Count > 0) {
-                ViewBag.FocusPurchaseCode = true;
-            }
-            return View(model);
+            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
         }
-        var bookingSummaryModel = new BookingSummaryVM {
+
+        // Validate that all supplier IDs exist in the database before creating booking
+        var existingSupplierIds = await context.Suppliers
+            .Where(s => selectedSuppliers.Contains(s.Id) && s.IsActive)
+            .Select(s => s.Id)
+            .ToListAsync();
+
+        if (existingSupplierIds.Count != selectedSuppliers.Count) {
+            Log.Warning("One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", selectedSuppliers, existingSupplierIds);
+            ModelState.AddModelError(string.Empty, "One or more selected suppliers are invalid. Please refresh and try again.");
+            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
+        }
+
+        // Create and save the booking to database
+        var booking = new Booking {
             TourDate = tourDate!.Value,
             CustomerEmail = customerEmail,
             PurchaseCode = purchaseCode,
             SelectedSupplierIds = selectedSuppliers,
-            SelectedSuppliers = await context.Suppliers.Where(s => selectedSuppliers.Contains(s.Id)).ToListAsync()
-        };
-        Log.Information("User submitted tour request for date {TourDate:dd/MM/yyyy} with {SelectedCount} suppliers.", bookingSummaryModel.TourDate, selectedSuppliers.Count);
-        return RedirectToAction("BookingSummary", bookingSummaryModel);
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> BookingSummary(BookingSummaryVM bookingSummary) {
-        Log.Debug("Loading booking summary page.");
-        if (bookingSummary == null) {
-            return RedirectToAction("Index");
-        }
-
-        bookingSummary.SelectedSupplierIds ??= [];
-
-        if (bookingSummary.SelectedSuppliers == null || bookingSummary.SelectedSuppliers.Count == 0) {
-            if (bookingSummary.SelectedSupplierIds.Count > 0) {
-                bookingSummary.SelectedSuppliers = await context.Suppliers
-                    .Where(s => bookingSummary.SelectedSupplierIds.Contains(s.Id))
-                    .ToListAsync();
-            } else {
-                bookingSummary.SelectedSuppliers = [];
-            }
-        }
-
-        return View(bookingSummary);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult ConfirmBookingSummary(BookingSummaryVM bookingSummary) {
-        if (bookingSummary == null) {
-            Log.Warning("ConfirmBookingSummary called with null model.");
-            return RedirectToAction("Index");
-        }
-
-        if (!ModelState.IsValid) {
-            return View("BookingSummary", bookingSummary);
-        }
-
-        var confirmationModel = new BookingConfirmationVM {
-            TourDate = bookingSummary.TourDate,
-            CustomerEmail = bookingSummary.CustomerEmail,
-            PurchaseCode = bookingSummary.PurchaseCode,
-            SelectedSupplierIds = bookingSummary.SelectedSupplierIds
+            CreatedAt = DateTime.UtcNow,
+            IsConfirmed = false
         };
 
-        TempData["Confirmation"] = JsonSerializer.Serialize(confirmationModel);
-
-        Log.Information("User confirmed booking for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", bookingSummary.CustomerEmail, bookingSummary.TourDate);
-
-        return RedirectToAction("BookingConfirmation");
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> BookingConfirmation() {
-        object? bookingIdObj = TempData.Peek("BookingId"); // Peek to retain TempData for subsequent requests
-        if (bookingIdObj == null) {
-            return RedirectToAction("Error");
-        }
-
-        int bookingId;
-        if (bookingIdObj is int bookingIdInt) {
-            bookingId = bookingIdInt;
-        } else if (bookingIdObj is string s && int.TryParse(s, out int parsedId)) {
-            bookingId = parsedId;
-
-        } else {
-            Log.Warning("Confirmation action received unexpected BookingId type: {Type}.", bookingIdObj.GetType().FullName);
-            return RedirectToAction("Error");
-        }
-
-        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.Id == bookingId);
-        if (booking == null) {
-            Log.Warning("Confirmation action could not find booking with id {BookingId}.", bookingId);
-            return RedirectToAction("Error");
-        }
-
-        var model = new BookingConfirmationVM() {
-            TourDate = booking.TourDate,
-            CustomerEmail = booking.CustomerEmail,
-            PurchaseCode = booking.PurchaseCode,
-            SelectedSupplierIds = booking.SelectedSupplierIds,
-            BookingId = booking.Id,
-            QrToken = booking.QrToken
-        };
-
-        return View(model);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SaveConfirmedBooking([FromBody] BookingConfirmationVM? confirmation = null) {
-        if (confirmation == null) {
-            Log.Warning("SaveConfirmedBooking called with null or invalid request body.");
-            return BadRequest("Invalid request.");
-        }
-
-        var selectedSupplierIds = confirmation.SelectedSupplierIds;
-        int actualSupplierSelectionCount = selectedSupplierIds?.Count ?? 0;
-        if (selectedSupplierIds == null || actualSupplierSelectionCount != MAX_SUPPLIER_SELECTIONS) {
-            Log.Warning("Invalid supplier selection in confirmation data: {ActualCount}, expected: {ExpectedCount}", actualSupplierSelectionCount, MAX_SUPPLIER_SELECTIONS);
-            string result = $"Invalid supplier selection. Expected {MAX_SUPPLIER_SELECTIONS} supplier selections, but received {actualSupplierSelectionCount}.";
-            return BadRequest(result);
-        }
-
-        // Validate that all supplier IDs exist in the database before creating BookingSupplier records
-        var existingSupplierIds = await context.Suppliers
-            .Where(s => selectedSupplierIds.Contains(s.Id) && s.IsActive)
-            .Select(s => s.Id)
-            .ToListAsync();
-
-        if (existingSupplierIds.Count != selectedSupplierIds.Count) {
-            Log.Warning("One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", selectedSupplierIds, existingSupplierIds);
-            return BadRequest("One or more selected suppliers are invalid.");
-        }
-
-        var booking = new Booking {
-            TourDate = confirmation.TourDate,
-            CustomerEmail = confirmation.CustomerEmail,
-            PurchaseCode = confirmation.PurchaseCode,
-            SelectedSupplierIds = selectedSupplierIds,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        booking.BookingSuppliers = [.. selectedSupplierIds.Select(id =>
+        booking.BookingSuppliers = [.. selectedSuppliers.Select(id =>
             new BookingSupplier {
                 Booking = booking,
                 SupplierId = id
             })];
 
-        var visits = selectedSupplierIds.Select(id =>
+        var visits = selectedSuppliers.Select(id =>
             new Visit {
                 Booking = booking,
                 SupplierId = id,
@@ -219,27 +67,115 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             await context.Visits.AddRangeAsync(visits);
             await context.SaveChangesAsync();
 
-            Log.Information("Saved booking id {BookingId} for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", booking.Id, booking.CustomerEmail, booking.TourDate);
-
+            Log.Information("Booking {BookingId}: Saved for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", booking.Id, booking.CustomerEmail, booking.TourDate);
         } catch (Exception ex) {
-            const string BOOKING_SAVE_ERROR_MESSAGE = "Unable to save your booking due to a system error. Please try again or contact support if the problem persists.";
-            Log.Error(ex, "Failed to save booking to database.");
-
-            return StatusCode(500, new { success = false, nextAction = "BookingSummary", message = BOOKING_SAVE_ERROR_MESSAGE });
+            Log.Error(ex, "Booking {BookingId}: Failed to save to database.", booking.Id);
+            string supportLink = GenerateUrl("UserSupport");
+            ModelState.AddModelError(string.Empty, $"Unable to save your booking due to a system error. Please try again or <a href='{supportLink}'>contact support</a> if the problem persists.");
+            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
         }
 
-        TempData["BookingId"] = booking.Id;
+        return RedirectToAction("BookingSummary", new { qrToken = booking.QrToken });
+    }
 
-        string? emailWarningMessage = null;
+    [HttpGet]
+    public async Task<IActionResult> BookingSummary(Guid qrToken) {
+        Log.Debug("Loading booking summary page.");
+        if (qrToken == Guid.Empty) {
+            Log.Warning("BookingSummary called with empty QrToken.");
+            return RedirectToAction("Index");
+        }
 
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        if (booking == null) {
+            Log.Warning("BookingSummary could not find booking with token {QrToken}.", qrToken);
+            return RedirectToAction("Index");
+        }
+
+        var selectedSuppliers = await context.Suppliers
+            .Where(s => booking.SelectedSupplierIds.Contains(s.Id))
+            .ToListAsync();
+
+        var bookingSummary = new BookingSummaryVM {
+            TourDate = booking.TourDate,
+            CustomerEmail = booking.CustomerEmail,
+            PurchaseCode = booking.PurchaseCode,
+            SelectedSupplierIds = booking.SelectedSupplierIds,
+            SelectedSuppliers = selectedSuppliers,
+            QrToken = booking.QrToken
+        };
+
+        return View(bookingSummary);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmBookingSummary(Guid qrToken) {
+        if (qrToken == Guid.Empty) {
+            Log.Warning("ConfirmBookingSummary called with empty QrToken.");
+            return RedirectToAction("Index");
+        }
+
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        if (booking == null) {
+            Log.Warning("ConfirmBookingSummary could not find booking with token {QrToken}.", qrToken);
+            return RedirectToAction("Index");
+        }
+
+        if (booking.IsConfirmed) {
+            Log.Information("Booking {BookingId}: Already confirmed, redirecting to confirmation page.", booking.Id);
+            return RedirectToAction("BookingConfirmation", new { qrToken });
+        }
+
+        try {
+            booking.IsConfirmed = true;
+            await context.SaveChangesAsync();
+
+            Log.Information("Booking {BookingId}: Confirmed for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", booking.Id, booking.CustomerEmail, booking.TourDate);
+        } catch (Exception ex) {
+            Log.Error(ex, "Booking {BookingId}: Failed to mark as confirmed.", booking.Id);
+            string supportLink = GenerateUrl("UserSupport");
+            return await CreateBookingSummaryErrorViewAsync(booking, $"Unable to confirm your booking due to a system error. Please try again or <a href='{supportLink}'>contact support</a> if the problem persists.");
+        }
+
+        // Non-critical operation: Send confirmation email
+        bool emailFailed = false;
         try {
             await SendBookingConfirmationEmailAsync(booking);
         } catch (Exception emailEx) {
-            Log.Error(emailEx, "Booking saved but failed to send confirmation email to {CustomerEmail}.", booking.CustomerEmail);
-            emailWarningMessage = EMAIL_SEND_FAILED_MESSAGE;
+            Log.Error(emailEx, "Booking {BookingId}: confirmed but failed to send confirmation email to {CustomerEmail}.", booking.Id, booking.CustomerEmail);
+            emailFailed = true;
         }
 
-        return Ok(new { success = true, nextAction = "Confirmation", warningMessage = emailWarningMessage });
+        return RedirectToAction("BookingConfirmation", new { qrToken, emailWarning = emailFailed });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> BookingConfirmation(Guid qrToken, bool emailWarning = false) {
+        if (qrToken == Guid.Empty) {
+            Log.Warning("BookingConfirmation called with empty QrToken.");
+            return RedirectToAction("Error");
+        }
+
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        if (booking == null) {
+            Log.Warning("BookingConfirmation could not find booking with token {QrToken}.", qrToken);
+            return RedirectToAction("Error");
+        }
+
+        string? emailWarningMessage = null;
+        if (emailWarning) {
+            string supportUrl = GenerateUrl("UserSupport");
+            emailWarningMessage = $"Your booking was saved, but we were unable to send a confirmation email. Please save the link below with your tour details and <a href='{supportUrl}'>contact support</a> for assistance.";
+        }
+
+        var model = new BookingConfirmationVM() {
+            CustomerEmail = booking.CustomerEmail,
+            QrToken = booking.QrToken,
+            EmailWarning = emailWarningMessage
+        };
+
+        return View(model);
     }
 
     [HttpGet]
@@ -255,7 +191,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             .FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
 
         if (booking == null || booking.BookingSuppliers == null) {
-            Log.Warning("Booking or BookingSuppliers is null for token {QrToken}.", qrToken);
+            Log.Error("Booking or BookingSuppliers is null for token {QrToken}.", qrToken);
             return RedirectToAction("Error");
         }
 
@@ -269,11 +205,10 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             .Select(bs => bs.Supplier)
             .ToList();
 
-        Log.Debug("Found {ClaimedCount} claimed suppliers and {UnclaimedCount} unclaimed suppliers for bookingId {BookingId}.",
-            claimedSupplierIds.Count, unclaimedSuppliers.Count, booking.Id);
+        Log.Debug("Booking {BookingId}: Found {ClaimedCount} claimed suppliers and {UnclaimedCount} unclaimed suppliers.", booking.Id, claimedSupplierIds.Count, unclaimedSuppliers.Count);
 
         if (unclaimedSuppliers.Count == 0) {
-            Log.Information("All suppliers already visited for booking {BookingId}. Redirecting to tour completed.", booking.Id);
+            Log.Information("Booking {BookingId}: All suppliers already visited, redirecting to tour completed.", booking.Id);
             return RedirectToAction("TourCompleted");
         }
 
@@ -312,94 +247,6 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return View(model);
     }
 
-    public record RecordVisitDTO(Guid QrToken, int SelectedSupplierId, string SupplierCode);
-
-    private static bool TryValidateRecordVisitPayload(RecordVisitDTO? payload, out string errorMessage) {
-        if (payload == null || payload.SelectedSupplierId <= 0 || payload.QrToken == Guid.Empty || string.IsNullOrEmpty(payload.SupplierCode)) {
-            errorMessage = "Invalid booking or business information.";
-            return false;
-        }
-
-        errorMessage = string.Empty;
-        return true;
-    }
-
-    [HttpPut]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDTO? payload) {
-        IActionResult BadRequestError(string message) {
-            return BadRequest(new { error = message });
-        }
-
-        if (!TryValidateRecordVisitPayload(payload, out string errorMessage)) {
-            Log.Warning("RecordVisit called with invalid parameters.");
-            return BadRequestError(errorMessage);
-        }
-
-        var booking = await context.Bookings.SingleOrDefaultAsync(b => b.QrToken == payload!.QrToken && !b.IsCancelled);
-        if (booking == null) {
-            Log.Warning("RecordVisit could not find active booking with QrToken: {QrToken}.", payload!.QrToken);
-            return BadRequestError("Booking not found. Please contact Support.");
-        }
-
-        var supplier = await context.Suppliers.SingleOrDefaultAsync(s => s.Id == payload!.SelectedSupplierId && s.IsActive);
-        if (supplier == null) {
-            Log.Warning("RecordVisit could not find active supplier with id {SupplierId}.", payload!.SelectedSupplierId);
-            return BadRequestError("Business not found in Food Tour. Please contact Support.");
-        }
-        if (!string.Equals(supplier.ConfirmationCode, payload!.SupplierCode, StringComparison.OrdinalIgnoreCase)) {
-            Log.Warning("RecordVisit supplier passcode mismatch for supplier id {SupplierId}.", payload.SelectedSupplierId);
-            return BadRequestError("Invalid business code provided. Please try again or contact Support.");
-        }
-
-        var visit = await context.Visits
-            .SingleOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == payload.SelectedSupplierId);
-
-        if (visit == null) {
-            Log.Warning("RecordVisit could not find visit for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
-            return BadRequestError("Visit not found for this booking and business. Please contact Support.");
-        }
-
-        try {
-            int rows = await context.Visits
-                .Where(v => v.Id == visit.Id && !v.IsClaimed)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(v => v.IsClaimed, true)
-                    .SetProperty(v => v.ClaimedAt, v => DateTime.UtcNow));
-            if (rows == 0) {
-                Log.Warning("RecordVisit called for already claimed visit: booking id {BookingId}, supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
-                return BadRequestError("This visit has already been confirmed.");
-            }
-
-            Log.Information("Visit recorded for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
-
-            await context.Entry(visit).ReloadAsync();
-            await TrySendVisitRecordedNotificationsAsync(booking, supplier, visit);
-
-            return Ok(new { success = true });
-        } catch (Exception ex) {
-            Log.Error(ex, "Failed to save visit record for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, payload.SelectedSupplierId);
-            return StatusCode(500, new { error = "Unable to record visit due to a system error." });
-        }
-    }
-
-    private async Task TrySendVisitRecordedNotificationsAsync(Booking booking, Supplier supplier, Visit visit) {
-        try {
-            await adminNotificationService.NotifyVisitRecordedAsync(booking, supplier, visit);
-            Log.Information("Admin notification email sent for visit ID {VisitId}", visit.Id);
-        } catch (Exception emailEx) {
-            Log.Error(emailEx, "Visit recorded but failed to notify admin. VisitId {VisitId}, BookingId {BookingId}, SupplierId {SupplierId}.", visit.Id, booking.Id, supplier.Id);
-        }
-
-        try {
-            string supportUrl = GenerateUrl("UserSupport");
-            await supplierNotificationService.NotifyVisitRecordedAsync(booking, supplier, visit, supportUrl);
-            Log.Information("Supplier notification email sent for visit ID {VisitId}", visit.Id);
-        } catch (Exception emailEx) {
-            Log.Error(emailEx, "Visit recorded but failed to notify supplier. VisitId {VisitId}, BookingId {BookingId}, SupplierId {SupplierId}.", visit.Id, booking.Id, supplier.Id);
-        }
-    }
-
     [HttpGet("[controller]/qr")]
     public async Task<IActionResult> QrImage(Guid qrToken) {
         if (qrToken == Guid.Empty) {
@@ -435,17 +282,6 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return View();
     }
 
-    [HttpGet]
-    public IActionResult UserSupport() {
-        var result = new UserSupportVM {
-            SupportPhoneNumberDial = supportSettings.PhoneNumberDial,
-            SupportPhoneNumberDisplay = supportSettings.PhoneNumberDisplay,
-            SupportEmailAddress = supportSettings.EmailAddress
-        };
-
-        return View(result);
-    }
-
     public IActionResult Privacy() {
         return View();
     }
@@ -453,6 +289,16 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error() {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    [HttpGet]
+    public IActionResult UserSupport() {
+        var result = new UserSupportVM {
+            SupportPhoneNumberDial = supportSettings.PhoneNumberDial,
+            SupportPhoneNumberDisplay = supportSettings.PhoneNumberDisplay,
+            SupportEmailAddress = supportSettings.EmailAddress
+        };
+        return View(result);
     }
 
     private async Task<FoodTourVM> CreateFoodTourViewModel() {
@@ -470,6 +316,90 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         };
     }
 
+    private async Task<IActionResult> CreateBookingSummaryErrorViewAsync(Booking booking, string errorMessage) {
+        var selectedSuppliers = await context.Suppliers
+            .Where(s => booking.SelectedSupplierIds.Contains(s.Id))
+            .ToListAsync();
+
+        var bookingSummary = new BookingSummaryVM {
+            TourDate = booking.TourDate,
+            CustomerEmail = booking.CustomerEmail,
+            PurchaseCode = booking.PurchaseCode,
+            SelectedSupplierIds = booking.SelectedSupplierIds,
+            SelectedSuppliers = selectedSuppliers,
+            QrToken = booking.QrToken
+        };
+
+        ModelState.AddModelError(string.Empty, errorMessage);
+        return View("BookingSummary", bookingSummary);
+    }
+
+    private async Task ValidateBookingRequestAsync(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string customerEmailConfirmation, string purchaseCode) {
+        ValidateTourDate(tourDate);
+        ValidateCustomerEmail(customerEmail, customerEmailConfirmation);
+        await ValidatePurchaseCodeAsync(purchaseCode);
+        ValidateSupplierSelections(selectedSuppliers);
+    }
+
+    private void ValidateTourDate(DateTime? tourDate) {
+        if (!tourDate.HasValue) {
+            ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Please select a date for your tour.");
+        } else if (!IsValidTourDate(tourDate.Value)) {
+            ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Tours are only available Monday to Saturday between April and October, and only for future dates.");
+        }
+    }
+
+    private void ValidateCustomerEmail(string customerEmail, string customerEmailConfirmation) {
+        if (string.IsNullOrWhiteSpace(customerEmail)) {
+            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter your email address.");
+        } else if (!new EmailAddressAttribute().IsValid(customerEmail)) {
+            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter a valid email address.");
+        }
+
+        if (string.IsNullOrWhiteSpace(customerEmailConfirmation)) {
+            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "Please confirm your email address.");
+        } else if (!new EmailAddressAttribute().IsValid(customerEmailConfirmation)) {
+            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "Please enter a valid email address.");
+        } else if (!string.Equals(customerEmail, customerEmailConfirmation, StringComparison.Ordinal)) {
+            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "The email addresses do not match.");
+        }
+    }
+
+    private async Task ValidatePurchaseCodeAsync(string purchaseCode) {
+        if (string.IsNullOrWhiteSpace(purchaseCode)) {
+            ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter your purchase code.");
+        } else {
+            bool purchaseCodeExists = await context.PurchaseCodes
+                .AnyAsync(pc => pc.Code == purchaseCode && pc.IsActive);
+            if (!purchaseCodeExists) {
+                ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter a valid purchase code.");
+                Log.Information("Purchase code validation failed: code '{PurchaseCode}' does not exist or is inactive.", purchaseCode);
+            }
+        }
+    }
+
+    private void ValidateSupplierSelections(List<int> selectedSuppliers) {
+        if (selectedSuppliers.Count != MAX_SUPPLIER_SELECTIONS) {
+            ModelState.AddModelError(string.Empty, $"You must select {MAX_SUPPLIER_SELECTIONS} tasting experiences for your tour.");
+        }
+    }
+
+    private async Task<IActionResult> CreateIndexViewWithErrorsAsync(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string customerEmailConfirmation, string purchaseCode) {
+        var model = await CreateFoodTourViewModel();
+        model.TourDate = tourDate;
+        model.CustomerEmail = customerEmail;
+        model.CustomerEmailConfirmation = customerEmailConfirmation;
+        model.PurchaseCode = purchaseCode;
+
+        ViewBag.SelectedSuppliers = selectedSuppliers;
+
+        if (ModelState.ContainsKey(nameof(FoodTourVM.PurchaseCode)) && ModelState[nameof(FoodTourVM.PurchaseCode)]?.Errors.Count > 0) {
+            ViewBag.FocusPurchaseCode = true;
+        }
+
+        return View(model);
+    }
+
     private static string GetInsufficientSuppliersMessage(int supplierCount) {
         string experienceText = supplierCount == 1 ? "tasting experience is" : "tasting experiences are";
         return $"Only {supplierCount} {experienceText} currently available. You need at least {MAX_SUPPLIER_SELECTIONS} to create a tour. Please check back later.";
@@ -483,11 +413,14 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         if (date.DayOfWeek == DayOfWeek.Sunday) {
             return false;
         }
-        if (date.Month < 3 || date.Month > 10) {
+        if (date.Month < 4 || date.Month > 10) {
             return false;
         }
         return true;
     }
+
+    private record ValidationResult<T>(bool IsValid, string ErrorMessage, T? Data = default);
+
     private async Task SendBookingConfirmationEmailAsync(Booking booking) {
         try {
             var supplierIds = booking.SelectedSupplierIds;
@@ -501,9 +434,9 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             var (subject, body) = bookingEmailService.GenerateBookingConfirmationEmail(booking, suppliers, foodTourCodeUrl, userSupportUrl);
             await emailSender.SendEmailAsync(booking.CustomerEmail, subject, body);
 
-            Log.Information("Sent booking confirmation email to {CustomerEmail}.", booking.CustomerEmail);
+            Log.Information("Booking {BookingId}: Sent confirmation email to {CustomerEmail}.", booking.Id, booking.CustomerEmail);
         } catch (Exception emailEx) {
-            Log.Error(emailEx, "Failed to send booking confirmation email to {CustomerEmail}.", booking.CustomerEmail);
+            Log.Error(emailEx, "Booking {BookingId}: Failed to send confirmation email to {CustomerEmail}.", booking.Id, booking.CustomerEmail);
             throw new InvalidOperationException("Booking saved, but we were unable to send a confirmation email. Please contact support.", emailEx);
         }
     }
@@ -513,7 +446,6 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         if (string.IsNullOrWhiteSpace(generatedUrl)) {
             throw new InvalidOperationException($"Unable to generate {actionName} URL.");
         }
-
         return generatedUrl;
     }
 }

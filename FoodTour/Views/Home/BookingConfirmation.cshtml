@@ -1,4 +1,4 @@
-﻿@model FoodTour.Models.BookingConfirmationVM
+@model FoodTour.Models.BookingConfirmationVM
 @{
 	ViewData["Title"] = "Booking Confirmation";
 }
@@ -24,12 +24,10 @@
 <div class="container text-center">
 	<div class="row justify-content-center">
 		<div class="col-md-8 col-lg-6 align-content-center">
-			@if (Context.Request.Query["emailWarningMessage"] is { Count: > 0 } emailWarningMessage && !string.IsNullOrWhiteSpace(emailWarningMessage.ToString())) {
+			@if (!string.IsNullOrEmpty(Model.EmailWarning)) {
 				<div class="alert alert-warning" role="alert">
 					<i class="bi bi-exclamation-triangle"></i>
-					The email address entered appears to be incorrect.<br />
-					Your booking has been saved, but you won’t receive a confirmation email.<br /><br />
-					Please save the tour link above to use on the day, or contact <a asp-controller="Home" asp-action="UserSupport">Support</a>, if you’d like us to resend your confirmation.
+					@Model.EmailWarning
 				</div>
 			}
 			<p class="text-muted">
