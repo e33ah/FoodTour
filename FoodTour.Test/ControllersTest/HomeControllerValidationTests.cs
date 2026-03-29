@@ -81,14 +81,15 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
     [InlineData("")]
     [InlineData(" ")]
     [InlineData(null)]
-    public async Task Index_AddsModelError_WhenCustomerEmailIsEmpty(string customerEmail) {
+    public async Task Index_AddsModelError_WhenCustomerEmailIsEmpty(string? customerEmail) {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
         context.PurchaseCodes.Add(new PurchaseCode { Code = TestHelper.VALID_CODE, IsActive = true });
         await context.SaveChangesAsync();
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, customerEmail, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        // null-coalescing operator is used to satisfy the non-nullable parameter, but the test will pass null to trigger the validation error
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, customerEmail!, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
@@ -135,12 +136,13 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
     [InlineData("")]
     [InlineData(" ")]
     [InlineData(null)]
-    public async Task Index_AddsModelError_WhenPurchaseCodeIsEmpty(string purchaseCode) {
+    public async Task Index_AddsModelError_WhenPurchaseCodeIsEmpty(string? purchaseCode) {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, purchaseCode);
+        // null-coalescing operator is used to satisfy the non-nullable parameter, but the test will pass null to trigger the validation error
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, purchaseCode!);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();

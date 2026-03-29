@@ -13,12 +13,12 @@
 					<h1 class="card-title mb-4">
 						<i class="bi bi-fork-knife text-primary"></i> Food Tour Visit
 					</h1>
-					<p class="text-muted">Thank you for participating in Weymouth FoodTour!</p>
+					<p class="text-muted">Thank you for greeting our Weymouth Food Tour customer(s).</p>
 					<div>
 						<form id="supplierVisitForm" asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
 							@Html.AntiForgeryToken()
 							<div class="col-12 col-md-10 col-lg-8 py-1">
-								<label asp-for="SelectedSupplierId" class="form-label">Select your business to confirm customer visit:</label>
+								<label asp-for="SelectedSupplierId" class="form-label">Please select your business:</label>
 								<span asp-validation-for="SelectedSupplierId" class="text-danger"></span>
 								<select asp-for="SelectedSupplierId" class="form-select">
 									<option value="">-- Select business --</option>

@@ -52,7 +52,7 @@ public class HomeControllerBookingConfirmationTests : HomeControllerTestBase {
         var view = result.ShouldBeOfType<ViewResult>();
         var model = view.Model.ShouldBeOfType<BookingConfirmationVM>();
         model.EmailWarning.ShouldNotBeNull();
-        model.EmailWarning.ShouldBe("Your booking was saved, but we were unable to send a confirmation email. Please save the link below with your tour details and <a href='http://localhost/Home/UserSupport'>contact support</a> for assistance.");
+        model.EmailWarning.ShouldBe("Your booking was saved, but we were unable to send a confirmation email. Please save the link above with your tour details and <a href='http://localhost/Home/UserSupport'>contact support</a> for assistance.");
     }
 
     [Fact]

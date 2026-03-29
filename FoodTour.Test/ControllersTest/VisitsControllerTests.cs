@@ -145,11 +145,12 @@ public class VisitsControllerTests {
     [InlineData("00000000-0000-0000-0000-000000000000", 1, SUPPLIER_CODE)]
     [InlineData("e4f50c60-4d42-11ec-81d3-0242ac130003", 1, "")]
     [InlineData("e4f50c60-4d42-11ec-81d3-0242ac130003", 1, null)]
-    public async Task RecordVisit_ReturnsBadRequest_WhenParametersAreInvalid(string qrTokenString, int selectedSupplierId, string supplierCode) {
+    public async Task RecordVisit_ReturnsBadRequest_WhenParametersAreInvalid(string qrTokenString, int selectedSupplierId, string? supplierCode) {
         var qrToken = Guid.Parse(qrTokenString);
         var sut = TestHelper.CreateVisitsController(TestHelper.CreateInMemoryContext());
 
-        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(qrToken, selectedSupplierId, supplierCode));
+        // null-coalescing operator is used to satisfy the non-nullable parameter, but the test will pass null to trigger the validation error
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(qrToken, selectedSupplierId, supplierCode!));
 
         var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
         object response = badRequest.Value.ShouldNotBeNull();

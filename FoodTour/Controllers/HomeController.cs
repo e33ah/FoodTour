@@ -166,7 +166,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         string? emailWarningMessage = null;
         if (emailWarning) {
             string supportUrl = GenerateUrl("UserSupport");
-            emailWarningMessage = $"Your booking was saved, but we were unable to send a confirmation email. Please save the link below with your tour details and <a href='{supportUrl}'>contact support</a> for assistance.";
+            emailWarningMessage = $"Your booking was saved, but we were unable to send a confirmation email. Please save the link above with your tour details and <a href='{supportUrl}'>contact support</a> for assistance.";
         }
 
         var model = new BookingConfirmationVM() {

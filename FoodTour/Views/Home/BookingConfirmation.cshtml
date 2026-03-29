@@ -27,7 +27,7 @@
 			@if (!string.IsNullOrEmpty(Model.EmailWarning)) {
 				<div class="alert alert-warning" role="alert">
 					<i class="bi bi-exclamation-triangle"></i>
-					@Model.EmailWarning
+					@Html.Raw(Model.EmailWarning)
 				</div>
 			}
 			<p class="text-muted">
