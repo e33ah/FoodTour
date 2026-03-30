@@ -17,44 +17,90 @@ public class FoodTourApiController(FoodTourContext context) : ControllerBase {
                 });
             }
 
-            // Log the complete JSON packet contents
+            // Log the complete JSON packet size
             string jsonString = jsonData.GetRawText();
-            Log.Information("Received new booking JSON packet at {Date}. Data: {JsonData}", DateTime.UtcNow, jsonString);
+            Log.Information("Received new booking JSON packet at {Timestamp}. Raw data length: {DataLength} characters", 
+                DateTime.UtcNow, jsonString.Length);
 
-            // Log individual properties if they exist
-            if (jsonData.TryGetProperty("customerEmail", out var customerEmailElement)) {
-                Log.Information("Customer Email: {Email}", customerEmailElement.GetString());
+            // Determine if data is wrapped in 'booking' object or at root level
+            var bookingElement = jsonData;
+            if (jsonData.TryGetProperty("booking", out var wrappedBooking)) {
+                bookingElement = wrappedBooking;
+                Log.Information("Detected wrapped booking format");
+            } else {
+                Log.Information("Detected direct booking format");
             }
 
-            if (jsonData.TryGetProperty("availability", out var tourDateElement)) {
-                Log.Information("Tour Date: {TourDate}", tourDateElement.GetString());
+            // Extract and log specific values only if this is for the Weymouth Self-Guided Food Tour
+            var itemNameElement = NavigateJsonPath(bookingElement, "availability.item.name");
+            string itemName = itemNameElement?.ValueKind == JsonValueKind.String 
+                ? itemNameElement.Value.GetString() ?? "" 
+                : "";
+
+            if (itemName == "Weymouth Self-Guided Food Tour") {
+                Log.Information("Processing booking for Weymouth Self-Guided Food Tour - logging detailed values");
+
+                ExtractAndLogValue(bookingElement, "pk", "Booking PK");
+                ExtractAndLogValue(bookingElement, "contact.name", "Contact Name");
+                ExtractAndLogValue(bookingElement, "contact.email", "Contact Email");
+                ExtractAndLogValue(bookingElement, "availability.start_at", "Tour Start Time");
+                ExtractAndLogValue(bookingElement, "availability.item.name", "Item Name");
+                ExtractAndLogValue(bookingElement, "customer_count", "Customer Count");
+            } else {
+                Log.Information("Skipping detailed logging - Item name '{ItemName}' does not match 'Weymouth Self-Guided Food Tour'", itemName);
             }
 
-            if (jsonData.TryGetProperty("uuid", out var purchaseCodeElement)) {
-                Log.Information("Purchase Code: {PurchaseCode}", purchaseCodeElement.GetString());
-            }
-            if (jsonData.TryGetProperty("customer_count", out var customerCountElement)) {
-                Log.Information("Customer Count: {PurchaseCode}", customerCountElement.GetString());
-            }
-
-            // Log all properties in the JSON
+            // Count total properties for response
             int propertyCount = 0;
             foreach (var property in jsonData.EnumerateObject()) {
-                Log.Information("JSON Property: {PropertyName} = {PropertyValue}", 
-                    property.Name, property.Value.GetRawText());
                 propertyCount++;
             }
 
-            // Return success response for now
+            Log.Information("Successfully processed booking data with {PropertyCount} root properties", propertyCount);
+
+            // Return success response
             return Ok(new { 
-                message = "JSON packet received and logged successfully",
+                message = "Booking JSON packet received successfully",
                 timestamp = DateTime.UtcNow,
-                receivedProperties = propertyCount
+                receivedProperties = propertyCount,
             });
 
         } catch (Exception ex) {
-            Log.Error(ex, "Error processing JSON packet");
-            return StatusCode(500, new { message = "An error occurred whilst processing the request." });
+            Log.Error(ex, "Error processing booking JSON packet");
+            return StatusCode(500, new { message = "An error occurred whilst processing the booking request." });
         }
+    }
+
+    private static void ExtractAndLogValue(JsonElement rootElement, string jsonPath, string displayName) {
+        var element = NavigateJsonPath(rootElement, jsonPath);
+
+        if (element.HasValue) {
+            string value = element.Value.ValueKind switch {
+                JsonValueKind.String => element.Value.GetString() ?? "null",
+                JsonValueKind.Number => element.Value.GetRawText(),
+                JsonValueKind.True => "true",
+                JsonValueKind.False => "false",
+                JsonValueKind.Null => "null",
+                _ => element.Value.GetRawText()
+            };
+            Log.Information("JSON data {DisplayName}: {Value}", displayName, value);
+        } else {
+            Log.Information("JSON data {DisplayName}: not found", displayName);
+        }
+    }
+
+    private static JsonElement? NavigateJsonPath(JsonElement rootElement, string path) {
+        string[] pathParts = path.Split('.');
+        var currentElement = rootElement;
+
+        foreach (string part in pathParts) {
+            if (currentElement.TryGetProperty(part, out var nextElement)) {
+                currentElement = nextElement;
+            } else {
+                return null;
+            }
+        }
+
+        return currentElement;
     }
 }
