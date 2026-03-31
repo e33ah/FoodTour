@@ -147,7 +147,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
         sut.ModelState.ContainsKey(nameof(FoodTourVM.PurchaseCode)).ShouldBeTrue();
-        sut.ModelState[nameof(FoodTourVM.PurchaseCode)]!.Errors[0].ErrorMessage.ShouldBe("Please enter your purchase code.");
+        sut.ModelState[nameof(FoodTourVM.PurchaseCode)]!.Errors[0].ErrorMessage.ShouldBe("Purchase code is required.");
     }
 
     [Fact]

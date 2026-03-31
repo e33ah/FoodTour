@@ -221,13 +221,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
     }
 
     private static async Task<HomeController> CreateHomeControllerForTesting(int contextSupplierCount) {
-        var context = TestHelper.CreateContextWithActiveSuppliersCount(contextSupplierCount);
-        context.PurchaseCodes.Add(new PurchaseCode { Code = TestHelper.VALID_CODE });
-        await context.SaveChangesAsync();
-        var emailSender = Mock.Of<IEmailSender>();
-        var bookingEmailService = new BookingEmailService();
-        var supportOptions = TestHelper.CreateSupportOptions();
-        return new HomeController(context, emailSender, bookingEmailService, supportOptions);
+        return await TestHelper.CreateHomeController(contextSupplierCount);
     }
 
     private static async Task<IActionResult> PostIndex(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {

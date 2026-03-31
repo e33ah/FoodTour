@@ -171,4 +171,62 @@ public static class TestHelper {
 
         return booking;
     }
+
+    public static FoodTourApiController CreateFoodTourApiController() {
+        var options = new DbContextOptionsBuilder<FoodTourContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new FoodTourContext(options);
+        var bookingValidationService = new BookingValidationService(context);
+        var purchaseCodeValidationService = new PurchaseCodeValidationService(context);
+        return new FoodTourApiController(context, bookingValidationService, purchaseCodeValidationService);
+    }
+
+    public static FoodTourApiController CreateFoodTourApiController(FoodTourContext context) {
+        var bookingValidationService = new BookingValidationService(context);
+        var purchaseCodeValidationService = new PurchaseCodeValidationService(context);
+        return new FoodTourApiController(context, bookingValidationService, purchaseCodeValidationService);
+    }
+
+
+    public static PurchaseCodeValidationService CreatePurchaseCodeValidationService(FoodTourContext? context = null) {
+        context ??= CreateInMemoryContext();
+        return new PurchaseCodeValidationService(context);
+    }
+
+    public static async Task<HomeController> CreateHomeController(int contextSupplierCount) {
+        var context = CreateContextWithActiveSuppliersCount(contextSupplierCount);
+        context.PurchaseCodes.Add(new PurchaseCode { Code = VALID_CODE });
+        await context.SaveChangesAsync();
+        var emailSender = Mock.Of<IEmailSender>();
+        var bookingEmailService = new BookingEmailService();
+        var supportOptions = CreateSupportOptions();
+        var bookingValidationService = new BookingValidationService(context);
+        var purchaseCodeValidationService = new PurchaseCodeValidationService(context);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, purchaseCodeValidationService);
+    }
+
+    public static HomeController CreateHomeController(FoodTourContext context, IEmailSender? emailSender = null) {
+        emailSender ??= Mock.Of<IEmailSender>();
+        var bookingEmailService = new BookingEmailService();
+        var supportOptions = CreateSupportOptions();
+        var bookingValidationService = new BookingValidationService(context);
+        var purchaseCodeValidationService = new PurchaseCodeValidationService(context);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, purchaseCodeValidationService);
+    }
+
+    public static Mock<IEmailSender> CreateMockEmailSender() {
+        var emailSenderMock = new Mock<IEmailSender>();
+        emailSenderMock
+            .Setup(sender => sender.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
+        return emailSenderMock;
+    }
+
+    public static (HomeController controller, Mock<IEmailSender> emailSenderMock) CreateHomeControllerWithEmailSenderMock(FoodTourContext context) {
+        var emailSenderMock = CreateMockEmailSender();
+        var controller = CreateHomeController(context, emailSenderMock.Object);
+        return (controller, emailSenderMock);
+    }
 }

@@ -1,0 +1,143 @@
+namespace FoodTour.Services;
+
+public class BookingValidationService(FoodTourContext context) : IBookingValidationService {
+    private const int TOUR_SEASON_START_MONTH = 4;
+    private const int TOUR_SEASON_END_MONTH = 10;
+    private const int MAX_SUPPLIER_SELECTIONS = 5;
+    
+    private static readonly EmailAddressAttribute emailValidator = new();
+
+    public async Task<BookingValidationResult> ValidateAsync(BookingValidationRequest request) {
+        var result = new BookingValidationResult();
+
+        result.IsTourDateValid = ValidateTourDate(request.TourDate, result);
+        result.IsCustomerEmailValid = ValidateCustomerEmail(request.CustomerEmail, result);
+        result.IsCustomerEmailConfirmationValid = ValidateCustomerEmailConfirmation(request.CustomerEmail, request.CustomerEmailConfirmation, result);
+        // Skip if not provided
+        result.IsCustomerCountValid = !request.CustomerCount.HasValue || ValidateCustomerCount(request.CustomerCount, result);
+        result.AreSelectedSuppliersValid = request.SelectedSupplierIds == null || await ValidateSelectedSuppliersAsync(request.SelectedSupplierIds, result);
+
+        return result;
+    }
+
+    public bool IsTourDateValid(DateTime? tourDate) {
+        if (!tourDate.HasValue) {
+            Log.Debug("Tour date is null");
+            return false;
+        }
+
+        return IsValidTourDate(tourDate.Value);
+    }
+
+    public bool IsCustomerEmailValid(string? customerEmail) {
+        return !string.IsNullOrWhiteSpace(customerEmail) && emailValidator.IsValid(customerEmail);
+    }
+
+    public bool IsCustomerCountValid(int? customerCount) {
+        return customerCount.HasValue && customerCount.Value > 0;
+    }
+
+
+    private static bool ValidateTourDate(DateTime? tourDate, BookingValidationResult result) {
+        if (!tourDate.HasValue) {
+            result.IsTourDateNull = true;
+            result.AddError("Tour date is required");
+            return false;
+        }
+
+        if (!IsValidTourDate(tourDate.Value)) {
+            result.AddError($"Tour date {tourDate.Value:yyyy-MM-dd} is invalid. Tours run April-October, Monday-Saturday, and must be in the future");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool ValidateCustomerEmail(string? customerEmail, BookingValidationResult result) {
+        if (string.IsNullOrWhiteSpace(customerEmail)) {
+            result.IsCustomerEmailEmpty = true;
+            result.AddError("Customer email is required");
+            return false;
+        }
+
+        if (!emailValidator.IsValid(customerEmail)) {
+            result.AddError($"Customer email '{customerEmail}' is not in a valid format");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool ValidateCustomerEmailConfirmation(string? customerEmail, string? customerEmailConfirmation, BookingValidationResult result) {
+        if (string.IsNullOrWhiteSpace(customerEmailConfirmation)) {
+            result.IsCustomerEmailConfirmationEmpty = true;
+            result.AddError("Email confirmation is required");
+            return false;
+        }
+
+        if (!emailValidator.IsValid(customerEmailConfirmation)) {
+            result.AddError($"Email confirmation '{customerEmailConfirmation}' is not in a valid format");
+            return false;
+        }
+
+        if (!string.Equals(customerEmail, customerEmailConfirmation, StringComparison.Ordinal)) {
+            result.AddError("Email confirmation does not match the provided email address");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool ValidateCustomerCount(int? customerCount, BookingValidationResult result) {
+        if (!customerCount.HasValue || customerCount.Value <= 0) {
+            result.AddError($"Customer count must be greater than 0. Provided value: {customerCount?.ToString() ?? "null"}");
+            Log.Debug("Customer count is invalid. Value: {CustomerCount}", customerCount);
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task<bool> ValidateSelectedSuppliersAsync(List<int>? selectedSupplierIds, BookingValidationResult result) {
+        if (selectedSupplierIds == null || selectedSupplierIds.Count == 0) {
+            result.AddError("At least one supplier must be selected");
+            return false;
+        }
+
+        if (selectedSupplierIds.Count != MAX_SUPPLIER_SELECTIONS) {
+            result.AddError($"Exactly {MAX_SUPPLIER_SELECTIONS} suppliers must be selected. Currently selected: {selectedSupplierIds.Count}");
+            return false;
+        }
+
+        // If we have the right count, check if they actually exist in the database
+        // This validation is done here for the API controller, but also done again 
+        // in HomeController for better error messaging
+        try {
+            var existingSupplierIds = await context.Suppliers
+                .Where(s => selectedSupplierIds.Contains(s.Id) && s.IsActive)
+                .Select(s => s.Id)
+                .ToListAsync();
+
+            if (existingSupplierIds.Count != selectedSupplierIds.Count) {
+                var missingIds = selectedSupplierIds.Except(existingSupplierIds).ToList();
+                result.AddError($"One or more selected suppliers do not exist or are inactive. Missing supplier IDs: [{string.Join(", ", missingIds)}]");
+                Log.Warning("One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", 
+                    selectedSupplierIds, existingSupplierIds);
+                return false; 
+            }
+
+            return true;
+        } catch (Exception ex) {
+            result.AddError($"Failed to validate selected suppliers: {ex.Message}");
+            Log.Error(ex, "Failed to validate selected suppliers against database.");
+            return false;
+        }
+    }
+
+    private static bool IsValidTourDate(DateTime date) {
+        return date > DateTime.Today
+            && date.DayOfWeek != DayOfWeek.Sunday
+            && date.Month >= TOUR_SEASON_START_MONTH
+            && date.Month <= TOUR_SEASON_END_MONTH;
+    }
+}

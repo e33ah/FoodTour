@@ -1,6 +1,6 @@
 namespace FoodTour.Controllers;
 
-public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions) : Controller {
+public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions, IBookingValidationService bookingValidationService, IPurchaseCodeValidationService purchaseCodeValidationService) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
     private readonly QrImageService qrImageService = new();
     private readonly SupportSettings supportSettings = supportOptions.Value;
@@ -21,9 +21,32 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string customerEmailConfirmation, string purchaseCode) {
-        await ValidateBookingRequestAsync(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
+        var purchaseCodeValidationRequest = new PurchaseCodeValidationRequest {
+            PurchaseCode = purchaseCode ?? "",
+            ValidationType = PurchaseCodeValidationType.MustExistAndBeActive
+        };
 
-        if (!ModelState.IsValid) {
+        var purchaseCodeResult = await purchaseCodeValidationService.ValidateAsync(purchaseCodeValidationRequest);
+
+        // Validate other booking data (excluding purchase code)
+        var validationRequest = new BookingValidationRequest {
+            TourDate = tourDate,
+            CustomerEmail = customerEmail,
+            CustomerEmailConfirmation = customerEmailConfirmation,
+            SelectedSupplierIds = selectedSuppliers
+            // CustomerCount is not currently required for web form validation
+        };
+
+        var validationResult = await bookingValidationService.ValidateAsync(validationRequest);
+
+        if (!validationResult.IsValid || !purchaseCodeResult.IsValid) {
+            MapValidationErrorsToModelState(validationResult);
+
+            // Add purchase code validation error if applicable
+            if (!purchaseCodeResult.IsValid) {
+                ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), purchaseCodeResult.ErrorMessage!);
+            }
+
             return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
         }
 
@@ -43,7 +66,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         var booking = new Booking {
             TourDate = tourDate!.Value,
             CustomerEmail = customerEmail,
-            PurchaseCode = purchaseCode,
+            PurchaseCode = purchaseCode!,
             SelectedSupplierIds = selectedSuppliers,
             CreatedAt = DateTime.UtcNow,
             IsConfirmed = false
@@ -334,62 +357,12 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return View("BookingSummary", bookingSummary);
     }
 
-    private async Task ValidateBookingRequestAsync(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string customerEmailConfirmation, string purchaseCode) {
-        ValidateTourDate(tourDate);
-        ValidateCustomerEmail(customerEmail, customerEmailConfirmation);
-        await ValidatePurchaseCodeAsync(purchaseCode);
-        ValidateSupplierSelections(selectedSuppliers);
-    }
-
-    private void ValidateTourDate(DateTime? tourDate) {
-        if (!tourDate.HasValue) {
-            ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Please select a date for your tour.");
-        } else if (!IsValidTourDate(tourDate.Value)) {
-            ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Tours are only available Monday to Saturday between April and October, and only for future dates.");
-        }
-    }
-
-    private void ValidateCustomerEmail(string customerEmail, string customerEmailConfirmation) {
-        if (string.IsNullOrWhiteSpace(customerEmail)) {
-            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter your email address.");
-        } else if (!new EmailAddressAttribute().IsValid(customerEmail)) {
-            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter a valid email address.");
-        }
-
-        if (string.IsNullOrWhiteSpace(customerEmailConfirmation)) {
-            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "Please confirm your email address.");
-        } else if (!new EmailAddressAttribute().IsValid(customerEmailConfirmation)) {
-            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "Please enter a valid email address.");
-        } else if (!string.Equals(customerEmail, customerEmailConfirmation, StringComparison.Ordinal)) {
-            ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "The email addresses do not match.");
-        }
-    }
-
-    private async Task ValidatePurchaseCodeAsync(string purchaseCode) {
-        if (string.IsNullOrWhiteSpace(purchaseCode)) {
-            ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter your purchase code.");
-        } else {
-            bool purchaseCodeExists = await context.PurchaseCodes
-                .AnyAsync(pc => pc.Code == purchaseCode && pc.IsActive);
-            if (!purchaseCodeExists) {
-                ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), "Please enter a valid purchase code.");
-                Log.Information("Purchase code validation failed: code '{PurchaseCode}' does not exist or is inactive.", purchaseCode);
-            }
-        }
-    }
-
-    private void ValidateSupplierSelections(List<int> selectedSuppliers) {
-        if (selectedSuppliers.Count != MAX_SUPPLIER_SELECTIONS) {
-            ModelState.AddModelError(string.Empty, $"You must select {MAX_SUPPLIER_SELECTIONS} tasting experiences for your tour.");
-        }
-    }
-
-    private async Task<IActionResult> CreateIndexViewWithErrorsAsync(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string customerEmailConfirmation, string purchaseCode) {
+    private async Task<IActionResult> CreateIndexViewWithErrorsAsync(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string customerEmailConfirmation, string? purchaseCode) {
         var model = await CreateFoodTourViewModel();
         model.TourDate = tourDate;
         model.CustomerEmail = customerEmail;
         model.CustomerEmailConfirmation = customerEmailConfirmation;
-        model.PurchaseCode = purchaseCode;
+        model.PurchaseCode = purchaseCode ?? string.Empty;
 
         ViewBag.SelectedSuppliers = selectedSuppliers;
 
@@ -405,21 +378,42 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return $"Only {supplierCount} {experienceText} currently available. You need at least {MAX_SUPPLIER_SELECTIONS} to create a tour. Please check back later.";
     }
 
-    private static bool IsValidTourDate(DateTime date) {
-        var today = DateTime.Today;
-        if (date <= today) {
-            return false;
+    private void MapValidationErrorsToModelState(BookingValidationResult validationResult) {
+        if (!validationResult.IsTourDateValid) {
+            if (validationResult.IsTourDateNull) {
+                ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Please select a date for your tour.");
+            } else {
+                ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Tours are only available Monday to Saturday between April and October, and only for future dates.");
+            }
         }
-        if (date.DayOfWeek == DayOfWeek.Sunday) {
-            return false;
-        }
-        if (date.Month < 4 || date.Month > 10) {
-            return false;
-        }
-        return true;
-    }
 
-    private record ValidationResult<T>(bool IsValid, string ErrorMessage, T? Data = default);
+        if (!validationResult.IsCustomerEmailValid) {
+            if (validationResult.IsCustomerEmailEmpty) {
+                ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter your email address.");
+            } else {
+                ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter a valid email address.");
+            }
+        }
+
+        if (!validationResult.IsCustomerEmailConfirmationValid) {
+            if (validationResult.IsCustomerEmailConfirmationEmpty) {
+                ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "Please confirm your email address.");
+            } else {
+                ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "The email addresses do not match.");
+            }
+        }
+
+        if (!validationResult.AreSelectedSuppliersValid) {
+            // Check if it's a supplier existence issue vs count issue
+            bool hasSupplierExistenceError = validationResult.ErrorMessages.Any(msg => msg.Contains("do not exist or are inactive"));
+
+            if (hasSupplierExistenceError) {
+                ModelState.AddModelError(string.Empty, "One or more selected suppliers are invalid. Please refresh and try again.");
+            } else {
+                ModelState.AddModelError(string.Empty, $"You must select {MAX_SUPPLIER_SELECTIONS} tasting experiences for your tour.");
+            }
+        }
+    }
 
     private async Task SendBookingConfirmationEmailAsync(Booking booking) {
         try {

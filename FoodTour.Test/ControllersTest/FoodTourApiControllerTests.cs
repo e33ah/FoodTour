@@ -3,12 +3,7 @@ namespace FoodTour.Test.Controllers;
 public class FoodTourApiControllerTests {
     [Fact]
     public async Task CreateNewBooking_ReturnsOk_WhenValidJsonReceived() {
-        var options = new DbContextOptionsBuilder<FoodTourContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        using var context = new FoodTourContext(options);
-        var controller = new FoodTourApiController(context);
+        var controller = TestHelper.CreateFoodTourApiController();
         string jsonString = """
             {
                 "customerEmail": "test@example.com",
@@ -26,11 +21,7 @@ public class FoodTourApiControllerTests {
 
     [Fact]
     public async Task CreateNewBooking_ReturnsOk_WhenComplexJsonReceived() {
-        var options = new DbContextOptionsBuilder<FoodTourContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        using var context = new FoodTourContext(options);
-        var controller = new FoodTourApiController(context);
+        var controller = TestHelper.CreateFoodTourApiController();
 
         string jsonString = """
             {
@@ -57,12 +48,7 @@ public class FoodTourApiControllerTests {
 
     [Fact]
     public async Task CreateNewBooking_HandlesInvalidJson_Gracefully() {
-        var options = new DbContextOptionsBuilder<FoodTourContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        using var context = new FoodTourContext(options);
-        var controller = new FoodTourApiController(context);
+        var controller = TestHelper.CreateFoodTourApiController();
 
         // Create an empty JsonElement
         var jsonElement = new JsonElement();

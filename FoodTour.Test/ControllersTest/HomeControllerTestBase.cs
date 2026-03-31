@@ -8,30 +8,22 @@ public abstract class HomeControllerTestBase {
     }
 
     protected static HomeController CreateConfiguredController(FoodTourContext context) {
-        var emailSenderMock = CreateMockEmailSender();
-        var emailSender = emailSenderMock.Object;
-        var bookingEmailService = new BookingEmailService();
-        var supportOptions = TestHelper.CreateSupportOptions();
+        var controller = TestHelper.CreateHomeController(context);
 
-        return new HomeController(context, emailSender, bookingEmailService, supportOptions) {
-            TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>()),
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-        };
+        controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+
+        return controller;
     }
 
     protected static (HomeController controller, Mock<IEmailSender> emailSenderMock) CreateConfiguredControllerWithEmailSenderMock(FoodTourContext context) {
         string urlPath = "FoodTourCode?qrToken=abc";
-        var emailSenderMock = CreateMockEmailSender();
-        var emailSender = emailSenderMock.Object;
-        var bookingEmailService = new BookingEmailService();
-        var adminNotificationService = new AdminNotificationService(emailSender, TestHelper.CreateAdminNotificationOptions());
-        var supplierNotificationService = new SupplierNotificationService(emailSender);
-        var supportOptions = TestHelper.CreateSupportOptions();
+        var (controller, emailSenderMock) = TestHelper.CreateHomeControllerWithEmailSenderMock(context);
+        var adminNotificationService = new AdminNotificationService(emailSenderMock.Object, TestHelper.CreateAdminNotificationOptions());
+        var supplierNotificationService = new SupplierNotificationService(emailSenderMock.Object);
 
-        var controller = new HomeController(context, emailSender, bookingEmailService, supportOptions) {
-            TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>()),
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-        };
+        controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
 
         string urlActionResult = $"{BASE_URL}/{urlPath}";
         controller.Url = Mock.Of<IUrlHelper>(u => u.Action(It.IsAny<UrlActionContext>()) == urlActionResult);
@@ -53,13 +45,5 @@ public abstract class HomeControllerTestBase {
 
         controller.ControllerContext.HttpContext.Request.Scheme = "https";
         return controller;
-    }
-
-    private static Mock<IEmailSender> CreateMockEmailSender() {
-        var emailSenderMock = new Mock<IEmailSender>();
-        emailSenderMock
-            .Setup(sender => sender.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(Task.CompletedTask);
-        return emailSenderMock;
     }
 }
