@@ -7,18 +7,20 @@ public class FoodTourApiControllerJsonProcessingTests {
         var controller = TestHelper.CreateFoodTourApiController();
         string jsonString = """
             {
-                "availability": {
-                    "item": {
-                        "name": "Weymouth Self-Guided Food Tour"
+                "booking": {
+                    "availability": {
+                        "item": {
+                            "name": "Weymouth Self-Guided Food Tour"
+                        },
+                        "start_at": "2025-06-15T10:00:00Z"
                     },
-                    "start_at": "2025-06-15T10:00:00Z"
-                },
-                "contact": {
-                    "name": "John Doe",
-                    "email": "john@example.com"
-                },
-                "customer_count": 2,
-                "pk": "TOUR123"
+                    "contact": {
+                        "name": "John Doe",
+                        "email": "john@example.com"
+                    },
+                    "customer_count": 2,
+                    "pk": "TOUR123"
+                }
             }
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
@@ -36,17 +38,19 @@ public class FoodTourApiControllerJsonProcessingTests {
         var controller = TestHelper.CreateFoodTourApiController();
         string jsonString = """
             {
-                "availability": {
-                    "item": {
-                        "name": "Different Tour"
+                "booking": {
+                    "availability": {
+                        "item": {
+                            "name": "Different Tour"
+                        },
+                        "start_at": "2025-06-15T10:00:00Z"
                     },
-                    "start_at": "2025-06-15T10:00:00Z"
-                },
-                "contact": {
-                    "email": "john@example.com"
-                },
-                "customer_count": 2,
-                "pk": "TOUR123"
+                    "contact": {
+                        "email": "john@example.com"
+                    },
+                    "customer_count": 2,
+                    "pk": "TOUR123"
+                }
             }
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
@@ -58,7 +62,7 @@ public class FoodTourApiControllerJsonProcessingTests {
     }
 
     [Fact]
-    public async Task CreateNewBooking_HandlesWrappedBookingData_Correctly() {
+    public async Task CreateNewBooking_HandlesBookingDataWrapper_Correctly() {
         var controller = TestHelper.CreateFoodTourApiController();
         string jsonString = """
             {
@@ -90,13 +94,15 @@ public class FoodTourApiControllerJsonProcessingTests {
         var controller = TestHelper.CreateFoodTourApiController();
         string jsonString = """
             {
-                "availability": {
-                    "item": {
-                        "name": "Weymouth Self-Guided Food Tour"
+                "booking": {
+                    "availability": {
+                        "item": {
+                            "name": "Weymouth Self-Guided Food Tour"
+                        }
+                    },
+                    "contact": {
+                        "email": "john@example.com"
                     }
-                },
-                "contact": {
-                    "email": "john@example.com"
                 }
             }
             """;
@@ -113,17 +119,19 @@ public class FoodTourApiControllerJsonProcessingTests {
         var controller = TestHelper.CreateFoodTourApiController();
         string jsonString = """
             {
-                "availability": {
-                    "item": {
-                        "name": "Weymouth Self-Guided Food Tour"
+                "booking": {
+                    "availability": {
+                        "item": {
+                            "name": "Weymouth Self-Guided Food Tour"
+                        },
+                        "start_at": "invalid-date"
                     },
-                    "start_at": "invalid-date"
-                },
-                "contact": {
-                    "email": "john@example.com"
-                },
-                "customer_count": 2,
-                "pk": "TOUR123"
+                    "contact": {
+                        "email": "john@example.com"
+                    },
+                    "customer_count": 2,
+                    "pk": "TOUR123"
+                }
             }
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
@@ -139,17 +147,19 @@ public class FoodTourApiControllerJsonProcessingTests {
         var controller = TestHelper.CreateFoodTourApiController();
         string jsonString = """
             {
-                "availability": {
-                    "item": {
-                        "name": "Weymouth Self-Guided Food Tour"
+                "booking": {
+                    "availability": {
+                        "item": {
+                            "name": "Weymouth Self-Guided Food Tour"
+                        },
+                        "start_at": "2025-06-15T10:00:00Z"
                     },
-                    "start_at": "2025-06-15T10:00:00Z"
-                },
-                "contact": {
-                    "email": "john@example.com"
-                },
-                "customer_count": "invalid-number",
-                "pk": "TOUR123"
+                    "contact": {
+                        "email": "john@example.com"
+                    },
+                    "customer_count": "invalid-number",
+                    "pk": "TOUR123"
+                }
             }
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
@@ -161,37 +171,35 @@ public class FoodTourApiControllerJsonProcessingTests {
     }
 
     [Fact]
-    public async Task CreateNewBooking_CountsPropertiesCorrectly_InResponse() {
+    public async Task CreateNewBooking_ReturnsInternalServerError_WhenBookingWrapperMissing() {
         var controller = TestHelper.CreateFoodTourApiController();
+
+        // Create JSON without the required "booking" wrapper
         string jsonString = """
             {
-                "property1": "value1",
-                "property2": "value2",
-                "property3": "value3"
+                "availability": {
+                    "item": {
+                        "name": "Weymouth Self-Guided Food Tour"
+                    }
+                },
+                "contact": {
+                    "email": "john@example.com"
+                }
             }
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
         var result = await controller.CreateNewBooking(jsonElement, KEY);
 
-        var okResult = result.ShouldBeOfType<OkObjectResult>();
-        object? responseValue = okResult.Value;
-        responseValue.ShouldNotBeNull();
-
-        // Convert response to JSON and access properties
-        string jsonResponseString = JsonSerializer.Serialize(responseValue);
-        var jsonResponse = JsonSerializer.Deserialize<JsonElement>(jsonResponseString);
-        int receivedProperties = jsonResponse.GetProperty("receivedProperties").GetInt32();
-        receivedProperties.ShouldBe(3);
+        // Should return 500 error since GetProperty("booking") will throw KeyNotFoundException
+        var errorResult = result.ShouldBeOfType<ObjectResult>();
+        errorResult.StatusCode.ShouldBe(500);
     }
 
-    [Fact]
+    [Fact] 
     public async Task CreateNewBooking_ReturnsInternalServerError_WhenExceptionThrown() {
-        // This test would require a way to force an exception, 
-        // which might need a mockable dependency in the controller
-        // For now, this shows the intent - actual implementation would depend on your architecture
         var controller = TestHelper.CreateFoodTourApiController();
-        
+
         // Create malformed JSON that might cause parsing issues
         var malformedElement = new JsonElement();
 
@@ -199,5 +207,6 @@ public class FoodTourApiControllerJsonProcessingTests {
 
         // Should handle gracefully and return OK (based on current implementation)
         var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
     }
 }

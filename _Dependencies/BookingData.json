@@ -1,0 +1,16 @@
+{
+    "booking": {
+        "pk": 123456789,
+        "contact": {
+            "name": "Mrs Test",
+            "email": "mrstest@example.com"
+        },
+        "availability": {
+            "start_at": "2026-10-31T11:15:00+0000",
+            "item": {
+                "name": "Weymouth Self-Guided Food Tour"
+            }
+        },
+        "customer_count": 2
+    }
+}

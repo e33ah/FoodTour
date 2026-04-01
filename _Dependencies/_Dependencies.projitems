@@ -16,6 +16,7 @@
     <Folder Include="$(MSBuildThisFileDirectory)Publish_Support\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)BookingData.json" />
     <Content Include="$(MSBuildThisFileDirectory)publish_support\app_offline.htm" />
   </ItemGroup>
 </Project>

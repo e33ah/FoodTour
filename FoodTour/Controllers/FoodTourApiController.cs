@@ -13,21 +13,17 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             return Unauthorized("Invalid key provided.");
         }
         try {
-            var validationResult = ValidateAndLogJsonData(jsonData, "booking");
+            var validationResult = ValidateJsonData(jsonData);
             if (!validationResult.IsValid) {
                 return Ok(CreateEmptyJsonResponse());
             }
-            // Log the complete JSON packet contents temporarily to test
-            string jsonString = jsonData.GetRawText();
-            Log.Information("Received new booking cancellation JSON packet at {Date}. Data: {JsonData}", DateTime.UtcNow, jsonString);
 
-            var bookingElement = UnwrapJsonData(jsonData, "booking");
+            var bookingElement = jsonData.GetProperty("booking");
             await ProcessWeymouthTourBooking(bookingElement);
 
-            int propertyCount = CountJsonProperties(jsonData);
-            Log.Information("Successfully processed booking data with {PropertyCount} root properties", propertyCount);
+            Log.Information("Successfully processed new booking data.");
 
-            return Ok(CreateSuccessResponse(propertyCount));
+            return Ok(CreateSuccessResponse());
 
         } catch (Exception ex) {
             Log.Error(ex, "Error processing booking JSON packet");
@@ -42,22 +38,17 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             return Unauthorized("Invalid key provided.");
         }
         try {
-            var validationResult = ValidateAndLogJsonData(jsonData, "booking update");
+            var validationResult = ValidateJsonData(jsonData);
             if (!validationResult.IsValid) {
                 return Ok(CreateEmptyJsonResponse());
             }
 
-            // Log the complete JSON packet contents temporarily to test
-            string jsonString = jsonData.GetRawText();
-            Log.Information("Received new booking JSON packet at {Date}. Data: {JsonData}", DateTime.UtcNow, jsonString);
-
-            var bookingElement = UnwrapJsonData(jsonData, "booking");
+            var bookingElement = jsonData.GetProperty("booking");
             await UpdateFoodTourBooking(bookingElement);
 
-            int propertyCount = CountJsonProperties(jsonData);
-            Log.Information("Successfully received booking update data with {PropertyCount} root properties", propertyCount);
+            Log.Information("Successfully received booking update data.");
 
-            return Ok(CreateSuccessResponse(propertyCount));
+            return Ok(CreateSuccessResponse());
         } catch (Exception ex) {
             Log.Error(ex, "Error processing booking update JSON packet");
             return CreateErrorResponse("An error occurred whilst processing the booking update request.");
@@ -71,21 +62,17 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             return Unauthorized("Invalid key provided.");
         }
         try {
-            var validationResult = ValidateAndLogJsonData(jsonData, "booking cancellation");
+            var validationResult = ValidateJsonData(jsonData);
             if (!validationResult.IsValid) {
                 return Ok(CreateEmptyJsonResponse());
             }
-            // Log the complete JSON packet contents temporarily to test
-            string jsonString = jsonData.GetRawText();
-            Log.Information("Received new booking cancellation JSON packet at {Date}. Data: {JsonData}", DateTime.UtcNow, jsonString);
 
-            var bookingElement = UnwrapJsonData(jsonData, "booking");
+            var bookingElement = jsonData.GetProperty("booking");
 
             await CancelFoodTourBooking(bookingElement);
 
-            int propertyCount = CountJsonProperties(jsonData);
-            Log.Information("Successfully received booking cancellation data with {PropertyCount} root properties", propertyCount);
-            return Ok(CreateSuccessResponse(propertyCount));
+            Log.Information("Successfully received booking cancellation data.");
+            return Ok(CreateSuccessResponse());
         } catch (Exception ex) {
             Log.Error(ex, "Error processing booking cancellation JSON packet");
             return CreateErrorResponse("An error occurred whilst processing the booking cancellation request.");
@@ -102,27 +89,17 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             { "customer_count", "Customer Count" }
         };
 
-    private static JsonValidationResult ValidateAndLogJsonData(JsonElement jsonData, string dataType) {
-        if (jsonData.ValueKind == JsonValueKind.Undefined || jsonData.ValueKind == JsonValueKind.Null) {
-            Log.Warning("Received empty or null JSON data");
-            return new JsonValidationResult { IsValid = false };
-        }
-
-        string jsonString = jsonData.GetRawText();
-        Log.Information("Received new {DataType} JSON packet at {Timestamp}. Raw data length: {DataLength} characters",
-            dataType, DateTime.UtcNow, jsonString.Length);
-
-        return new JsonValidationResult { IsValid = true, DataLength = jsonString.Length };
+    private record ValidationResult {
+        public bool IsValid { get; init; }
+        public IList<string> ErrorMessages { get; init; } = [];
     }
 
-    private static JsonElement UnwrapJsonData(JsonElement jsonData, string wrapperProperty) {
-        if (jsonData.TryGetProperty(wrapperProperty, out var wrappedData)) {
-            Log.Information("Detected wrapped {WrapperProperty} format", wrapperProperty);
-            return wrappedData;
+    private static ValidationResult ValidateJsonData(JsonElement jsonData) {
+        if (jsonData.ValueKind == JsonValueKind.Undefined || jsonData.ValueKind == JsonValueKind.Null) {
+            Log.Warning("Received empty or null JSON data");
+            return new ValidationResult { IsValid = false };
         }
-
-        Log.Information("Detected direct {WrapperProperty} format", wrapperProperty);
-        return jsonData;
+        return new ValidationResult { IsValid = true };
     }
 
     private async Task ProcessWeymouthTourBooking(JsonElement bookingElement) {
@@ -135,14 +112,7 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             PopulateBookingFromJson(bookingElement, field.Key, field.Value, newBooking);
         }
 
-        var purchaseCodeValidationRequest = new PurchaseCodeValidationRequest {
-            PurchaseCode = newBooking.PurchaseCode ?? "",
-            ValidationType = PurchaseCodeValidationType.MustNotExist
-        };
-
-        var purchaseCodeResult = await purchaseCodeValidationService.ValidateAsync(purchaseCodeValidationRequest);
-
-        // Validate other booking data (excluding purchase code)
+        // Validate booking data first (excluding purchase code existence check)
         var validationRequest = new BookingValidationRequest {
             TourDate = newBooking.TourDate,
             CustomerEmail = newBooking.CustomerEmail,
@@ -152,25 +122,55 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
 
         var validationResult = await bookingValidationService.ValidateAsync(validationRequest);
 
-        if (validationResult.IsValid && purchaseCodeResult.IsValid) {
-            try {
-                await context.Bookings.AddAsync(newBooking);
-                await context.SaveChangesAsync();
-
-                Log.Information("Booking {BookingId}: Saved for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", newBooking.Id, newBooking.CustomerEmail, newBooking.TourDate);
-            } catch (Exception ex) {
-                Log.Error(ex, "Booking {BookingId}: Failed to save to database.", newBooking.Id);
-            }
-        } else {
-            var allErrors = new List<string>();
-            allErrors.AddRange(validationResult.ErrorMessages);
-            if (!purchaseCodeResult.IsValid && purchaseCodeResult.ErrorMessage != null) {
-                allErrors.Add(purchaseCodeResult.ErrorMessage);
-            }
-
+        if (!validationResult.IsValid) {
             Log.Error("Booking validation failed for {CustomerEmail}. Errors: {ValidationErrors}",
                 newBooking.CustomerEmail,
-                string.Join(", ", allErrors));
+                string.Join(", ", validationResult.ErrorMessages));
+            return;
+        }
+
+        // Use database transaction to ensure atomicity
+        using var transaction = await context.Database.BeginTransactionAsync();
+        try {
+            // Check if booking already exists within the transaction to prevent duplicates
+            if (!string.IsNullOrEmpty(newBooking.PurchaseCode)) {
+                var existingBooking = await context.Bookings
+                    .FirstOrDefaultAsync(b => b.PurchaseCode == newBooking.PurchaseCode);
+
+                if (existingBooking != null) {
+                    Log.Information("Booking with Purchase Code {PurchaseCode} already exists (ID: {BookingId}). Aborting transaction for duplicate webhook call.",
+                        newBooking.PurchaseCode, existingBooking.Id);
+                    await transaction.RollbackAsync();
+                    return;
+                }
+            }
+
+            // Purchase code validation within transaction
+            var purchaseCodeValidationRequest = new PurchaseCodeValidationRequest {
+                PurchaseCode = newBooking.PurchaseCode ?? "",
+                ValidationType = PurchaseCodeValidationType.MustNotExist
+            };
+
+            var purchaseCodeResult = await purchaseCodeValidationService.ValidateAsync(purchaseCodeValidationRequest);
+
+            if (!purchaseCodeResult.IsValid) {
+                Log.Error("Purchase code validation failed for {CustomerEmail}. Error: {ValidationError}",
+                    newBooking.CustomerEmail, purchaseCodeResult.ErrorMessage);
+                await transaction.RollbackAsync();
+                return;
+            }
+
+            // Add and save the booking within the transaction
+            await context.Bookings.AddAsync(newBooking);
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            Log.Information("Booking {BookingId}: Saved for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", 
+                newBooking.Id, newBooking.CustomerEmail, newBooking.TourDate);
+
+        } catch (Exception ex) {
+            Log.Error(ex, "Booking {BookingId}: Failed to save to database. Rolling back transaction.", newBooking.Id);
+            await transaction.RollbackAsync();
         }
     }
 
@@ -178,86 +178,55 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         if (!IsWeymouthTourBooking(bookingElement)) {
             return;
         }
+
         var updatedBooking = new Booking();
         foreach (var field in fieldsToLog) {
             PopulateBookingFromJson(bookingElement, field.Key, field.Value, updatedBooking);
         }
 
-        var purchaseCodeValidationRequest = new PurchaseCodeValidationRequest {
-            PurchaseCode = updatedBooking.PurchaseCode ?? string.Empty,
-            ValidationType = PurchaseCodeValidationType.MustExist
-        };
-
-        var purchaseCodeResult = await purchaseCodeValidationService.ValidateAsync(purchaseCodeValidationRequest);
-
-        // Validate other booking data (excluding purchase code)
-        var validationRequest = new BookingValidationRequest {
-            TourDate = updatedBooking.TourDate,
-            CustomerEmail = updatedBooking.CustomerEmail,
-            CustomerEmailConfirmation = updatedBooking.CustomerEmail, // Assuming confirmation is the same as email for API input
-            CustomerCount = updatedBooking.TotalGuests
-        };
-
-        var validationResult = await bookingValidationService.ValidateAsync(validationRequest);
-
-        if (purchaseCodeResult.IsValid && validationResult.IsValid) {
-            var existingBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == updatedBooking.PurchaseCode);
-            if (existingBooking != null) {
-                existingBooking.TourDate = updatedBooking.TourDate;
-                existingBooking.CustomerEmail = updatedBooking.CustomerEmail;
-                existingBooking.TotalGuests = updatedBooking.TotalGuests;
-                try {
-                    context.Bookings.Update(existingBooking);
-                    await context.SaveChangesAsync();
-                    Log.Information("Booking {BookingId}: Updated for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", existingBooking.Id, existingBooking.CustomerEmail, existingBooking.TourDate);
-                } catch (Exception ex) {
-                    Log.Error(ex, "Booking {BookingId}: Failed to update in database.", existingBooking.Id);
-                }
-            } else {
-                Log.Warning("No existing booking found with Purchase Code: {PurchaseCode} for update.", updatedBooking.PurchaseCode);
-            }
-        } else {
-            var allErrors = new List<string>();
-            allErrors.AddRange(validationResult.ErrorMessages);
-            if (!purchaseCodeResult.IsValid && purchaseCodeResult.ErrorMessage != null) {
-                allErrors.Add(purchaseCodeResult.ErrorMessage);
-            }
-            Log.Warning("Booking update validation failed for {CustomerEmail}. Errors: {ValidationErrors}",
-                updatedBooking.CustomerEmail, string.Join(", ", allErrors));
+        var validationResults = await ValidateUpdateBooking(updatedBooking);
+        if (!validationResults.IsValid) {
+            LogValidationErrors(updatedBooking.CustomerEmail, validationResults.ErrorMessages);
+            return;
         }
+
+        var existingBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == updatedBooking.PurchaseCode);
+        if (existingBooking == null) {
+            Log.Warning("No existing booking found with Purchase Code: {PurchaseCode} for update.", updatedBooking.PurchaseCode);
+            return;
+        }
+
+        if (!HasBookingChanges(existingBooking, updatedBooking)) {
+            Log.Information("Booking {BookingId}: No changes detected for {CustomerEmail}. Skipping update.", existingBooking.Id, existingBooking.CustomerEmail);
+            return;
+        }
+
+        await UpdateExistingBooking(existingBooking, updatedBooking);
     }
 
     private async Task CancelFoodTourBooking(JsonElement bookingElement) {
         if (!IsWeymouthTourBooking(bookingElement)) {
             return;
         }
-        var updatedBooking = new Booking();
+
+        var bookingToCancel = new Booking();
         foreach (var field in fieldsToLog) {
-            PopulateBookingFromJson(bookingElement, field.Key, field.Value, updatedBooking);
+            PopulateBookingFromJson(bookingElement, field.Key, field.Value, bookingToCancel);
         }
-        var purchaseCodeValidationRequest = new PurchaseCodeValidationRequest {
-            PurchaseCode = updatedBooking.PurchaseCode ?? string.Empty,
-            ValidationType = PurchaseCodeValidationType.MustExist
-        };
-        var purchaseCodeResult = await purchaseCodeValidationService.ValidateAsync(purchaseCodeValidationRequest);
-        if (purchaseCodeResult.IsValid) {
-            var existingBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == updatedBooking.PurchaseCode);
-            if (existingBooking != null) {
-                existingBooking.IsCancelled = true;
-                context.Bookings.Update(existingBooking);
-                Log.Information("Booking {BookingId}: Marked as cancelled for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", existingBooking.Id, existingBooking.CustomerEmail, existingBooking.TourDate);
-            } else {
-                Log.Warning("No existing booking found with Purchase Code: {PurchaseCode} for update.", updatedBooking.PurchaseCode);
-            }
-            try {
-                await context.SaveChangesAsync();
-            } catch (Exception ex) {
-                Log.Error(ex, "Purchase code:{PurchaseCode} Failed to update in database.", updatedBooking.PurchaseCode);
-            }
-        } else {
-            string errorMessage = purchaseCodeResult.ErrorMessage ?? "Unknown error during purchase code validation.";
-            Log.Warning("Purchase code validation failed for {CustomerEmail}. Error: {ErrorMessage}", updatedBooking.CustomerEmail, errorMessage);
+
+        var validationResult = await ValidateCancellationBooking(bookingToCancel);
+        if (!validationResult.IsValid) {
+            LogValidationErrors(bookingToCancel.CustomerEmail, validationResult.ErrorMessages);
+            return;
         }
+
+        var existingBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == bookingToCancel.PurchaseCode);
+        if (existingBooking == null) {
+            Log.Warning("No existing booking found with Purchase Code: {PurchaseCode} for cancellation.", bookingToCancel.PurchaseCode);
+            return;
+        }
+
+        await CancelExistingBooking(existingBooking);
     }
 
     private static bool IsWeymouthTourBooking(JsonElement bookingElement) {
@@ -275,19 +244,10 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         return true;
     }
 
-    private static int CountJsonProperties(JsonElement jsonData) {
-        int propertyCount = 0;
-        foreach (var property in jsonData.EnumerateObject()) {
-            propertyCount++;
-        }
-        return propertyCount;
-    }
-
-    private static object CreateSuccessResponse(int propertyCount) {
+    private static object CreateSuccessResponse() {
         return new {
             message = "Booking JSON packet received successfully",
             timestamp = DateTime.UtcNow,
-            receivedProperties = propertyCount,
         };
     }
 
@@ -295,7 +255,6 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         return new {
             message = "Empty JSON packet received",
             timestamp = DateTime.UtcNow,
-            receivedProperties = 0
         };
     }
 
@@ -378,7 +337,7 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
     }
 
     private static void LogValue(string displayName, string value) {
-        Log.Information("JSON data {DisplayName}: {Value}", displayName, value);
+        Log.Debug("JSON data {DisplayName}: {Value}", displayName, value);
     }
 
     private static JsonElement? NavigateJsonPath(JsonElement rootElement, string path) {
@@ -394,5 +353,93 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         }
 
         return currentElement;
+    }
+
+    private static bool HasBookingChanges(Booking existingBooking, Booking updatedBooking) {
+        return existingBooking.TourDate != updatedBooking.TourDate ||
+               existingBooking.CustomerEmail != updatedBooking.CustomerEmail ||
+               existingBooking.TotalGuests != updatedBooking.TotalGuests;
+    }
+
+    private async Task<ValidationResult> ValidateUpdateBooking(Booking booking) {
+        var purchaseCodeValidationRequest = new PurchaseCodeValidationRequest {
+            PurchaseCode = booking.PurchaseCode ?? string.Empty,
+            ValidationType = PurchaseCodeValidationType.MustExist
+        };
+
+        var purchaseCodeResult = await purchaseCodeValidationService.ValidateAsync(purchaseCodeValidationRequest);
+
+        var validationRequest = new BookingValidationRequest {
+            TourDate = booking.TourDate,
+            CustomerEmail = booking.CustomerEmail,
+            CustomerEmailConfirmation = booking.CustomerEmail,
+            CustomerCount = booking.TotalGuests
+        };
+
+        var validationResult = await bookingValidationService.ValidateAsync(validationRequest);
+
+        var allErrors = new List<string>();
+        allErrors.AddRange(validationResult.ErrorMessages);
+        if (!purchaseCodeResult.IsValid && purchaseCodeResult.ErrorMessage != null) {
+            allErrors.Add(purchaseCodeResult.ErrorMessage);
+        }
+
+        return new ValidationResult {
+            IsValid = purchaseCodeResult.IsValid && validationResult.IsValid,
+            ErrorMessages = allErrors
+        };
+    }
+
+    private async Task UpdateExistingBooking(Booking existingBooking, Booking updatedBooking) {
+        existingBooking.TourDate = updatedBooking.TourDate;
+        existingBooking.CustomerEmail = updatedBooking.CustomerEmail;
+        existingBooking.TotalGuests = updatedBooking.TotalGuests;
+
+        try {
+            context.Bookings.Update(existingBooking);
+            await context.SaveChangesAsync();
+            Log.Information("Booking {BookingId}: Updated for {CustomerEmail} on {TourDate:dd/MM/yyyy}.",
+                existingBooking.Id, existingBooking.CustomerEmail, existingBooking.TourDate);
+        } catch (Exception ex) {
+            Log.Error(ex, "Booking {BookingId}: Failed to update in database.", existingBooking.Id);
+        }
+    }
+
+    private static void LogValidationErrors(string customerEmail, IList<string> errorMessages) {
+        Log.Warning("Booking update validation failed for {CustomerEmail}. Errors: {ValidationErrors}",
+            customerEmail, string.Join(", ", errorMessages));
+    }
+
+    private async Task<ValidationResult> ValidateCancellationBooking(Booking booking) {
+        var purchaseCodeValidationRequest = new PurchaseCodeValidationRequest {
+            PurchaseCode = booking.PurchaseCode ?? string.Empty,
+            ValidationType = PurchaseCodeValidationType.MustExist
+        };
+
+        var purchaseCodeResult = await purchaseCodeValidationService.ValidateAsync(purchaseCodeValidationRequest);
+
+        var errorMessages = new List<string>();
+        if (!purchaseCodeResult.IsValid && purchaseCodeResult.ErrorMessage != null) {
+            errorMessages.Add(purchaseCodeResult.ErrorMessage);
+        }
+
+        return new ValidationResult {
+            IsValid = purchaseCodeResult.IsValid,
+            ErrorMessages = errorMessages
+        };
+    }
+
+    private async Task CancelExistingBooking(Booking existingBooking) {
+        existingBooking.IsCancelled = true;
+        context.Bookings.Update(existingBooking);
+
+        Log.Information("Booking {BookingId}: Marked as cancelled for {CustomerEmail} on {TourDate:dd/MM/yyyy}.",
+            existingBooking.Id, existingBooking.CustomerEmail, existingBooking.TourDate);
+
+        try {
+            await context.SaveChangesAsync();
+        } catch (Exception ex) {
+            Log.Error(ex, "Purchase code:{PurchaseCode} Failed to update in database.", existingBooking.PurchaseCode);
+        }
     }
 }
