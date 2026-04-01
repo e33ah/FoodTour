@@ -1,6 +1,7 @@
 namespace FoodTour.Test.Controllers;
 
 public class FoodTourApiControllerTests {
+    private const string KEY = "5N8GS1ZZKC8J";
     [Fact]
     public async Task CreateNewBooking_ReturnsOk_WhenValidJsonReceived() {
         var controller = TestHelper.CreateFoodTourApiController();
@@ -13,7 +14,7 @@ public class FoodTourApiControllerTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = await controller.CreateNewBooking(jsonElement);
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
@@ -37,7 +38,7 @@ public class FoodTourApiControllerTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = await controller.CreateNewBooking(jsonElement);
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
@@ -53,7 +54,7 @@ public class FoodTourApiControllerTests {
         // Create an empty JsonElement
         var jsonElement = new JsonElement();
 
-        var result = await controller.CreateNewBooking(jsonElement);
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
 
         // Should still return OK as we're just logging at this stage
         var okResult = result.ShouldBeOfType<OkObjectResult>();

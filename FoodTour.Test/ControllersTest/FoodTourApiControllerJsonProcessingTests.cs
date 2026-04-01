@@ -1,6 +1,7 @@
 namespace FoodTour.Test.Controllers;
 
 public class FoodTourApiControllerJsonProcessingTests {
+    private const string KEY = "5N8GS1ZZKC8J";
     [Fact]
     public async Task CreateNewBooking_ProcessesWeymouthTourBooking_WhenItemNameMatches() {
         var controller = TestHelper.CreateFoodTourApiController();
@@ -22,11 +23,11 @@ public class FoodTourApiControllerJsonProcessingTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = await controller.CreateNewBooking(jsonElement);
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
-        var responseValue = okResult.Value;
+        object? responseValue = okResult.Value;
         responseValue.ShouldNotBeNull();
     }
 
@@ -50,7 +51,7 @@ public class FoodTourApiControllerJsonProcessingTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = await controller.CreateNewBooking(jsonElement);
+        var result = await controller.CreateNewBooking(jsonElement, KEY );
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
@@ -78,7 +79,7 @@ public class FoodTourApiControllerJsonProcessingTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = await controller.CreateNewBooking(jsonElement);
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
@@ -101,7 +102,7 @@ public class FoodTourApiControllerJsonProcessingTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = await controller.CreateNewBooking(jsonElement);
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
@@ -127,7 +128,7 @@ public class FoodTourApiControllerJsonProcessingTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = await controller.CreateNewBooking(jsonElement);
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
@@ -153,7 +154,7 @@ public class FoodTourApiControllerJsonProcessingTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = await controller.CreateNewBooking(jsonElement);
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
@@ -171,16 +172,16 @@ public class FoodTourApiControllerJsonProcessingTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = await controller.CreateNewBooking(jsonElement);
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
-        var responseValue = okResult.Value;
+        object? responseValue = okResult.Value;
         responseValue.ShouldNotBeNull();
 
         // Convert response to JSON and access properties
-        var jsonResponseString = JsonSerializer.Serialize(responseValue);
+        string jsonResponseString = JsonSerializer.Serialize(responseValue);
         var jsonResponse = JsonSerializer.Deserialize<JsonElement>(jsonResponseString);
-        var receivedProperties = jsonResponse.GetProperty("receivedProperties").GetInt32();
+        int receivedProperties = jsonResponse.GetProperty("receivedProperties").GetInt32();
         receivedProperties.ShouldBe(3);
     }
 
@@ -194,7 +195,7 @@ public class FoodTourApiControllerJsonProcessingTests {
         // Create malformed JSON that might cause parsing issues
         var malformedElement = new JsonElement();
 
-        var result = await controller.CreateNewBooking(malformedElement);
+        var result = await controller.CreateNewBooking(malformedElement, KEY);
 
         // Should handle gracefully and return OK (based on current implementation)
         var okResult = result.ShouldBeOfType<OkObjectResult>();
