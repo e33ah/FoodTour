@@ -460,9 +460,20 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         }
 
         if (!string.IsNullOrEmpty(selectedSuppliers)) {
-            var supplierIds = selectedSuppliers.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(int.Parse).ToList();
-            ViewBag.SelectedSuppliers = supplierIds;
+            List<int> supplierIds = [];
+            string[] supplierIdParts = selectedSuppliers.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            foreach (string supplierIdPart in supplierIdParts) {
+                string trimmedPart = supplierIdPart.Trim();
+                if (int.TryParse(trimmedPart, out int supplierId)) {
+                    supplierIds.Add(supplierId);
+                } else {
+                    Log.Warning("Invalid supplier id '{SupplierId}' in selectedSuppliers query parameter.", trimmedPart);
+                }
+            }
+
+            if (supplierIds.Count > 0) {
+                ViewBag.SelectedSuppliers = supplierIds;
+            }
         }
     }
 }
