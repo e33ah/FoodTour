@@ -89,15 +89,15 @@
 						<div class="card mb-4 mt-4">
 							<div class="card-body">
 								<h3 class="card-title">
-									<i class="bi bi-key text-primary"></i> Purchase Code
+									<i class="bi bi-hash text-primary"></i> Booking Reference
 								</h3>
 								<small class="form-text text-muted mb-2 mt-2 d-block">
-									Please enter the purchase code you received after payment.
+									Please enter your booking reference from your confirmation email.
 								</small>
 								<div class="form-group">
-									<label asp-for="PurchaseCode" class="form-label visually-hidden">Purchase Code</label>
+									<label asp-for="PurchaseCode" class="form-label visually-hidden">Booking Reference</label>
 									<div class="d-flex justify-content-center">
-										<input asp-for="PurchaseCode" type="text" class="form-control w-auto" style="max-width: 220px;" id="purchaseCode" />
+										<input asp-for="PurchaseCode" type="text" class="form-control w-auto" style="max-width: 220px;" id="purchaseCode" placeholder="123456789" />
 									</div>
 									<span asp-validation-for="PurchaseCode" class="text-danger"></span>
 								</div>

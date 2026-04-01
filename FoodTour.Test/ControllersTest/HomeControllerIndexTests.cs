@@ -84,7 +84,7 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
             : TestHelper.CreateInMemoryContext();
         var sut = TestHelper.CreateHomeController(context);
 
-        var result = await sut.Index();
+        var result = await sut.Index(null, null, null, null);
 
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
@@ -96,5 +96,48 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
             .Select(i => TestHelper.CreateSupplier(i, $"Test Supplier {i}"))
             .ToArray();
         return await GetIndexViewModel(suppliers);
+    }
+
+    [Fact]
+    public async Task Index_PopulatesForm_WhenParametersProvided() {
+        var context = TestHelper.CreateInMemoryContext();
+        var sut = TestHelper.CreateHomeController(context);
+        var tourDate = new DateTime(2024, 6, 15);
+        string customerEmail = "test@example.com";
+        string purchaseCode = "TEST123";
+        string selectedSuppliers = "1,2,3";
+
+        var result = await sut.Index(tourDate, customerEmail, purchaseCode, selectedSuppliers);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
+
+        model.TourDate.ShouldBe(tourDate);
+        model.CustomerEmail.ShouldBe(customerEmail);
+        model.CustomerEmailConfirmation.ShouldBe(customerEmail);
+        model.PurchaseCode.ShouldBe(purchaseCode);
+
+        var selectedSuppliersList = (List<int>)viewResult.ViewData["SelectedSuppliers"]!;
+        selectedSuppliersList.ShouldBe([1, 2, 3]);
+    }
+
+    [Fact]
+    public async Task Index_HandlesEmptyParameters_WithoutErrors() {
+        var context = TestHelper.CreateInMemoryContext();
+        var sut = TestHelper.CreateHomeController(context);
+
+        var result = await sut.Index(
+            tourDate: (DateTime?)null,
+            customerEmail: (string?)null,
+            purchaseCode: (string?)null,
+            selectedSuppliers: (string?)null);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
+
+        model.TourDate.ShouldBeNull();
+        model.CustomerEmail.ShouldBe(string.Empty);
+        model.CustomerEmailConfirmation.ShouldBe(string.Empty);
+        model.PurchaseCode.ShouldBe(string.Empty);
     }
 }

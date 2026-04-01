@@ -5,7 +5,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     private readonly QrImageService qrImageService = new();
     private readonly SupportSettings supportSettings = supportOptions.Value;
 
-    public async Task<IActionResult> Index() {
+    public async Task<IActionResult> Index(DateTime? tourDate, string? customerEmail, string? purchaseCode, string? selectedSuppliers) {
         var model = await CreateFoodTourViewModel();
 
         if (model.Suppliers.Count == 0) {
@@ -14,6 +14,8 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             ViewBag.InsufficientSuppliersWarning = GetInsufficientSuppliersMessage(model.Suppliers.Count);
             Log.Warning("Insufficient active suppliers: {SupplierCount} found, {RequiredCount} required.", model.Suppliers.Count, MAX_SUPPLIER_SELECTIONS);
         }
+
+        PopulateFormFromQueryParameters(model, tourDate, customerEmail, purchaseCode, selectedSuppliers);
 
         return View(model);
     }
@@ -441,5 +443,26 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             throw new InvalidOperationException($"Unable to generate {actionName} URL.");
         }
         return generatedUrl;
+    }
+
+    private void PopulateFormFromQueryParameters(FoodTourVM model, DateTime? tourDate, string? customerEmail, string? purchaseCode, string? selectedSuppliers) {
+        if (tourDate.HasValue) {
+            model.TourDate = tourDate.Value;
+        }
+
+        if (!string.IsNullOrEmpty(customerEmail)) {
+            model.CustomerEmail = customerEmail;
+            model.CustomerEmailConfirmation = customerEmail;
+        }
+
+        if (!string.IsNullOrEmpty(purchaseCode)) {
+            model.PurchaseCode = purchaseCode;
+        }
+
+        if (!string.IsNullOrEmpty(selectedSuppliers)) {
+            var supplierIds = selectedSuppliers.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(int.Parse).ToList();
+            ViewBag.SelectedSuppliers = supplierIds;
+        }
     }
 }
