@@ -98,4 +98,253 @@ public class FoodTourApiControllerTests {
         // Both calls should return successfully, but only one booking should be created
         // The duplicate prevention is logged, not exposed in the API response for security
     }
+
+    [Fact]
+    public async Task CheckBooking_ReturnsOkWithFoundTrue_WhenActiveBookingExists() {
+        var context = TestHelper.CreateInMemoryContext();
+        var booking = new Booking {
+            CustomerEmail = "test@example.com",
+            PurchaseCode = "ABC123",
+            TourDate = DateTime.UtcNow.AddDays(7),
+            IsCancelled = false,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "test@example.com",
+            PurchaseCode = "ABC123"
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+        object? value = okResult.Value;
+        value.ShouldNotBeNull();
+        object? found = value.GetType().GetProperty("found")?.GetValue(value);
+        found.ShouldBe(true);
+        object? isCancelled = value.GetType().GetProperty("isCancelled")?.GetValue(value);
+        isCancelled.ShouldBe(false);
+        string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
+        message.ShouldBe("We've found your booking!");
+    }
+
+    [Fact]
+    public async Task CheckBooking_ReturnsOkWithCancelledTrue_WhenCancelledBookingExists() {
+        var context = TestHelper.CreateInMemoryContext();
+        var booking = new Booking {
+            CustomerEmail = "cancelled@example.com",
+            PurchaseCode = "CANCELLED123",
+            TourDate = DateTime.UtcNow.AddDays(7),
+            IsCancelled = true,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "cancelled@example.com",
+            PurchaseCode = "CANCELLED123"
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+        object? value = okResult.Value;
+        value.ShouldNotBeNull();
+        object? found = value.GetType().GetProperty("found")?.GetValue(value);
+        found.ShouldBe(true);
+        object? isCancelled = value.GetType().GetProperty("isCancelled")?.GetValue(value);
+        isCancelled.ShouldBe(true);
+        string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
+        message.ShouldBe("This booking has been cancelled. Please contact support if you believe this is an error.");
+    }
+
+    [Fact]
+    public async Task CheckBooking_ReturnsOkWithFoundFalse_WhenBookingDoesNotExist() {
+        var context = TestHelper.CreateInMemoryContext();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "notfound@example.com",
+            PurchaseCode = "NOTFOUND123"
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+        object? value = okResult.Value;
+        value.ShouldNotBeNull();
+        object? found = value.GetType().GetProperty("found")?.GetValue(value);
+        found.ShouldBe(false);
+        string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
+        message.ShouldBe("We couldn't find your booking. Please check your booking reference and email address for any typos, or contact support if the problem continues");
+    }
+
+    [Fact]
+    public async Task CheckBooking_ReturnsOkWithFoundFalse_WhenEmailDoesNotMatch() {
+        var context = TestHelper.CreateInMemoryContext();
+        var booking = new Booking {
+            CustomerEmail = "correct@example.com",
+            PurchaseCode = "ABC123",
+            TourDate = DateTime.UtcNow.AddDays(7),
+            IsCancelled = false,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "wrong@example.com",
+            PurchaseCode = "ABC123"
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+        object? value = okResult.Value;
+        value.ShouldNotBeNull();
+        object? found = value.GetType().GetProperty("found")?.GetValue(value);
+        found.ShouldBe(false);
+    }
+
+    [Fact]
+    public async Task CheckBooking_ReturnsOkWithFoundFalse_WhenPurchaseCodeDoesNotMatch() {
+        var context = TestHelper.CreateInMemoryContext();
+        var booking = new Booking {
+            CustomerEmail = "test@example.com",
+            PurchaseCode = "CORRECT123",
+            TourDate = DateTime.UtcNow.AddDays(7),
+            IsCancelled = false,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "test@example.com",
+            PurchaseCode = "WRONG123"
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+        object? value = okResult.Value;
+        value.ShouldNotBeNull();
+        object? found = value.GetType().GetProperty("found")?.GetValue(value);
+        found.ShouldBe(false);
+    }
+
+    [Fact]
+    public async Task CheckBooking_ReturnsBadRequest_WhenEmailIsEmpty() {
+        var controller = TestHelper.CreateFoodTourApiController();
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "",
+            PurchaseCode = "ABC123"
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        object? value = badRequestResult.Value;
+        value.ShouldNotBeNull();
+        string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
+        message.ShouldBe("Email and booking reference are required.");
+    }
+
+    [Fact]
+    public async Task CheckBooking_ReturnsBadRequest_WhenPurchaseCodeIsEmpty() {
+        var controller = TestHelper.CreateFoodTourApiController();
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "test@example.com",
+            PurchaseCode = ""
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        object? value = badRequestResult.Value;
+        value.ShouldNotBeNull();
+        string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
+        message.ShouldBe("Email and booking reference are required.");
+    }
+
+    [Fact]
+    public async Task CheckBooking_ReturnsBadRequest_WhenBothFieldsAreEmpty() {
+        var controller = TestHelper.CreateFoodTourApiController();
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "",
+            PurchaseCode = ""
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+        object? value = badRequestResult.Value;
+        value.ShouldNotBeNull();
+        string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
+        message.ShouldBe("Email and booking reference are required.");
+    }
+
+    [Fact]
+    public async Task CheckBooking_ReturnsBadRequest_WhenEmailIsWhitespace() {
+        var controller = TestHelper.CreateFoodTourApiController();
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "   ",
+            PurchaseCode = "ABC123"
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var badRequestResult = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequestResult.StatusCode.ShouldBe(400);
+    }
+
+    [Fact]
+    public async Task CheckBooking_IsCaseInsensitiveForEmail() {
+        var context = TestHelper.CreateInMemoryContext();
+        var booking = new Booking {
+            CustomerEmail = "Test@Example.Com",
+            PurchaseCode = "ABC123",
+            TourDate = DateTime.UtcNow.AddDays(7),
+            IsCancelled = false,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "test@example.com",
+            PurchaseCode = "ABC123"
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+        object? value = okResult.Value;
+        value.ShouldNotBeNull();
+        object? found = value.GetType().GetProperty("found")?.GetValue(value);
+        found.ShouldBe(true);
+        object? isCancelled = value.GetType().GetProperty("isCancelled")?.GetValue(value);
+        isCancelled.ShouldBe(false);
+    }
 }

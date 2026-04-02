@@ -85,6 +85,30 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         }
     }
 
+    [HttpPost("checkbooking")]
+    public async Task<IActionResult> CheckBooking([FromBody] BookingCheckRequest request) {
+        if (string.IsNullOrWhiteSpace(request.CustomerEmail) || string.IsNullOrWhiteSpace(request.PurchaseCode)) {
+            return BadRequest(new { found = false, message = "Email and booking reference are required." });
+        }
+
+        var booking = await context.Bookings
+            .FirstOrDefaultAsync(b => b.CustomerEmail.ToLower() == request.CustomerEmail.ToLower() && b.PurchaseCode == request.PurchaseCode);
+
+        if (booking == null) {
+            Log.Debug("No booking found for email {Email} and purchase code {PurchaseCode}", request.CustomerEmail, request.PurchaseCode);
+            return Ok(new { found = false, message = "We couldn't find your booking. Please check your booking reference and email address for any typos, or contact support if the problem continues" });
+        }
+
+        if (booking.IsCancelled) {
+            Log.Information("Booking {BookingId}: Found but cancelled for {CustomerEmail} with purchase code {PurchaseCode}", booking.Id, booking.CustomerEmail, booking.PurchaseCode);
+            return Ok(new { found = true, isCancelled = true, message = "This booking has been cancelled. Please contact support if you believe this is an error.", bookingId = booking.Id });
+        }
+
+        Log.Information("Booking {BookingId}: Found for {CustomerEmail} with purchase code {PurchaseCode}", booking.Id, booking.CustomerEmail, booking.PurchaseCode);
+        return Ok(new { found = true, isCancelled = false, message = "We've found your booking!", bookingId = booking.Id });
+    }
+
+
     private static object CreateSuccessResponse() => new { message = "Booking JSON packet received successfully", timestamp = DateTime.UtcNow };
 
     private static object CreateEmptyJsonResponse() => new { message = "Empty JSON packet received", timestamp = DateTime.UtcNow };

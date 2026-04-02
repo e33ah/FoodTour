@@ -252,6 +252,108 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Booking check functionality
+    const showBookingSuccess = (message) => {
+        clearBookingMessages();
+        if (purchaseCodeInput) {
+            const card = purchaseCodeInput.closest('.card');
+            if (card) {
+                const successElement = document.createElement('div');
+                successElement.className = 'alert alert-success mb-4 booking-message';
+                successElement.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${message}`;
+                card.parentNode.insertBefore(successElement, card.nextSibling);
+            }
+        }
+    };
+
+    const showBookingWarning = (message) => {
+        clearBookingMessages();
+        if (purchaseCodeInput) {
+            const card = purchaseCodeInput.closest('.card');
+            if (card) {
+                const warningElement = document.createElement('div');
+                warningElement.className = 'alert alert-warning mb-4 booking-message';
+                warningElement.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> ${message}`;
+                card.parentNode.insertBefore(warningElement, card.nextSibling);
+            }
+        }
+    };
+
+    const clearBookingSuccess = () => {
+        const existingMessage = document.querySelector('.booking-success-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+    };
+
+    const clearBookingMessages = () => {
+        const existingMessage = document.querySelector('.booking-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        // Also clear old success messages for backwards compatibility
+        clearBookingSuccess();
+    };
+
+    const checkBookingExists = async () => {
+        const email = emailInput?.value.trim();
+        const purchaseCode = purchaseCodeInput?.value.trim();
+
+        // Clear any previous messages
+        clearBookingMessages();
+        clearEmailError();
+        clearPurchaseCodeError();
+
+        // Only check if both fields have values
+        if (!email || !purchaseCode) {
+            return;
+        }
+
+        // Validate email format
+        if (!isValidEmail(email)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/foodtour/checkbooking', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    customerEmail: email,
+                    purchaseCode: purchaseCode
+                })
+            });
+
+            if (!response.ok) {
+                console.error('Booking check failed:', response.status);
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.found) {
+                if (data.isCancelled) {
+                    showBookingWarning(data.message);
+                } else {
+                    showBookingSuccess(data.message);
+                }
+            } else {
+                showBookingWarning(data.message);
+            }
+        } catch (error) {
+            console.error('Error checking booking:', error);
+        }
+    };
+
+    // Debounce function to avoid too many API calls
+    let bookingCheckTimeout;
+    const debouncedBookingCheck = () => {
+        clearTimeout(bookingCheckTimeout);
+        bookingCheckTimeout = setTimeout(checkBookingExists, 500);
+    };
+
     // Add form validation on submit
     const tourForm = document.querySelector('form[data-max-selections]');
     if (tourForm) {
@@ -345,12 +447,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Clear purchase code and email error messages as soon as the user types or changes the value
     if (purchaseCodeInput) {
-        purchaseCodeInput.addEventListener('input', clearPurchaseCodeError);
-        purchaseCodeInput.addEventListener('change', clearPurchaseCodeError);
+        purchaseCodeInput.addEventListener('input', () => {
+            clearPurchaseCodeError();
+            clearBookingMessages();
+            debouncedBookingCheck();
+        });
+        purchaseCodeInput.addEventListener('change', () => {
+            clearPurchaseCodeError();
+            clearBookingMessages();
+            debouncedBookingCheck();
+        });
     }
 
     if (emailInput) {
-        emailInput.addEventListener('input', clearEmailError);
-        emailInput.addEventListener('change', clearEmailError);
+        emailInput.addEventListener('input', () => {
+            clearEmailError();
+            clearBookingMessages();
+            debouncedBookingCheck();
+        });
+        emailInput.addEventListener('change', () => {
+            clearEmailError();
+            clearBookingMessages();
+            debouncedBookingCheck();
+        });
     }
 });

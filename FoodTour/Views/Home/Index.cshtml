@@ -42,27 +42,6 @@
 						<p class="mb-4">
 							Some venues are designed for quick visits and may not include seating.
 						</p>
-
-						<div class="card mb-4">
-							<div class="card-body">
-								<h3 class="card-title mb-3">
-									<i class="bi bi-calendar-event text-primary"></i> Select Your Tour Date
-								</h3>
-								<div class="form-group">
-									<small class="form-text text-muted mb-2 mt-2 d-block">
-										Tours are available daily from April to November
-									</small>
-									<label asp-for="TourDate" class="form-label visually-hidden">Tour Date</label>
-									<div class="d-flex justify-content-center">
-										<input asp-for="TourDate" type="date" class="form-control w-auto" id="tourDate" style="max-width: 220px;" />
-									</div>
-									<span asp-validation-for="TourDate" class="text-danger"></span>
-								</div>
-							</div>
-						</div>
-						@foreach (var item in Model.Suppliers) {
-							<partial name="_SupplierCard" model="item" />
-						}
 						<div class="card mb-4 mt-4">
 							<div class="card-body">
 								<h3 class="card-title">
@@ -96,6 +75,9 @@
 								</div>
 							</div>
 						</div>
+						@foreach (var item in Model.Suppliers) {
+							<partial name="_SupplierCard" model="item" />
+						}
 						<div class="text-center mt-4">
 							<button type="submit" class="btn btn-primary btn-lg" id="createTourBtn" disabled>Create My Tour</button>
 						</div>
