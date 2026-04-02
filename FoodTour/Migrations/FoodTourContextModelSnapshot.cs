@@ -91,29 +91,6 @@ namespace FoodTour.Migrations
                     b.ToTable("BookingSuppliers");
                 });
 
-            modelBuilder.Entity("FoodTour.Models.PurchaseCode", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PurchaseCodes");
-                });
-
             modelBuilder.Entity("FoodTour.Models.Supplier", b =>
                 {
                     b.Property<int>("Id")

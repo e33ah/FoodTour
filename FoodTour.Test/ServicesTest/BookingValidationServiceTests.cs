@@ -4,7 +4,6 @@ public class BookingValidationServiceTests {
     [Fact]
     public async Task ValidateAsync_ReturnsValid_WhenAllDataIsValid() {
         using var context = TestHelper.CreateInMemoryContext();
-        context.PurchaseCodes.Add(new PurchaseCode { Code = TestHelper.VALID_CODE });
         context.Suppliers.AddRange([
             TestHelper.CreateSupplier(1),
             TestHelper.CreateSupplier(2),
@@ -185,7 +184,6 @@ public class BookingValidationServiceTests {
     [Fact]
     public async Task ValidateAsync_ReturnsValid_WhenCustomerCountIsNull() {
         using var context = TestHelper.CreateInMemoryContext();
-        context.PurchaseCodes.Add(new PurchaseCode { Code = TestHelper.VALID_CODE });
         context.Suppliers.AddRange([
             TestHelper.CreateSupplier(1),
             TestHelper.CreateSupplier(2),
@@ -276,7 +274,6 @@ public class BookingValidationServiceTests {
     [Fact]
     public async Task ValidateAsync_ReturnsValid_WhenExactlyRequiredSuppliersSelected() {
         using var context = TestHelper.CreateInMemoryContext();
-        context.PurchaseCodes.Add(new PurchaseCode { Code = TestHelper.VALID_CODE });
         var suppliers = Enumerable.Range(1, TestHelper.EXPECTED_MAX_SELECTIONS)
             .Select(i => TestHelper.CreateSupplier(i))
             .ToArray();

@@ -197,7 +197,6 @@ public static class TestHelper {
 
     public static async Task<HomeController> CreateHomeController(int contextSupplierCount) {
         var context = CreateContextWithActiveSuppliersCount(contextSupplierCount);
-        context.PurchaseCodes.Add(new PurchaseCode { Code = VALID_CODE });
         await context.SaveChangesAsync();
         var emailSender = Mock.Of<IEmailSender>();
         var bookingEmailService = new BookingEmailService();

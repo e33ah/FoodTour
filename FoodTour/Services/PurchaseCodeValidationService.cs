@@ -9,22 +9,11 @@ public class PurchaseCodeValidationService(FoodTourContext context) : IPurchaseC
         }
 
         return request.ValidationType switch {
-            PurchaseCodeValidationType.MustExistAndBeActive => await ValidateMustExistAndBeActiveAsync(request.PurchaseCode),
             PurchaseCodeValidationType.MustNotExist => await ValidateMustNotExistAsync(request.PurchaseCode),
             PurchaseCodeValidationType.MustExist => await ValidateMustExistAsync(request.PurchaseCode),
             PurchaseCodeValidationType.MustExistForCancellation => await ValidateMustExistForCancellationAsync(request.PurchaseCode),
             _ => PurchaseCodeValidationResult.Failure("Unknown validation type.")
         };
-    }
-
-    private async Task<PurchaseCodeValidationResult> ValidateMustExistAndBeActiveAsync(string purchaseCode) {
-        bool codeExists = await context.PurchaseCodes
-            .AnyAsync(pc => pc.Code == purchaseCode && pc.IsActive);
-        Log.Debug($"Purchase code must exist and be active. Purchase code '{purchaseCode}' existence and active status: {codeExists}");
-
-        return codeExists
-            ? PurchaseCodeValidationResult.Success()
-            : PurchaseCodeValidationResult.Failure("Please enter a valid purchase code.");
     }
 
     private async Task<PurchaseCodeValidationResult> ValidateMustNotExistAsync(string purchaseCode) {
