@@ -70,52 +70,6 @@ public class BookingValidationServiceTests {
         result.IsTourDateValid.ShouldBeFalse();
     }
 
-    [Fact]
-    public async Task ValidateAsync_ReturnsInvalid_WhenTourDateIsSunday() {
-        using var context = TestHelper.CreateInMemoryContext();
-        var sut = new BookingValidationService(context);
-        var sundayDate = new DateTime(TestHelper.nextYear, 6, 1);
-        // Ensure it's actually a Sunday
-        while (sundayDate.DayOfWeek != DayOfWeek.Sunday) {
-            sundayDate = sundayDate.AddDays(1);
-        }
-
-        var request = new BookingValidationRequest {
-            TourDate = sundayDate,
-            CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerCount = 2,
-            SelectedSupplierIds = [1, 2, 3, 4, 5]
-        };
-
-        var result = await sut.ValidateAsync(request);
-
-        result.IsValid.ShouldBeFalse();
-        result.IsTourDateValid.ShouldBeFalse();
-    }
-
-    [Theory]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(11)]
-    [InlineData(12)]
-    public async Task ValidateAsync_ReturnsInvalid_WhenTourDateIsOutsideSeason(int month) {
-        using var context = TestHelper.CreateInMemoryContext();
-        var sut = new BookingValidationService(context);
-        var outOfSeasonDate = new DateTime(TestHelper.nextYear, month, 15);
-
-        var request = new BookingValidationRequest {
-            TourDate = outOfSeasonDate,
-            CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerCount = 2,
-            SelectedSupplierIds = [1, 2, 3, 4, 5]
-        };
-
-        var result = await sut.ValidateAsync(request);
-
-        result.IsValid.ShouldBeFalse();
-        result.IsTourDateValid.ShouldBeFalse();
-    }
-
     [Theory]
     [InlineData("")]
     [InlineData("   ")]

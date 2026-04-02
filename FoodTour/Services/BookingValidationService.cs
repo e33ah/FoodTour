@@ -1,8 +1,6 @@
 namespace FoodTour.Services;
 
 public class BookingValidationService(FoodTourContext context) : IBookingValidationService {
-    private const int TOUR_SEASON_START_MONTH = 4;
-    private const int TOUR_SEASON_END_MONTH = 10;
     private const int MAX_SUPPLIER_SELECTIONS = 5;
     
     private static readonly EmailAddressAttribute emailValidator = new();
@@ -45,7 +43,7 @@ public class BookingValidationService(FoodTourContext context) : IBookingValidat
         }
 
         if (!IsValidTourDate(tourDate.Value)) {
-            result.AddError($"Tour date {tourDate.Value:yyyy-MM-dd} is invalid. Tours run April-October, Monday-Saturday, and must be in the future");
+            result.AddError($"Tour date {tourDate.Value:yyyy-MM-dd} must be in the future");
             return false;
         }
 
@@ -114,9 +112,6 @@ public class BookingValidationService(FoodTourContext context) : IBookingValidat
     }
 
     private static bool IsValidTourDate(DateTime date) {
-        return date > DateTime.Today
-            && date.DayOfWeek != DayOfWeek.Sunday
-            && date.Month >= TOUR_SEASON_START_MONTH
-            && date.Month <= TOUR_SEASON_END_MONTH;
+        return date > DateTime.Today;
     }
 }
