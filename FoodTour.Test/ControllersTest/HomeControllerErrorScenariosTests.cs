@@ -14,7 +14,7 @@ public class HomeControllerErrorScenariosTests : HomeControllerTestBase {
         var sut = CreateConfiguredControllerWithUrl(context, "UserSupport");
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         var view = result.ShouldBeOfType<ViewResult>();
         var model = view.Model.ShouldBeOfType<FoodTourVM>();
@@ -146,7 +146,7 @@ public class HomeControllerErrorScenariosTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, "INVALID_CODE");
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, "INVALID_CODE");
 
         var view = result.ShouldBeOfType<ViewResult>();
         var viewBag = view.ViewData;
@@ -158,15 +158,14 @@ public class HomeControllerErrorScenariosTests : HomeControllerTestBase {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
-        var testEmail = "test@example.com";
-        var testPurchaseCode = "TEST_CODE";
+        string testEmail = "test@example.com";
+        string testPurchaseCode = "TEST_CODE";
 
-        var result = await sut.Index(null, selectedSuppliers, testEmail, testEmail, testPurchaseCode);
+        var result = await sut.Index(null, selectedSuppliers, testEmail, testPurchaseCode);
 
         var view = result.ShouldBeOfType<ViewResult>();
         var model = view.Model.ShouldBeOfType<FoodTourVM>();
         model.CustomerEmail.ShouldBe(testEmail);
-        model.CustomerEmailConfirmation.ShouldBe(testEmail);
         model.PurchaseCode.ShouldBe(testPurchaseCode);
         view.ViewData["SelectedSuppliers"].ShouldBe(selectedSuppliers);
     }

@@ -259,7 +259,6 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         var validationRequest = new BookingValidationRequest {
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
-            CustomerEmailConfirmation = booking.CustomerEmail,
             CustomerCount = booking.TotalGuests
         };
 
@@ -295,7 +294,6 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         var validationRequest = new BookingValidationRequest {
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
-            CustomerEmailConfirmation = booking.CustomerEmail,
             CustomerCount = booking.TotalGuests
         };
 

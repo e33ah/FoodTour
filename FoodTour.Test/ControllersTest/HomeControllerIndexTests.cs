@@ -84,7 +84,8 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
             : TestHelper.CreateInMemoryContext();
         var sut = TestHelper.CreateHomeController(context);
 
-        var result = await sut.Index(null, null, null, null);
+
+        var result = await sut.Index(qrToken: null);
 
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
@@ -99,45 +100,68 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
     }
 
     [Fact]
-    public async Task Index_PopulatesForm_WhenParametersProvided() {
-        var context = TestHelper.CreateInMemoryContext();
-        var sut = TestHelper.CreateHomeController(context);
+    public async Task Index_PopulatesForm_WhenQrTokenProvided() {
         var tourDate = new DateTime(2024, 6, 15);
         string customerEmail = "test@example.com";
         string purchaseCode = "TEST123";
-        string selectedSuppliers = "1,2,3";
+        var selectedSupplierIds = new List<int> { 1, 2, 3 };
+        var qrToken = Guid.NewGuid();
 
-        var result = await sut.Index(tourDate, customerEmail, purchaseCode, selectedSuppliers);
+        var booking = new Booking {
+            TourDate = tourDate,
+            CustomerEmail = customerEmail,
+            PurchaseCode = purchaseCode,
+            SelectedSupplierIds = selectedSupplierIds,
+            QrToken = qrToken,
+        };
+
+        var context = TestHelper.CreateInMemoryContext();
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync();
+
+        var sut = TestHelper.CreateHomeController(context);
+
+        var result = await sut.Index(qrToken);
 
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
 
         model.TourDate.ShouldBe(tourDate);
         model.CustomerEmail.ShouldBe(customerEmail);
-        model.CustomerEmailConfirmation.ShouldBe(customerEmail);
         model.PurchaseCode.ShouldBe(purchaseCode);
 
         var selectedSuppliersList = (List<int>)viewResult.ViewData["SelectedSuppliers"]!;
-        selectedSuppliersList.ShouldBe([1, 2, 3]);
+        selectedSuppliersList.ShouldBe(selectedSupplierIds);
     }
 
     [Fact]
-    public async Task Index_HandlesEmptyParameters_WithoutErrors() {
+    public async Task Index_HandlesEmptyQrToken_WithoutErrors() {
         var context = TestHelper.CreateInMemoryContext();
         var sut = TestHelper.CreateHomeController(context);
 
-        var result = await sut.Index(
-            tourDate: (DateTime?)null,
-            customerEmail: (string?)null,
-            purchaseCode: (string?)null,
-            selectedSuppliers: (string?)null);
+        var result = await sut.Index(qrToken: null);
 
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
 
         model.TourDate.ShouldBeNull();
         model.CustomerEmail.ShouldBe(string.Empty);
-        model.CustomerEmailConfirmation.ShouldBe(string.Empty);
+        model.PurchaseCode.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public async Task Index_HandlesInvalidQrToken_WithoutErrors() {
+        var context = TestHelper.CreateInMemoryContext();
+        var sut = TestHelper.CreateHomeController(context);
+        var invalidToken = Guid.NewGuid();
+
+        var result = await sut.Index(qrToken: invalidToken);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
+
+        model.TourDate.ShouldBeNull();
+        model.CustomerEmail.ShouldBe(string.Empty);
         model.PurchaseCode.ShouldBe(string.Empty);
     }
 }

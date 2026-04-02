@@ -12,7 +12,6 @@ public class BookingValidationService(FoodTourContext context) : IBookingValidat
 
         result.IsTourDateValid = ValidateTourDate(request.TourDate, result);
         result.IsCustomerEmailValid = ValidateCustomerEmail(request.CustomerEmail, result);
-        result.IsCustomerEmailConfirmationValid = ValidateCustomerEmailConfirmation(request.CustomerEmail, request.CustomerEmailConfirmation, result);
         // Skip if not provided
         result.IsCustomerCountValid = !request.CustomerCount.HasValue || ValidateCustomerCount(request.CustomerCount, result);
         result.AreSelectedSuppliersValid = request.SelectedSupplierIds == null || await ValidateSelectedSuppliersAsync(request.SelectedSupplierIds, result);
@@ -62,26 +61,6 @@ public class BookingValidationService(FoodTourContext context) : IBookingValidat
 
         if (!emailValidator.IsValid(customerEmail)) {
             result.AddError($"Customer email '{customerEmail}' is not in a valid format");
-            return false;
-        }
-
-        return true;
-    }
-
-    private static bool ValidateCustomerEmailConfirmation(string? customerEmail, string? customerEmailConfirmation, BookingValidationResult result) {
-        if (string.IsNullOrWhiteSpace(customerEmailConfirmation)) {
-            result.IsCustomerEmailConfirmationEmpty = true;
-            result.AddError("Email confirmation is required");
-            return false;
-        }
-
-        if (!emailValidator.IsValid(customerEmailConfirmation)) {
-            result.AddError($"Email confirmation '{customerEmailConfirmation}' is not in a valid format");
-            return false;
-        }
-
-        if (!string.Equals(customerEmail, customerEmailConfirmation, StringComparison.Ordinal)) {
-            result.AddError("Email confirmation does not match the provided email address");
             return false;
         }
 

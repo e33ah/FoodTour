@@ -180,53 +180,13 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         return await PostIndex(tourDate, selectedSuppliers, contextSupplierCount, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
     }
 
-    [Fact]
-    public async Task IndexPost_ReturnsViewWithError_WhenEmailConfirmationDoesNotMatch() {
-        var selectedSuppliers = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS);
-        var validTourDate = TestHelper.validTourDate;
-        const string EMAIL = "test@example.com";
-        const string CONFIRMATION_EMAIL = "different@example.com";
-
-        var (result, controller) = await PostIndexWithEmailConfirmationAndController(validTourDate, selectedSuppliers, TestHelper.EXPECTED_MAX_SELECTIONS, EMAIL, CONFIRMATION_EMAIL, TestHelper.VALID_CODE);
-
-        result.ShouldBeOfType<ViewResult>();
-        controller.ModelState.IsValid.ShouldBeFalse();
-        controller.ModelState.ContainsKey(nameof(FoodTourVM.CustomerEmailConfirmation)).ShouldBeTrue();
-        controller.ModelState[nameof(FoodTourVM.CustomerEmailConfirmation)]?.Errors.ShouldContain(e => e.ErrorMessage.Contains("do not match"));
-    }
-
-    [Fact]
-    public async Task IndexPost_RedirectsToBookingSummary_WhenEmailConfirmationMatches() {
-        var selectedSuppliers = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS);
-        var validTourDate = TestHelper.validTourDate;
-        const string EMAIL = "test@example.com";
-
-        var result = await PostIndexWithEmailConfirmation(validTourDate, selectedSuppliers, TestHelper.EXPECTED_MAX_SELECTIONS, EMAIL, EMAIL, TestHelper.VALID_CODE);
-
-        var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
-        redirectResult.ActionName.ShouldBe(nameof(HomeController.BookingSummary));
-    }
-
-    [Fact]
-    public async Task IndexPost_ReturnsViewWithError_WhenEmailConfirmationIsEmpty() {
-        var selectedSuppliers = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS);
-        var validTourDate = TestHelper.validTourDate;
-        const string EMAIL = "test@example.com";
-
-        var (result, controller) = await PostIndexWithEmailConfirmationAndController(validTourDate, selectedSuppliers, TestHelper.EXPECTED_MAX_SELECTIONS, EMAIL, "", TestHelper.VALID_CODE);
-
-        result.ShouldBeOfType<ViewResult>();
-        controller.ModelState.IsValid.ShouldBeFalse();
-        controller.ModelState.ContainsKey(nameof(FoodTourVM.CustomerEmailConfirmation)).ShouldBeTrue();
-    }
-
     private static async Task<HomeController> CreateHomeControllerForTesting(int contextSupplierCount) {
         return await TestHelper.CreateHomeController(contextSupplierCount);
     }
 
     private static async Task<IActionResult> PostIndex(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {
         var sut = await CreateHomeControllerForTesting(contextSupplierCount);
-        return await sut.Index(tourDate, selectedSuppliers, customerEmail, customerEmail, purchaseCode);
+        return await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
     }
 
     private static async Task<(IActionResult result, HomeController controller)> PostIndexWithController(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount) {
@@ -235,18 +195,18 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
 
     private static async Task<(IActionResult result, HomeController controller)> PostIndexWithController(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {
         var sut = await CreateHomeControllerForTesting(contextSupplierCount);
-        var result = await sut.Index(tourDate, selectedSuppliers, customerEmail, customerEmail, purchaseCode);
+        var result = await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
         return (result, sut);
     }
 
-    private static async Task<IActionResult> PostIndexWithEmailConfirmation(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string customerEmailConfirmation, string purchaseCode) {
+    private static async Task<IActionResult> PostIndexWithEmailConfirmation(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {
         var sut = await CreateHomeControllerForTesting(contextSupplierCount);
-        return await sut.Index(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
+        return await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
     }
 
-    private static async Task<(IActionResult result, HomeController controller)> PostIndexWithEmailConfirmationAndController(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string customerEmailConfirmation, string purchaseCode) {
+    private static async Task<(IActionResult result, HomeController controller)> PostIndexWithEmailConfirmationAndController(DateTime? tourDate, List<int> selectedSuppliers, int contextSupplierCount, string customerEmail, string purchaseCode) {
         var sut = await CreateHomeControllerForTesting(contextSupplierCount);
-        var result = await sut.Index(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
+        var result = await sut.Index(tourDate, selectedSuppliers, customerEmail, purchaseCode);
         return (result, sut);
     }
 }

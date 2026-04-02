@@ -11,7 +11,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        var result = await sut.Index(tourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(tourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
@@ -28,7 +28,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
         var pastDate = DateTime.Today.AddDays(-1);
 
-        var result = await sut.Index(pastDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(pastDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
@@ -50,7 +50,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
             sunday = sunday.AddDays(1);
         }
 
-        var result = await sut.Index(sunday, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(sunday, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
@@ -69,7 +69,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
         var outOfSeasonDate = new DateTime(TestHelper.nextYear, month, day);
 
-        var result = await sut.Index(outOfSeasonDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(outOfSeasonDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
@@ -89,7 +89,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
         // null-coalescing operator is used to satisfy the non-nullable parameter, but the test will pass null to trigger the validation error
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, customerEmail!, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, customerEmail!, TestHelper.VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
@@ -108,28 +108,12 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, invalidEmail, invalidEmail, TestHelper.VALID_CODE);
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, invalidEmail, TestHelper.VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
         sut.ModelState.ContainsKey(nameof(FoodTourVM.CustomerEmail)).ShouldBeTrue();
         sut.ModelState[nameof(FoodTourVM.CustomerEmail)]!.Errors[0].ErrorMessage.ShouldBe("Please enter a valid email address.");
-    }
-
-    [Fact]
-    public async Task Index_AddsModelError_WhenEmailAddressesDoNotMatch() {
-        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
-        context.PurchaseCodes.Add(new PurchaseCode { Code = TestHelper.VALID_CODE, IsActive = true });
-        await context.SaveChangesAsync();
-        var sut = CreateConfiguredController(context);
-        var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
-
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, "different@email.com", TestHelper.VALID_CODE);
-
-        result.ShouldBeOfType<ViewResult>();
-        sut.ModelState.IsValid.ShouldBeFalse();
-        sut.ModelState.ContainsKey(nameof(FoodTourVM.CustomerEmailConfirmation)).ShouldBeTrue();
-        sut.ModelState[nameof(FoodTourVM.CustomerEmailConfirmation)]!.Errors[0].ErrorMessage.ShouldBe("The email addresses do not match.");
     }
 
     [Theory]
@@ -142,7 +126,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
         // null-coalescing operator is used to satisfy the non-nullable parameter, but the test will pass null to trigger the validation error
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, purchaseCode!);
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, purchaseCode!);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
@@ -158,7 +142,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, "INVALIDCODE");
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, "INVALIDCODE");
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
@@ -174,7 +158,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
@@ -192,7 +176,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(supplierCount);
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
@@ -212,7 +196,7 @@ public class HomeControllerValidationTests : HomeControllerTestBase {
         var validDate = new DateTime(TestHelper.nextYear, month, day);
         var sut = CreateConfiguredController(context);
 
-        var result = await sut.Index(validDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(validDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         var redirect = result.ShouldBeOfType<RedirectToActionResult>();
         redirect.ActionName.ShouldBe(nameof(HomeController.BookingSummary));

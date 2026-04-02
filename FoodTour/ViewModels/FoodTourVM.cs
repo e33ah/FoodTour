@@ -16,11 +16,6 @@ public class FoodTourVM {
     [EmailAddress(ErrorMessage = "Please enter a valid email address")]
     public string CustomerEmail { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Please confirm your email address")]
-    [EmailAddress(ErrorMessage = "Please enter a valid email address")]
-    [Compare(nameof(CustomerEmail), ErrorMessage = "The email addresses do not match")]
-    public string CustomerEmailConfirmation { get; set; } = string.Empty;
-
     [Required(ErrorMessage = "Please enter your purchase code")]
     public string PurchaseCode { get; set; } = string.Empty;
 }

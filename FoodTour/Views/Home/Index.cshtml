@@ -69,20 +69,12 @@
 									<i class="bi bi-send text-primary"></i> Email
 								</h3>
 								<small class="form-text text-muted mb-2 mt-2 d-block">
-									Please provide your email address to receive your tour details.
+									Enter the email address used to make your booking
 								</small>
-								<div class="form-group mb-3">
+								<div class="form-group">
 									<label asp-for="CustomerEmail" class="form-label visually-hidden">Email Address</label>
 									<input asp-for="CustomerEmail" type="email" class="form-control" placeholder="your.email@example.com" />
 									<span asp-validation-for="CustomerEmail" class="text-danger"></span>
-								</div>
-								<small class="form-text text-muted mb-2 mt-2 d-block">
-									Please re-enter your email address.
-								</small>
-								<div class="form-group">
-									<label asp-for="CustomerEmailConfirmation" class="form-label visually-hidden">Confirm Email Address</label>
-									<input asp-for="CustomerEmailConfirmation" type="email" class="form-control" placeholder="your.email@example.com" />
-									<span asp-validation-for="CustomerEmailConfirmation" class="text-danger"></span>
 								</div>
 							</div>
 						</div>
@@ -92,11 +84,12 @@
 									<i class="bi bi-hash text-primary"></i> Booking Reference
 								</h3>
 								<small class="form-text text-muted mb-2 mt-2 d-block">
-									Please enter your booking reference from your confirmation email.
+									Enter your booking reference (found in your confirmation email)
 								</small>
 								<div class="form-group">
 									<label asp-for="PurchaseCode" class="form-label visually-hidden">Booking Reference</label>
 									<div class="d-flex justify-content-center">
+										<span class="input-group-text bg-transparent text-muted">#</span>
 										<input asp-for="PurchaseCode" type="text" class="form-control w-auto" style="max-width: 220px;" id="purchaseCode" placeholder="123456789" />
 									</div>
 									<span asp-validation-for="PurchaseCode" class="text-danger"></span>

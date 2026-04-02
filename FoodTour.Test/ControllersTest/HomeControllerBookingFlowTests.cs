@@ -10,7 +10,7 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         var redirect = result.ShouldBeOfType<RedirectToActionResult>();
         redirect.ActionName.ShouldBe(nameof(HomeController.BookingSummary));
@@ -34,7 +34,7 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         var visits = await context.Visits.ToListAsync();
         visits.Count.ShouldBe(5);
@@ -59,7 +59,7 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = new List<int> { 1, 2, 99, 100, 101 }; // 99, 100, 101 don't exist
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
 
         var view = result.ShouldBeOfType<ViewResult>();
         var model = view.Model.ShouldBeOfType<FoodTourVM>();

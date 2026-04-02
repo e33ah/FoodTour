@@ -5,7 +5,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     private readonly QrImageService qrImageService = new();
     private readonly SupportSettings supportSettings = supportOptions.Value;
 
-    public async Task<IActionResult> Index(DateTime? tourDate, string? customerEmail, string? purchaseCode, string? selectedSuppliers) {
+    public async Task<IActionResult> Index(Guid? qrToken) {
         var model = await CreateFoodTourViewModel();
 
         if (model.Suppliers.Count == 0) {
@@ -15,14 +15,14 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             Log.Warning("Insufficient active suppliers: {SupplierCount} found, {RequiredCount} required.", model.Suppliers.Count, MAX_SUPPLIER_SELECTIONS);
         }
 
-        PopulateFormFromQueryParameters(model, tourDate, customerEmail, purchaseCode, selectedSuppliers);
+        await PopulateFormFromQrTokenAsync(model, qrToken);
 
         return View(model);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string customerEmailConfirmation, string purchaseCode) {
+    public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string purchaseCode) {
         var purchaseCodeValidationRequest = new PurchaseCodeValidationRequest {
             PurchaseCode = purchaseCode ?? "",
             ValidationType = PurchaseCodeValidationType.MustExistAndBeActive
@@ -34,7 +34,6 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         var validationRequest = new BookingValidationRequest {
             TourDate = tourDate,
             CustomerEmail = customerEmail,
-            CustomerEmailConfirmation = customerEmailConfirmation,
             SelectedSupplierIds = selectedSuppliers
             // CustomerCount is not currently required for web form validation
         };
@@ -49,7 +48,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
                 ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), purchaseCodeResult.ErrorMessage!);
             }
 
-            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
+            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, purchaseCode);
         }
 
         // Validate that all supplier IDs exist in the database before creating booking
@@ -61,7 +60,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         if (existingSupplierIds.Count != selectedSuppliers.Count) {
             Log.Warning("One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", selectedSuppliers, existingSupplierIds);
             ModelState.AddModelError(string.Empty, "One or more selected suppliers are invalid. Please refresh and try again.");
-            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
+            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, purchaseCode);
         }
 
         // Create and save the booking to database
@@ -97,7 +96,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             Log.Error(ex, "Booking {BookingId}: Failed to save to database.", booking.Id);
             string supportLink = GenerateUrl("UserSupport");
             ModelState.AddModelError(string.Empty, $"Unable to save your booking due to a system error. Please try again or <a href='{supportLink}'>contact support</a> if the problem persists.");
-            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, customerEmailConfirmation, purchaseCode);
+            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, purchaseCode);
         }
 
         return RedirectToAction("BookingSummary", new { qrToken = booking.QrToken });
@@ -359,11 +358,10 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return View("BookingSummary", bookingSummary);
     }
 
-    private async Task<IActionResult> CreateIndexViewWithErrorsAsync(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string customerEmailConfirmation, string? purchaseCode) {
+    private async Task<IActionResult> CreateIndexViewWithErrorsAsync(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string? purchaseCode) {
         var model = await CreateFoodTourViewModel();
         model.TourDate = tourDate;
         model.CustomerEmail = customerEmail;
-        model.CustomerEmailConfirmation = customerEmailConfirmation;
         model.PurchaseCode = purchaseCode ?? string.Empty;
 
         ViewBag.SelectedSuppliers = selectedSuppliers;
@@ -394,14 +392,6 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
                 ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter your email address.");
             } else {
                 ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter a valid email address.");
-            }
-        }
-
-        if (!validationResult.IsCustomerEmailConfirmationValid) {
-            if (validationResult.IsCustomerEmailConfirmationEmpty) {
-                ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "Please confirm your email address.");
-            } else {
-                ModelState.AddModelError(nameof(FoodTourVM.CustomerEmailConfirmation), "The email addresses do not match.");
             }
         }
 
@@ -445,35 +435,22 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return generatedUrl;
     }
 
-    private void PopulateFormFromQueryParameters(FoodTourVM model, DateTime? tourDate, string? customerEmail, string? purchaseCode, string? selectedSuppliers) {
-        if (tourDate.HasValue) {
-            model.TourDate = tourDate.Value;
+    private async Task PopulateFormFromQrTokenAsync(FoodTourVM model, Guid? qrToken) {
+        if (!qrToken.HasValue || qrToken.Value == Guid.Empty) {
+            return;
         }
 
-        if (!string.IsNullOrEmpty(customerEmail)) {
-            model.CustomerEmail = customerEmail;
-            model.CustomerEmailConfirmation = customerEmail;
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken.Value && !b.IsCancelled);
+        if (booking == null) {
+            Log.Debug("Index: Could not find booking with QR token {QrToken} for form population.", qrToken);
+            return;
         }
 
-        if (!string.IsNullOrEmpty(purchaseCode)) {
-            model.PurchaseCode = purchaseCode;
-        }
+        model.TourDate = booking.TourDate;
+        model.CustomerEmail = booking.CustomerEmail;
+        model.PurchaseCode = booking.PurchaseCode;
+        ViewBag.SelectedSuppliers = booking.SelectedSupplierIds;
 
-        if (!string.IsNullOrEmpty(selectedSuppliers)) {
-            List<int> supplierIds = [];
-            string[] supplierIdParts = selectedSuppliers.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            foreach (string supplierIdPart in supplierIdParts) {
-                string trimmedPart = supplierIdPart.Trim();
-                if (int.TryParse(trimmedPart, out int supplierId)) {
-                    supplierIds.Add(supplierId);
-                } else {
-                    Log.Warning("Invalid supplier id '{SupplierId}' in selectedSuppliers query parameter.", trimmedPart);
-                }
-            }
-
-            if (supplierIds.Count > 0) {
-                ViewBag.SelectedSuppliers = supplierIds;
-            }
-        }
+        Log.Debug("Index: Populated form from booking {BookingId} using QR token.", booking.Id);
     }
 }

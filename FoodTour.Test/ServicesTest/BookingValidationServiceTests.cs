@@ -18,7 +18,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = 2,
             SelectedSupplierIds = [1, 2, 3, 4, 5]
         };
@@ -28,7 +27,6 @@ public class BookingValidationServiceTests {
         result.IsValid.ShouldBeTrue();
         result.IsTourDateValid.ShouldBeTrue();
         result.IsCustomerEmailValid.ShouldBeTrue();
-        result.IsCustomerEmailConfirmationValid.ShouldBeTrue();
         result.IsCustomerCountValid.ShouldBeTrue();
         result.AreSelectedSuppliersValid.ShouldBeTrue();
         // Purchase code validation is now handled separately by IPurchaseCodeValidationService
@@ -42,7 +40,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = null,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = 2,
             SelectedSupplierIds = [1, 2, 3, 4, 5]
         };
@@ -64,7 +61,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = pastDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = 2,
             SelectedSupplierIds = [1, 2, 3, 4, 5]
         };
@@ -88,7 +84,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = sundayDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = 2,
             SelectedSupplierIds = [1, 2, 3, 4, 5]
         };
@@ -112,7 +107,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = outOfSeasonDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = 2,
             SelectedSupplierIds = [1, 2, 3, 4, 5]
         };
@@ -134,10 +128,10 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = customerEmail,
-            CustomerEmailConfirmation = customerEmail,
             CustomerCount = 2,
             SelectedSupplierIds = [1, 2, 3, 4, 5]
         };
+
 
         var result = await sut.ValidateAsync(request);
 
@@ -158,7 +152,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = email,
-            CustomerEmailConfirmation = email,
             CustomerCount = 2,
             SelectedSupplierIds = [1, 2, 3, 4, 5]
         };
@@ -167,25 +160,6 @@ public class BookingValidationServiceTests {
 
         result.IsValid.ShouldBeFalse();
         result.IsCustomerEmailValid.ShouldBeFalse();
-    }
-
-    [Fact]
-    public async Task ValidateAsync_ReturnsInvalid_WhenEmailConfirmationDoesNotMatch() {
-        using var context = TestHelper.CreateInMemoryContext();
-        var sut = new BookingValidationService(context);
-
-        var request = new BookingValidationRequest {
-            TourDate = TestHelper.validTourDate,
-            CustomerEmail = "test@example.com",
-            CustomerEmailConfirmation = "different@example.com",
-            CustomerCount = 2,
-            SelectedSupplierIds = [1, 2, 3, 4, 5]
-        };
-
-        var result = await sut.ValidateAsync(request);
-
-        result.IsValid.ShouldBeFalse();
-        result.IsCustomerEmailConfirmationValid.ShouldBeFalse();
     }
 
     [Theory]
@@ -198,7 +172,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = customerCount,
             SelectedSupplierIds = [1, 2, 3, 4, 5]
         };
@@ -226,7 +199,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = null, // Optional field
             SelectedSupplierIds = [1, 2, 3, 4, 5]
         };
@@ -245,7 +217,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = 2,
             SelectedSupplierIds = []
         };
@@ -264,7 +235,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = 2,
             SelectedSupplierIds = [1, 2, 3, 4, 5, 6] // More than max allowed
         };
@@ -293,7 +263,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = 2,
             SelectedSupplierIds = selectedSupplierIds
         };
@@ -319,7 +288,6 @@ public class BookingValidationServiceTests {
         var request = new BookingValidationRequest {
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
-            CustomerEmailConfirmation = TestHelper.VALID_EMAIL,
             CustomerCount = 2,
             SelectedSupplierIds = selectedSupplierIds
         };

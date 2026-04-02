@@ -11,7 +11,6 @@ public class HomeControllerErrorMappingTests : HomeControllerTestBase {
             tourDate: null, // Invalid
             selectedSuppliers: [1], // Invalid count
             customerEmail: "", // Invalid
-            customerEmailConfirmation: "different@email.com", // Different
             purchaseCode: "" // Invalid
         );
 
@@ -21,7 +20,6 @@ public class HomeControllerErrorMappingTests : HomeControllerTestBase {
         // Verify specific error mappings
         controller.ModelState.ContainsKey(nameof(FoodTourVM.TourDate)).ShouldBeTrue();
         controller.ModelState.ContainsKey(nameof(FoodTourVM.CustomerEmail)).ShouldBeTrue();
-        controller.ModelState.ContainsKey(nameof(FoodTourVM.CustomerEmailConfirmation)).ShouldBeTrue();
         controller.ModelState.ContainsKey(nameof(FoodTourVM.PurchaseCode)).ShouldBeTrue();
         controller.ModelState.ContainsKey(string.Empty).ShouldBeTrue(); // Supplier selection error
     }
@@ -35,8 +33,7 @@ public class HomeControllerErrorMappingTests : HomeControllerTestBase {
             tourDate: null,
             selectedSuppliers: [1, 2, 3, 4, 5],
             customerEmail: TestHelper.VALID_EMAIL,
-            customerEmailConfirmation: TestHelper.VALID_EMAIL,
-            purchaseCode: TestHelper.VALID_CODE
+                        purchaseCode: TestHelper.VALID_CODE
         );
 
         result.ShouldBeOfType<ViewResult>();
@@ -54,8 +51,7 @@ public class HomeControllerErrorMappingTests : HomeControllerTestBase {
             tourDate: pastDate,
             selectedSuppliers: [1, 2, 3, 4, 5],
             customerEmail: TestHelper.VALID_EMAIL,
-            customerEmailConfirmation: TestHelper.VALID_EMAIL,
-            purchaseCode: TestHelper.VALID_CODE
+                        purchaseCode: TestHelper.VALID_CODE
         );
 
         result.ShouldBeOfType<ViewResult>();
@@ -72,8 +68,7 @@ public class HomeControllerErrorMappingTests : HomeControllerTestBase {
             tourDate: TestHelper.validTourDate,
             selectedSuppliers: [1, 2, 3, 4, 5],
             customerEmail: "",
-            customerEmailConfirmation: "",
-            purchaseCode: TestHelper.VALID_CODE
+                        purchaseCode: TestHelper.VALID_CODE
         );
 
         result.ShouldBeOfType<ViewResult>();
@@ -90,31 +85,12 @@ public class HomeControllerErrorMappingTests : HomeControllerTestBase {
             tourDate: TestHelper.validTourDate,
             selectedSuppliers: [1, 2, 3, 4, 5],
             customerEmail: "invalid-email",
-            customerEmailConfirmation: "invalid-email",
-            purchaseCode: TestHelper.VALID_CODE
+                        purchaseCode: TestHelper.VALID_CODE
         );
 
         result.ShouldBeOfType<ViewResult>();
         controller.ModelState[nameof(FoodTourVM.CustomerEmail)]?.Errors[0].ErrorMessage
             .ShouldBe("Please enter a valid email address.");
-    }
-
-    [Fact]
-    public async Task Index_MapsEmailConfirmationError_WhenEmailsDoNotMatch() {
-        using var context = TestHelper.CreateInMemoryContext();
-        var controller = TestHelper.CreateHomeController(context);
-
-        var result = await controller.Index(
-            tourDate: TestHelper.validTourDate,
-            selectedSuppliers: [1, 2, 3, 4, 5],
-            customerEmail: "test@example.com",
-            customerEmailConfirmation: "different@example.com",
-            purchaseCode: TestHelper.VALID_CODE
-        );
-
-        result.ShouldBeOfType<ViewResult>();
-        controller.ModelState[nameof(FoodTourVM.CustomerEmailConfirmation)]?.Errors[0].ErrorMessage
-            .ShouldBe("The email addresses do not match.");
     }
 
     [Fact]
@@ -126,8 +102,7 @@ public class HomeControllerErrorMappingTests : HomeControllerTestBase {
             tourDate: TestHelper.validTourDate,
             selectedSuppliers: [1, 2, 3, 4, 5],
             customerEmail: TestHelper.VALID_EMAIL,
-            customerEmailConfirmation: TestHelper.VALID_EMAIL,
-            purchaseCode: ""
+                        purchaseCode: ""
         );
 
         result.ShouldBeOfType<ViewResult>();
@@ -146,8 +121,7 @@ public class HomeControllerErrorMappingTests : HomeControllerTestBase {
             tourDate: TestHelper.validTourDate,
             selectedSuppliers: [1, 2, 3, 4, 5],
             customerEmail: TestHelper.VALID_EMAIL,
-            customerEmailConfirmation: TestHelper.VALID_EMAIL,
-            purchaseCode: "INVALID_CODE"
+                        purchaseCode: "INVALID_CODE"
         );
 
         result.ShouldBeOfType<ViewResult>();
@@ -166,8 +140,7 @@ public class HomeControllerErrorMappingTests : HomeControllerTestBase {
             tourDate: TestHelper.validTourDate,
             selectedSuppliers: [1, 2, 3], // Only 3 suppliers
             customerEmail: TestHelper.VALID_EMAIL,
-            customerEmailConfirmation: TestHelper.VALID_EMAIL,
-            purchaseCode: TestHelper.VALID_CODE
+                        purchaseCode: TestHelper.VALID_CODE
         );
 
         result.ShouldBeOfType<ViewResult>();
