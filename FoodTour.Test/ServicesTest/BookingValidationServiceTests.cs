@@ -317,4 +317,163 @@ public class BookingValidationServiceTests {
 
         result.ShouldBeFalse();
     }
+
+    [Theory]
+    [InlineData("John Smith")]
+    [InlineData("Mary-Jane O'Connor")]
+    [InlineData("José García")]
+    [InlineData("李明")]
+    [InlineData("A")]
+    public void IsCustomerNameValid_ReturnsTrue_WhenNameIsValid(string customerName) {
+        using var context = TestHelper.CreateInMemoryContext();
+        var sut = new BookingValidationService(context);
+
+        bool result = sut.IsCustomerNameValid(customerName);
+
+        result.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void IsCustomerNameValid_ReturnsFalse_WhenNameIsEmpty(string? customerName) {
+        using var context = TestHelper.CreateInMemoryContext();
+        var sut = new BookingValidationService(context);
+
+        bool result = sut.IsCustomerNameValid(customerName);
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsCustomerNameValid_ReturnsFalse_WhenNameIsTooLong() {
+        using var context = TestHelper.CreateInMemoryContext();
+        var sut = new BookingValidationService(context);
+        string longName = new('A', 1024);
+
+        bool result = sut.IsCustomerNameValid(longName);
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsCustomerNameValid_ReturnsTrue_WhenNameIsJustUnderMaxLength() {
+        using var context = TestHelper.CreateInMemoryContext();
+        var sut = new BookingValidationService(context);
+        string longName = new('A', 1023);
+
+        bool result = sut.IsCustomerNameValid(longName);
+
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ReturnsValid_WhenCustomerNameIsNotProvided() {
+        using var context = TestHelper.CreateInMemoryContext();
+        context.Suppliers.AddRange([
+            TestHelper.CreateSupplier(1),
+            TestHelper.CreateSupplier(2),
+            TestHelper.CreateSupplier(3),
+            TestHelper.CreateSupplier(4),
+            TestHelper.CreateSupplier(5)
+        ]);
+        await context.SaveChangesAsync();
+        var sut = new BookingValidationService(context);
+
+        var request = new BookingValidationRequest {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            CustomerCount = 2,
+            CustomerName = null,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+
+        var result = await sut.ValidateAsync(request);
+
+        result.IsValid.ShouldBeTrue();
+        result.IsCustomerNameValid.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ReturnsValid_WhenCustomerNameIsProvided() {
+        using var context = TestHelper.CreateInMemoryContext();
+        context.Suppliers.AddRange([
+            TestHelper.CreateSupplier(1),
+            TestHelper.CreateSupplier(2),
+            TestHelper.CreateSupplier(3),
+            TestHelper.CreateSupplier(4),
+            TestHelper.CreateSupplier(5)
+        ]);
+        await context.SaveChangesAsync();
+        var sut = new BookingValidationService(context);
+
+        var request = new BookingValidationRequest {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            CustomerCount = 2,
+            CustomerName = "John Smith",
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+
+        var result = await sut.ValidateAsync(request);
+
+        result.IsValid.ShouldBeTrue();
+        result.IsCustomerNameValid.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ReturnsValid_WhenCustomerNameIsEmptyString() {
+        using var context = TestHelper.CreateInMemoryContext();
+        context.Suppliers.AddRange([
+            TestHelper.CreateSupplier(1),
+            TestHelper.CreateSupplier(2),
+            TestHelper.CreateSupplier(3),
+            TestHelper.CreateSupplier(4),
+            TestHelper.CreateSupplier(5)
+        ]);
+        await context.SaveChangesAsync();
+        var sut = new BookingValidationService(context);
+
+        var request = new BookingValidationRequest {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            CustomerCount = 2,
+            CustomerName = "",
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+
+        var result = await sut.ValidateAsync(request);
+
+        result.IsValid.ShouldBeTrue();
+        result.IsCustomerNameValid.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ReturnsInvalid_WhenCustomerNameIsTooLong() {
+        using var context = TestHelper.CreateInMemoryContext();
+        context.Suppliers.AddRange([
+            TestHelper.CreateSupplier(1),
+            TestHelper.CreateSupplier(2),
+            TestHelper.CreateSupplier(3),
+            TestHelper.CreateSupplier(4),
+            TestHelper.CreateSupplier(5)
+        ]);
+        await context.SaveChangesAsync();
+        var sut = new BookingValidationService(context);
+        string longName = new('A', 1024);
+
+        var request = new BookingValidationRequest {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            CustomerCount = 2,
+            CustomerName = longName,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+
+        var result = await sut.ValidateAsync(request);
+
+        result.IsValid.ShouldBeFalse();
+        result.IsCustomerNameValid.ShouldBeFalse();
+    }
 }

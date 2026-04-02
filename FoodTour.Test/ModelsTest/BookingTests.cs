@@ -15,6 +15,7 @@ public class BookingTests {
         sut.QrToken.ShouldNotBe(Guid.Empty);
         sut.IsConfirmed.ShouldBeFalse();
         sut.TotalGuests.ShouldBe(0);
+        sut.CustomerName.ShouldBeNull();
     }
 
     [Fact]

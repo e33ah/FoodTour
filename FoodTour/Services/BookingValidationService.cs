@@ -13,7 +13,7 @@ public class BookingValidationService(FoodTourContext context) : IBookingValidat
         // Skip if not provided
         result.IsCustomerCountValid = !request.CustomerCount.HasValue || ValidateCustomerCount(request.CustomerCount, result);
         result.AreSelectedSuppliersValid = request.SelectedSupplierIds == null || await ValidateSelectedSuppliersAsync(request.SelectedSupplierIds, result);
-
+        result.IsCustomerNameValid = string.IsNullOrWhiteSpace(request.CustomerName) || IsCustomerNameValid(request.CustomerName);
         return result;
     }
 
@@ -34,6 +34,9 @@ public class BookingValidationService(FoodTourContext context) : IBookingValidat
         return customerCount.HasValue && customerCount.Value > 0;
     }
 
+    public bool IsCustomerNameValid(string? customerName) {
+        return !string.IsNullOrWhiteSpace(customerName) && customerName.Length < 1024;
+    }
 
     private static bool ValidateTourDate(DateTime? tourDate, BookingValidationResult result) {
         if (!tourDate.HasValue) {

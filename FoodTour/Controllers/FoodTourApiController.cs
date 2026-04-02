@@ -231,6 +231,11 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
                 LogValue(displayName, booking.PurchaseCode);
                 break;
 
+            case "Contact Name":
+               booking.CustomerName = ExtractStringValue(element.Value);
+                LogValue(displayName, booking.CustomerName);
+                break;
+
             case "Contact Email":
                 booking.CustomerEmail = ExtractStringValue(element.Value);
                 LogValue(displayName, booking.CustomerEmail);
@@ -254,7 +259,6 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
                 }
                 break;
 
-            case "Contact Name":
             case "Item Name":
                 LogValue(displayName, ExtractStringValue(element.Value));
                 break;
@@ -283,7 +287,8 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         var validationRequest = new BookingValidationRequest {
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
-            CustomerCount = booking.TotalGuests
+            CustomerCount = booking.TotalGuests,
+            CustomerName = booking.CustomerName
         };
 
         var validationResult = await bookingValidationService.ValidateAsync(validationRequest);

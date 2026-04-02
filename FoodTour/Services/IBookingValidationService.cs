@@ -5,4 +5,5 @@ public interface IBookingValidationService {
     bool IsTourDateValid(DateTime? tourDate);
     bool IsCustomerEmailValid(string? customerEmail);
     bool IsCustomerCountValid(int? customerCount);
+    bool IsCustomerNameValid(string? customerName);
 }

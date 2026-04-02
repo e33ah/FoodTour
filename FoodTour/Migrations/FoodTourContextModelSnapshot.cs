@@ -40,6 +40,9 @@ namespace FoodTour.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("CustomerName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsCancelled")
                         .HasColumnType("bit");
 

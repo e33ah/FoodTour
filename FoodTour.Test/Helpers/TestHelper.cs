@@ -202,8 +202,7 @@ public static class TestHelper {
         var bookingEmailService = new BookingEmailService();
         var supportOptions = CreateSupportOptions();
         var bookingValidationService = new BookingValidationService(context);
-        var purchaseCodeValidationService = new PurchaseCodeValidationService(context);
-        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, purchaseCodeValidationService);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService);
     }
 
     public static HomeController CreateHomeController(FoodTourContext context, IEmailSender? emailSender = null) {
@@ -211,8 +210,7 @@ public static class TestHelper {
         var bookingEmailService = new BookingEmailService();
         var supportOptions = CreateSupportOptions();
         var bookingValidationService = new BookingValidationService(context);
-        var purchaseCodeValidationService = new PurchaseCodeValidationService(context);
-        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, purchaseCodeValidationService);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService);
     }
 
     public static Mock<IEmailSender> CreateMockEmailSender() {

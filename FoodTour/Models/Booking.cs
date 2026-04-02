@@ -17,6 +17,7 @@ public class Booking {
     public Guid QrToken { get; set; } = Guid.NewGuid();
     public int TotalGuests { get; set; }
     public bool IsConfirmed { get; set; }
+    public string? CustomerName { get; set; }
 
     // Join collection for persistence of selected suppliers
     public ICollection<BookingSupplier> BookingSuppliers { get; set; } = [];

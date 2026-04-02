@@ -1,6 +1,6 @@
 namespace FoodTour.Controllers;
 
-public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions, IBookingValidationService bookingValidationService, IPurchaseCodeValidationService purchaseCodeValidationService) : Controller {
+public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions, IBookingValidationService bookingValidationService) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
     private readonly QrImageService qrImageService = new();
     private readonly SupportSettings supportSettings = supportOptions.Value;
