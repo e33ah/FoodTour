@@ -16,8 +16,6 @@ public class FoodTourVMTests {
         sut.SupplierName.ShouldBe(string.Empty);
         sut.SupplierDescription.ShouldBe(string.Empty);
         sut.SupplierAddress.ShouldBe(string.Empty);
-        sut.CustomerEmail.ShouldBe(string.Empty);
-        sut.PurchaseCode.ShouldBe(string.Empty);
         sut.SupplierOpeningTimes.ShouldBe(string.Empty);
     }
 
@@ -57,16 +55,12 @@ public class FoodTourVMTests {
             SupplierName = "Sea Snacks",
             SupplierDescription = "A great tasting experience",
             SupplierAddress = "123 Main Street",
-            SupplierOpeningTimes = "9am - 5pm",
-            CustomerEmail = "Susie@test.com",
-            PurchaseCode = "ABC123"
+            SupplierOpeningTimes = "9am - 5pm"
         };
 
         sut.SupplierName.ShouldBe("Sea Snacks");
         sut.SupplierDescription.ShouldBe("A great tasting experience");
         sut.SupplierAddress.ShouldBe("123 Main Street");
         sut.SupplierOpeningTimes.ShouldBe("9am - 5pm");
-        sut.CustomerEmail.ShouldBe("Susie@test.com");
-        sut.PurchaseCode.ShouldBe("ABC123");
     }
 }

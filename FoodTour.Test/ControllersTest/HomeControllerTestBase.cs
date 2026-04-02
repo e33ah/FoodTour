@@ -12,6 +12,8 @@ public abstract class HomeControllerTestBase {
 
         controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        controller.Url = Mock.Of<IUrlHelper>(u => u.Action(It.IsAny<UrlActionContext>()) == $"{BASE_URL}/MockAction");
+        controller.ControllerContext.HttpContext.Request.Scheme = "https";
 
         return controller;
     }

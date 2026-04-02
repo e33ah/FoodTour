@@ -22,81 +22,90 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Index(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string purchaseCode) {
-        var purchaseCodeValidationRequest = new PurchaseCodeValidationRequest {
-            PurchaseCode = purchaseCode ?? "",
-            ValidationType = PurchaseCodeValidationType.MustExistAndBeActive
-        };
+    public async Task<IActionResult> Index(int bookingId, List<int> selectedSuppliers) {
+        // Validate that the booking ID is provided
+        if (bookingId <= 0) {
+            Log.Warning("Index POST called with invalid or missing booking ID: {BookingId}", bookingId);
+            ModelState.AddModelError(string.Empty, "Your booking could not be validated. Please enter your email and booking reference.");
+            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
+        }
 
-        var purchaseCodeResult = await purchaseCodeValidationService.ValidateAsync(purchaseCodeValidationRequest);
+        // Retrieve the booking from the database
+        var booking = await context.Bookings
+            .FirstOrDefaultAsync(b => b.Id == bookingId && !b.IsCancelled);
 
-        // Validate other booking data (excluding purchase code)
+        if (booking == null) {
+            Log.Warning("Index POST could not find active booking with ID: {BookingId}", bookingId);
+            ModelState.AddModelError(string.Empty, "Your booking could not be found or has been cancelled. Please verify your details.");
+            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
+        }
+
+        // Validate supplier selections
         var validationRequest = new BookingValidationRequest {
-            TourDate = tourDate,
-            CustomerEmail = customerEmail,
+            TourDate = booking.TourDate,
+            CustomerEmail = booking.CustomerEmail,
             SelectedSupplierIds = selectedSuppliers
-            // CustomerCount is not currently required for web form validation
         };
 
         var validationResult = await bookingValidationService.ValidateAsync(validationRequest);
 
-        if (!validationResult.IsValid || !purchaseCodeResult.IsValid) {
+        if (!validationResult.IsValid) {
             MapValidationErrorsToModelState(validationResult);
-
-            // Add purchase code validation error if applicable
-            if (!purchaseCodeResult.IsValid) {
-                ModelState.AddModelError(nameof(FoodTourVM.PurchaseCode), purchaseCodeResult.ErrorMessage!);
-            }
-
-            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, purchaseCode);
+            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
         }
 
-        // Validate that all supplier IDs exist in the database before creating booking
+        // Validate that all supplier IDs exist in the database
         var existingSupplierIds = await context.Suppliers
             .Where(s => selectedSuppliers.Contains(s.Id) && s.IsActive)
             .Select(s => s.Id)
             .ToListAsync();
 
         if (existingSupplierIds.Count != selectedSuppliers.Count) {
-            Log.Warning("One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", selectedSuppliers, existingSupplierIds);
+            Log.Warning("Booking {BookingId}: One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", bookingId, selectedSuppliers, existingSupplierIds);
             ModelState.AddModelError(string.Empty, "One or more selected suppliers are invalid. Please refresh and try again.");
-            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, purchaseCode);
+            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
         }
 
-        // Create and save the booking to database
-        var booking = new Booking {
-            TourDate = tourDate!.Value,
-            CustomerEmail = customerEmail,
-            PurchaseCode = purchaseCode!,
-            SelectedSupplierIds = selectedSuppliers,
-            CreatedAt = DateTime.UtcNow,
-            IsConfirmed = false
-        };
+        // Update the booking with new supplier selections
+        booking.SelectedSupplierIds = selectedSuppliers;
 
+        // Remove old BookingSuppliers
+        var oldBookingSuppliers = await context.BookingSuppliers
+            .Where(bs => bs.BookingId == booking.Id)
+            .ToListAsync();
+        context.BookingSuppliers.RemoveRange(oldBookingSuppliers);
+
+        // Add new BookingSuppliers
         booking.BookingSuppliers = [.. selectedSuppliers.Select(id =>
             new BookingSupplier {
                 Booking = booking,
                 SupplierId = id
             })];
 
-        var visits = selectedSuppliers.Select(id =>
+        // Remove old Visits
+        var oldVisits = await context.Visits
+            .Where(v => v.BookingId == booking.Id)
+            .ToListAsync();
+        context.Visits.RemoveRange(oldVisits);
+
+        // Add new Visits
+        var newVisits = selectedSuppliers.Select(id =>
             new Visit {
                 Booking = booking,
                 SupplierId = id,
                 IsClaimed = false
             }).ToList();
 
-        try {
-            await context.Bookings.AddAsync(booking);
-            await context.Visits.AddRangeAsync(visits);
-            await context.SaveChangesAsync();
+        await context.Visits.AddRangeAsync(newVisits);
 
-            Log.Information("Booking {BookingId}: Saved for {CustomerEmail} on {TourDate:dd/MM/yyyy}.", booking.Id, booking.CustomerEmail, booking.TourDate);
+        try {
+            await context.SaveChangesAsync();
+            Log.Information("Booking {BookingId}: Updated for {CustomerEmail} on {TourDate:dd/MM/yyyy} with {SupplierCount} suppliers.", booking.Id, booking.CustomerEmail, booking.TourDate, selectedSuppliers.Count);
         } catch (Exception ex) {
-            Log.Error(ex, "Booking {BookingId}: Failed to save to database.", booking.Id);
+            Log.Error(ex, "Booking {BookingId}: Failed to update in database.", booking.Id);
             string supportLink = GenerateUrl("UserSupport");
-            ModelState.AddModelError(string.Empty, $"Unable to save your booking due to a system error. Please try again or <a href='{supportLink}'>contact support</a> if the problem persists.");
-            return await CreateIndexViewWithErrorsAsync(tourDate, selectedSuppliers, customerEmail, purchaseCode);
+            ModelState.AddModelError(string.Empty, $"Unable to update your booking due to a system error. Please try again or <a href='{supportLink}'>contact support</a> if the problem persists.");
+            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
         }
 
         return RedirectToAction("BookingSummary", new { qrToken = booking.QrToken });
@@ -358,18 +367,9 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return View("BookingSummary", bookingSummary);
     }
 
-    private async Task<IActionResult> CreateIndexViewWithErrorsAsync(DateTime? tourDate, List<int> selectedSuppliers, string customerEmail, string? purchaseCode) {
+    private async Task<IActionResult> CreateIndexViewWithErrorsAsync(List<int> selectedSuppliers) {
         var model = await CreateFoodTourViewModel();
-        model.TourDate = tourDate;
-        model.CustomerEmail = customerEmail;
-        model.PurchaseCode = purchaseCode ?? string.Empty;
-
         ViewBag.SelectedSuppliers = selectedSuppliers;
-
-        if (ModelState.ContainsKey(nameof(FoodTourVM.PurchaseCode)) && ModelState[nameof(FoodTourVM.PurchaseCode)]?.Errors.Count > 0) {
-            ViewBag.FocusPurchaseCode = true;
-        }
-
         return View(model);
     }
 
@@ -379,22 +379,6 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     }
 
     private void MapValidationErrorsToModelState(BookingValidationResult validationResult) {
-        if (!validationResult.IsTourDateValid) {
-            if (validationResult.IsTourDateNull) {
-                ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Please select a date for your tour.");
-            } else {
-                ModelState.AddModelError(nameof(FoodTourVM.TourDate), "Tours are only available Monday to Saturday between April and October, and only for future dates.");
-            }
-        }
-
-        if (!validationResult.IsCustomerEmailValid) {
-            if (validationResult.IsCustomerEmailEmpty) {
-                ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter your email address.");
-            } else {
-                ModelState.AddModelError(nameof(FoodTourVM.CustomerEmail), "Please enter a valid email address.");
-            }
-        }
-
         if (!validationResult.AreSelectedSuppliersValid) {
             // Check if it's a supplier existence issue vs count issue
             bool hasSupplierExistenceError = validationResult.ErrorMessages.Any(msg => msg.Contains("do not exist or are inactive"));
@@ -446,10 +430,9 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             return;
         }
 
-        model.TourDate = booking.TourDate;
-        model.CustomerEmail = booking.CustomerEmail;
-        model.PurchaseCode = booking.PurchaseCode;
         ViewBag.SelectedSuppliers = booking.SelectedSupplierIds;
+        ViewBag.CustomerEmail = booking.CustomerEmail;
+        ViewBag.PurchaseCode = booking.PurchaseCode;
 
         Log.Debug("Index: Populated form from booking {BookingId} using QR token.", booking.Id);
     }

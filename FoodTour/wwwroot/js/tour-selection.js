@@ -1,119 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Constants
     const MAX_SELECTIONS = parseInt(document.querySelector('[data-max-selections]')?.dataset.maxSelections || '0');
-    const DATE_FORMAT = 'Y-m-d';
-    const ALT_DATE_FORMAT = 'd/m/Y';
-    const TOUR_MONTH_START = 4; // April
-    const TOUR_MONTH_END = 10; // October
-    const SUNDAY = 0;
     const ERROR_TIMEOUT_MS = 5000;
 
     // Cached selectors
     const checkboxes = document.querySelectorAll('.supplier-checkbox');
     const supplierCards = document.querySelectorAll('.supplier-card');
     const createTourBtn = document.getElementById('createTourBtn');
-    const tourDateInput = document.getElementById('tourDate');
 
     let messageTimeout;
     let currentMessage = null;
 
     // Utility functions
-    const getTomorrow = () => {
-        const now = new Date();
-        return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    };
-
-    const getTourDateRange = () => {
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const aprilFirst = new Date(currentYear, TOUR_MONTH_START - 1, 1);
-        const octoberLast = new Date(currentYear, TOUR_MONTH_END - 1, 31);
-        let minDate = getTomorrow() > aprilFirst ? getTomorrow() : aprilFirst;
-        let maxDate = octoberLast;
-        if (now > octoberLast) {
-            const nextYear = currentYear + 1;
-            minDate = new Date(nextYear, TOUR_MONTH_START - 1, 1);
-            maxDate = new Date(nextYear, TOUR_MONTH_END - 1, 31);
-        }
-        return { minDate, maxDate };
-    };
-
-    const parseDate = (dateString) => {
-        if (!dateString) return null;
-        if (dateString.includes('/')) {
-            const [day, month, year] = dateString.split('/').map(Number);
-            return new Date(year, month - 1, day);
-        }
-        return new Date(dateString + 'T00:00:00');
-    };
-
-    const isFutureDate = (date) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return date > today;
-    };
-
-    const isValidTourDate = (dateString) => {
-        const date = parseDate(dateString);
-        if (!date || !isFutureDate(date)) return false;
-        const month = date.getMonth() + 1;
-        const dayOfWeek = date.getDay();
-        return dayOfWeek !== SUNDAY && month >= TOUR_MONTH_START && month <= TOUR_MONTH_END;
-    };
-
-    const showDateError = (message) => {
-        clearDateError();
-        if (tourDateInput) {
-            // Find the .form-group containing the date input
-            const formGroup = tourDateInput.closest('.form-group');
-            if (formGroup) {
-                const errorElement = document.createElement('div');
-                errorElement.className = 'text-danger small mt-1 date-validation-error';
-                errorElement.textContent = message;
-                errorElement.setAttribute('tabindex', '-1');
-                formGroup.parentNode.insertBefore(errorElement, formGroup.nextSibling);
-                errorElement.focus();
-            }
-        }
-    };
-
-    const clearDateError = () => {
-        if (tourDateInput) {
-            const formGroup = tourDateInput.closest('.form-group');
-            if (formGroup) {
-                // Remove any error message directly after the form-group
-                const nextSibling = formGroup.nextSibling;
-                if (nextSibling && nextSibling.classList && nextSibling.classList.contains('date-validation-error')) {
-                    nextSibling.remove();
-                }
-            }
-        }
-    };
-
     const updateButtonState = () => {
         const checkedCount = document.querySelectorAll('.supplier-checkbox:checked').length;
         if (createTourBtn) {
             createTourBtn.disabled = checkedCount !== MAX_SELECTIONS;
         }
-    };
-
-    const validateTourDate = () => {
-        if (!tourDateInput || !tourDateInput.value) {
-            clearDateError();
-            updateButtonState();
-            return;
-        }
-        const date = parseDate(tourDateInput.value);
-        if (!date || !isFutureDate(date)) {
-            showDateError('Please select a date in the future.');
-        } else if (date.getDay() === SUNDAY) {
-            showDateError('Tours are not available on Sundays. Please select a different date.');
-        } else if (date.getMonth() + 1 < TOUR_MONTH_START || date.getMonth() + 1 > TOUR_MONTH_END) {
-            showDateError('Tours are only available from April to October. Please select a date within this period.');
-        } else {
-            clearDateError();
-        }
-        updateButtonState();
     };
 
     const updateCardVisualState = (card, checkbox) => {
@@ -148,29 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonState();
     };
 
-    // Event listeners
-    const setupDateInput = () => {
-        const { minDate, maxDate } = getTourDateRange();
-        if (tourDateInput && typeof flatpickr !== 'undefined') {
-            flatpickr(tourDateInput, {
-                minDate,
-                maxDate,
-                locale: { firstDayOfWeek: 1 },
-                dateFormat: DATE_FORMAT,
-                altInput: true,
-                altFormat: ALT_DATE_FORMAT,
-                disable: [date => date.getDay() === SUNDAY],
-                onChange: validateTourDate,
-                onReady: () => { if (tourDateInput.value) validateTourDate(); }
-            });
-        } else if (tourDateInput) {
-            tourDateInput.min = minDate.toISOString().split('T')[0];
-            tourDateInput.max = maxDate.toISOString().split('T')[0];
-            tourDateInput.addEventListener('change', validateTourDate);
-            tourDateInput.addEventListener('blur', validateTourDate);
-        }
-    };
-
+    // Event listeners for supplier selection
     const setupCheckboxes = () => {
         checkboxes.forEach(checkbox => {
             checkbox.addEventListener('change', () => handleCheckboxChange(checkbox));
@@ -189,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Email validation helpers
-    const emailInput = document.querySelector('input[type="email"][name$="CustomerEmail"]');
+    const emailInput = document.getElementById('customerEmail');
 
     const isValidEmail = (email) => {
         // Simple email regex for client-side validation
@@ -223,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Purchase code validation helpers
-    const purchaseCodeInput = document.querySelector('input[name$="PurchaseCode"]');
+    const purchaseCodeInput = document.getElementById('purchaseCode');
 
     const showPurchaseCodeError = (message) => {
         clearPurchaseCodeError();
@@ -253,8 +134,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Booking check functionality
-    const showBookingSuccess = (message) => {
+    let validatedBookingId = null;
+    const bookingIdInput = document.getElementById('BookingId');
+
+    const showBookingSuccess = (message, bookingId) => {
         clearBookingMessages();
+        validatedBookingId = bookingId;
+        if (bookingIdInput) {
+            bookingIdInput.value = bookingId;
+        }
         if (purchaseCodeInput) {
             const card = purchaseCodeInput.closest('.card');
             if (card) {
@@ -293,6 +181,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Also clear old success messages for backwards compatibility
         clearBookingSuccess();
+        // Clear validated booking ID
+        validatedBookingId = null;
+        if (bookingIdInput) {
+            bookingIdInput.value = '';
+        }
     };
 
     const checkBookingExists = async () => {
@@ -336,8 +229,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.found) {
                 if (data.isCancelled) {
                     showBookingWarning(data.message);
+                } else if (data.bookingId) {
+                    showBookingSuccess(data.message, data.bookingId);
                 } else {
-                    showBookingSuccess(data.message);
+                    showBookingWarning('Booking found but missing booking reference. Please contact support.');
                 }
             } else {
                 showBookingWarning(data.message);
@@ -388,62 +283,47 @@ document.addEventListener('DOMContentLoaded', () => {
             updateButtonState();
         };
 
-        const focusPurchaseCodeIfRequested = () => {
-            const focusFlag = tourForm.dataset.focusPurchaseCode;
-            if (focusFlag !== 'true') {
-                return;
-            }
-
-            if (!purchaseCodeInput) {
-                return;
-            }
-
-            purchaseCodeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            purchaseCodeInput.focus();
-        };
-
         tourForm.addEventListener('submit', function (event) {
-            let hasError = false;
-            // Validate tour date before submitting
-            if (!tourDateInput || !tourDateInput.value || !isValidTourDate(tourDateInput.value)) {
+            // Check if booking has been validated
+            if (!validatedBookingId) {
                 event.preventDefault();
-                showDateError('Please select a valid tour date before creating your tour.');
-                tourDateInput.focus();
-                hasError = true;
-            } else {
-                clearDateError();
-            }
-            // Validate email before submitting
-            if (!emailInput || !emailInput.value.trim() || !isValidEmail(emailInput.value.trim())) {
-                event.preventDefault();
-                showEmailError('Please enter a valid email address.');
-                hasError = true;
-            } else {
-                clearEmailError();
-            }
-            // Validate purchase code before submitting
-            if (!purchaseCodeInput || !purchaseCodeInput.value.trim()) {
-                event.preventDefault();
-                showPurchaseCodeError('Please enter your purchase code to continue.');
-                hasError = true;
-            } else {
-                clearPurchaseCodeError();
-            }
-            // Prevent form submission if any validation failed
-            if (hasError) {
-                event.preventDefault();
+
+                // Focus on the first missing or invalid field
+                if (!emailInput || !emailInput.value.trim()) {
+                    showEmailError('Please enter your email address to validate your booking.');
+                    emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    emailInput.focus();
+                } else if (!isValidEmail(emailInput.value.trim())) {
+                    showEmailError('Please enter a valid email address.');
+                    emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    emailInput.focus();
+                } else if (!purchaseCodeInput || !purchaseCodeInput.value.trim()) {
+                    showPurchaseCodeError('Please enter your booking reference to validate your booking.');
+                    purchaseCodeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    purchaseCodeInput.focus();
+                } else {
+                    // Both fields have values but booking not found
+                    showBookingWarning('We couldn\'t find your booking. Please check your email and booking reference are correct.');
+                    emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    emailInput.focus();
+                }
+
+                return false;
             }
         });
 
         restorePostedSelections();
-        focusPurchaseCodeIfRequested();
     }
 
     // Initialise
-    setupDateInput();
     setupCheckboxes();
     setupSupplierCards();
     updateButtonState();
+
+    // Check if email and purchase code are pre-populated (from qrToken navigation)
+    if (emailInput?.value.trim() && purchaseCodeInput?.value.trim()) {
+        checkBookingExists();
+    }
 
     // Clear purchase code and email error messages as soon as the user types or changes the value
     if (purchaseCodeInput) {

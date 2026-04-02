@@ -100,17 +100,14 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
     }
 
     [Fact]
-    public async Task Index_PopulatesForm_WhenQrTokenProvided() {
-        var tourDate = new DateTime(2024, 6, 15);
-        string customerEmail = "test@example.com";
-        string purchaseCode = "TEST123";
+    public async Task Index_PopulatesSelectedSuppliers_WhenQrTokenProvided() {
         var selectedSupplierIds = new List<int> { 1, 2, 3 };
         var qrToken = Guid.NewGuid();
 
         var booking = new Booking {
-            TourDate = tourDate,
-            CustomerEmail = customerEmail,
-            PurchaseCode = purchaseCode,
+            TourDate = new DateTime(2024, 6, 15),
+            CustomerEmail = "test@example.com",
+            PurchaseCode = "TEST123",
             SelectedSupplierIds = selectedSupplierIds,
             QrToken = qrToken,
         };
@@ -126,10 +123,6 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
 
-        model.TourDate.ShouldBe(tourDate);
-        model.CustomerEmail.ShouldBe(customerEmail);
-        model.PurchaseCode.ShouldBe(purchaseCode);
-
         var selectedSuppliersList = (List<int>)viewResult.ViewData["SelectedSuppliers"]!;
         selectedSuppliersList.ShouldBe(selectedSupplierIds);
     }
@@ -144,9 +137,8 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
 
-        model.TourDate.ShouldBeNull();
-        model.CustomerEmail.ShouldBe(string.Empty);
-        model.PurchaseCode.ShouldBe(string.Empty);
+        model.ShouldNotBeNull();
+        model.Suppliers.ShouldNotBeNull();
     }
 
     [Fact]
@@ -160,8 +152,7 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
 
-        model.TourDate.ShouldBeNull();
-        model.CustomerEmail.ShouldBe(string.Empty);
-        model.PurchaseCode.ShouldBe(string.Empty);
+        model.ShouldNotBeNull();
+        model.Suppliers.ShouldNotBeNull();
     }
 }

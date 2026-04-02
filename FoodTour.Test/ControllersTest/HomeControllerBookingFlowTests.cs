@@ -5,47 +5,45 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
     [Fact]
     public async Task Index_SavesBookingImmediately_WhenValidInput() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
-        context.PurchaseCodes.Add(new PurchaseCode { Code = TestHelper.VALID_CODE, IsActive = true });
-        await context.SaveChangesAsync();
+        var booking = await TestHelper.CreateBookingInDatabase(context);
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(booking.Id, selectedSuppliers);
 
         var redirect = result.ShouldBeOfType<RedirectToActionResult>();
         redirect.ActionName.ShouldBe(nameof(HomeController.BookingSummary));
 
-        // Verify booking was saved
+        // Verify booking was updated
         var bookings = await context.Bookings.ToListAsync();
         bookings.ShouldHaveSingleItem();
-        var booking = bookings[0];
-        booking.CustomerEmail.ShouldBe(TestHelper.VALID_EMAIL);
-        booking.PurchaseCode.ShouldBe(TestHelper.VALID_CODE);
-        booking.TourDate.ShouldBe(TestHelper.validTourDate);
-        booking.SelectedSupplierIds.ShouldBe(selectedSuppliers);
-        booking.IsConfirmed.ShouldBeFalse();
+        var updatedBooking = bookings[0];
+        updatedBooking.CustomerEmail.ShouldBe(TestHelper.VALID_EMAIL);
+        updatedBooking.PurchaseCode.ShouldBe(TestHelper.VALID_CODE);
+        updatedBooking.TourDate.ShouldBe(TestHelper.validTourDate);
+        updatedBooking.SelectedSupplierIds.ShouldBe(selectedSuppliers);
+        updatedBooking.IsConfirmed.ShouldBeFalse();
     }
 
     [Fact]
     public async Task Index_CreatesVisitRecords_WhenBookingSaved() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
-        context.PurchaseCodes.Add(new PurchaseCode { Code = TestHelper.VALID_CODE, IsActive = true });
-        await context.SaveChangesAsync();
+        var booking = await TestHelper.CreateBookingInDatabase(context);
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
-        await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        await sut.Index(booking.Id, selectedSuppliers);
 
         var visits = await context.Visits.ToListAsync();
         visits.Count.ShouldBe(5);
 
-        var booking = await context.Bookings.FirstOrDefaultAsync();
-        booking.ShouldNotBeNull();
+        var updatedBooking = await context.Bookings.FirstOrDefaultAsync();
+        updatedBooking.ShouldNotBeNull();
 
         foreach (int supplierId in selectedSuppliers) {
             var visit = visits.FirstOrDefault(v => v.SupplierId == supplierId);
             visit.ShouldNotBeNull();
-            visit.BookingId.ShouldBe(booking.Id);
+            visit.BookingId.ShouldBe(updatedBooking.Id);
             visit.IsClaimed.ShouldBeFalse();
             visit.ClaimedAt.ShouldBeNull();
         }
@@ -54,15 +52,14 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
     [Fact]
     public async Task Index_ReturnsBadRequest_WhenInvalidSupplierIds() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(2); // Only 2 suppliers exist
-        context.PurchaseCodes.Add(new PurchaseCode { Code = TestHelper.VALID_CODE, IsActive = true });
-        await context.SaveChangesAsync();
+        var booking = await TestHelper.CreateBookingInDatabase(context, selectedSupplierIds: [1, 2]);
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = new List<int> { 1, 2, 99, 100, 101 }; // 99, 100, 101 don't exist
 
-        var result = await sut.Index(TestHelper.validTourDate, selectedSuppliers, TestHelper.VALID_EMAIL, TestHelper.VALID_CODE);
+        var result = await sut.Index(booking.Id, selectedSuppliers);
 
         var view = result.ShouldBeOfType<ViewResult>();
-        var model = view.Model.ShouldBeOfType<FoodTourVM>();
+        view.Model.ShouldBeOfType<FoodTourVM>();
         sut.ModelState.IsValid.ShouldBeFalse();
         sut.ModelState[string.Empty]!.Errors.ShouldHaveSingleItem();
         sut.ModelState[string.Empty]!.Errors[0].ErrorMessage.ShouldBe("One or more selected suppliers are invalid. Please refresh and try again.");

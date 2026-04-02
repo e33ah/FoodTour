@@ -35,8 +35,8 @@
 					}
 					<form id="tourForm" asp-action="Index" method="post"
 						  data-max-selections="@Model.MaxSelections"
-						  data-selected-suppliers='@Html.Raw(JsonSerializer.Serialize(ViewBag.SelectedSuppliers ?? new List<int>()))'
-						  data-focus-purchase-code='@JsonSerializer.Serialize((bool?)ViewBag.FocusPurchaseCode == true)'>
+						  data-selected-suppliers='@Html.Raw(JsonSerializer.Serialize(ViewBag.SelectedSuppliers ?? new List<int>()))'>
+						<input type="hidden" id="BookingId" name="BookingId" value="" />
 						<h2 class="lead mb-3 fs-3">Select @Model.MaxSelections tasting experiences to create your personalised food tasting tour</h2>
 
 						<p class="mb-4">
@@ -51,9 +51,8 @@
 									Enter the email address used to make your booking
 								</small>
 								<div class="form-group">
-									<label asp-for="CustomerEmail" class="form-label visually-hidden">Email Address</label>
-									<input asp-for="CustomerEmail" type="email" class="form-control" placeholder="your.email@example.com" />
-									<span asp-validation-for="CustomerEmail" class="text-danger"></span>
+									<label for="customerEmail" class="form-label visually-hidden">Email Address</label>
+									<input id="customerEmail" name="customerEmail" type="email" class="form-control" placeholder="your.email@example.com" value="@(ViewBag.CustomerEmail ?? string.Empty)" />
 								</div>
 							</div>
 						</div>
@@ -66,12 +65,11 @@
 									Enter your booking reference (found in your confirmation email)
 								</small>
 								<div class="form-group">
-									<label asp-for="PurchaseCode" class="form-label visually-hidden">Booking Reference</label>
+									<label for="purchaseCode" class="form-label visually-hidden">Booking Reference</label>
 									<div class="d-flex justify-content-center">
 										<span class="input-group-text bg-transparent text-muted">#</span>
-										<input asp-for="PurchaseCode" type="text" class="form-control w-auto" style="max-width: 220px;" id="purchaseCode" placeholder="123456789" />
+										<input id="purchaseCode" name="purchaseCode" type="text" class="form-control w-auto" style="max-width: 220px;" placeholder="123456789" value="@(ViewBag.PurchaseCode ?? string.Empty)" />
 									</div>
-									<span asp-validation-for="PurchaseCode" class="text-danger"></span>
 								</div>
 							</div>
 						</div>
