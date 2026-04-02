@@ -171,7 +171,7 @@ public class FoodTourApiControllerJsonProcessingTests {
     }
 
     [Fact]
-    public async Task CreateNewBooking_ReturnsInternalServerError_WhenBookingWrapperMissing() {
+    public async Task CreateNewBooking_ReturnsOk_WhenBookingWrapperMissing() {
         var controller = TestHelper.CreateFoodTourApiController();
 
         // Create JSON without the required "booking" wrapper
@@ -191,9 +191,9 @@ public class FoodTourApiControllerJsonProcessingTests {
 
         var result = await controller.CreateNewBooking(jsonElement, KEY);
 
-        // Should return 500 error since GetProperty("booking") will throw KeyNotFoundException
-        var errorResult = result.ShouldBeOfType<ObjectResult>();
-        errorResult.StatusCode.ShouldBe(500);
+        // Should return OK even though GetProperty("booking") throws - webhook resilience
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
     }
 
     [Fact] 

@@ -46,9 +46,6 @@ public class FoodTourApiControllerTests {
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
-
-        var responseValue = okResult.Value as dynamic;
-        // Just verify we get a successful response - the logging is the main goal
     }
 
     [Fact]
@@ -60,7 +57,6 @@ public class FoodTourApiControllerTests {
 
         var result = await controller.CreateNewBooking(jsonElement, KEY);
 
-        // Should still return OK as we're just logging at this stage
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
     }
