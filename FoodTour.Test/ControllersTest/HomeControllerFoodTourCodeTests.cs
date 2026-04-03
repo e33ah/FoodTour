@@ -17,6 +17,7 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
         var tourSupplier = model.TourSuppliers.Single();
         tourSupplier.Name.ShouldBe(supplier.Name);
         model.QrToken.ShouldBe(booking.QrToken);
+        model.AllVisitsClaimed.ShouldBeFalse();
     }
 
     [Fact]
@@ -51,5 +52,61 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
         var result = await sut.FoodTourCode(booking.QrToken);
         var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
         redirectResult.ActionName.ShouldBe("Error");
+    }
+
+    [Fact]
+    public async Task FoodTourCode_SetsAllVisitsClaimedFalse_WhenNoVisitsExist() {
+        var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+        var booking = TestHelper.CreateValidBooking([1]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        var sut = CreateConfiguredController(context);
+
+        var result = await sut.FoodTourCode(booking.QrToken);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourCodeVM>();
+        model.AllVisitsClaimed.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task FoodTourCode_SetsAllVisitsClaimedFalse_WhenSomeVisitsNotClaimed() {
+        var supplier1 = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+        var supplier2 = TestHelper.CreateSupplier(2, "Lovely Bites", true);
+        var booking = TestHelper.CreateValidBooking([1, 2]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier1, supplier2], [booking]);
+
+        var visit1 = new Visit { BookingId = booking.Id, SupplierId = 1, IsClaimed = true, ClaimedAt = DateTime.UtcNow, TastingExperiencesClaimed = 2 };
+        var visit2 = new Visit { BookingId = booking.Id, SupplierId = 2, IsClaimed = false };
+        await context.Visits.AddRangeAsync([visit1, visit2]);
+        await context.SaveChangesAsync();
+
+        var sut = CreateConfiguredController(context);
+
+        var result = await sut.FoodTourCode(booking.QrToken);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourCodeVM>();
+        model.AllVisitsClaimed.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task FoodTourCode_SetsAllVisitsClaimedTrue_WhenAllVisitsClaimed() {
+        var supplier1 = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+        var supplier2 = TestHelper.CreateSupplier(2, "Lovely Bites", true);
+        var booking = TestHelper.CreateValidBooking([1, 2]);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier1, supplier2], [booking]);
+
+        var visit1 = new Visit { BookingId = booking.Id, SupplierId = 1, IsClaimed = true, ClaimedAt = DateTime.UtcNow, TastingExperiencesClaimed = 2 };
+        var visit2 = new Visit { BookingId = booking.Id, SupplierId = 2, IsClaimed = true, ClaimedAt = DateTime.UtcNow, TastingExperiencesClaimed = 2 };
+        await context.Visits.AddRangeAsync([visit1, visit2]);
+        await context.SaveChangesAsync();
+
+        var sut = CreateConfiguredController(context);
+
+        var result = await sut.FoodTourCode(booking.QrToken);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourCodeVM>();
+        model.AllVisitsClaimed.ShouldBeTrue();
     }
 }

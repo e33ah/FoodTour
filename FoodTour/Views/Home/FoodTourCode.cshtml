@@ -20,67 +20,85 @@
 		<div class="row justify-content-center">
 			<div class="col-md-8 col-lg-6">
 
-				<!-- Welcome & Instructions Card -->
-				<div class="card mb-4">
-					<div class="card-body text-center">
-						<h3 class="card-title">
-							<i class="bi bi-geo-alt-fill text-primary"></i> Getting Started
-						</h3>
-						<p class="mb-2">Your starting location will be <strong>Weymouth Town Bridge</strong>.</p>
-						<p class="mb-2">Please go to the north side of the bridge, outside the Rendezvous Bar, for <i class="bi bi-smartwatch text-primary" aria-hidden="true"></i><strong>11:15am</strong> where a member of our team will greet you.</p>
-						<p class="mb-0 text-muted">Explore the tasting experiences at your own pace and in any order, between 11.15am - 5.15pm.</p>
+				<!-- Tour Complete Card or Welcome & Instructions Card -->
+				@if (Model.AllVisitsClaimed) {
+					<div class="card mb-4 border-success">
+						<div class="card-body text-center">
+							<h3 class="card-title text-success">
+								<i class="bi bi-check-circle-fill"></i> Tour Complete!
+							</h3>
+							<p class="lead mb-3">You've claimed all your tasting experiences!</p>
+							<p class="mb-3">Thank you for joining us on the Weymouth Self-Guided Tasting Tour. We hope you enjoyed exploring the wonderful flavours our local suppliers have to offer.</p>
+							<p class="mb-0">
+								<i class="bi bi-heart-fill text-danger"></i>
+								<strong>Enjoy continuing to explore Weymouth!</strong>
+								<i class="bi bi-heart-fill text-danger"></i>
+							</p>
+						</div>
 					</div>
-				</div>
+				}
+				else {
+					<div class="card mb-4">
+						<div class="card-body text-center">
+							<h3 class="card-title">
+								<i class="bi bi-geo-alt-fill text-primary"></i> Getting Started
+							</h3>
+							<p class="mb-2">Your starting location will be <strong>Weymouth Town Bridge</strong>.</p>
+							<p class="mb-2">Please go to the north side of the bridge, outside the Rendezvous Bar, for <i class="bi bi-smartwatch text-primary" aria-hidden="true"></i><strong>11:15am</strong> where a member of our team will greet you.</p>
+							<p class="mb-0 text-muted">Explore the tasting experiences at your own pace and in any order, between 11.15am - 5.15pm.</p>
+						</div>
+					</div>
 
-				<!-- Interactive Map Card -->
-				<div class="card mb-4">
-					<div class="card-body text-center">
-						<h3 class="card-title">
-							<i class="bi bi-map text-primary"></i> Interactive Tour Guide
-						</h3>
-						<p class="mb-3">Ready to start your culinary adventure?</p>
-						<a href="https://storymaps.arcgis.com/stories/9da596d25952432eabd8551889bfee9e"
-						   target="_blank"
-						   rel="noopener noreferrer"
-						   class="btn btn-primary btn-lg px-4 py-3">
-							<i class="bi bi-map"></i> Start Your Tour Here
-						</a>
-						<p class="text-muted mt-2 small">Click above to launch your interactive map and tour guide</p>
+					<!-- Interactive Map Card -->
+					<div class="card mb-4">
+						<div class="card-body text-center">
+							<h3 class="card-title">
+								<i class="bi bi-map text-primary"></i> Interactive Tour Guide
+							</h3>
+							<p class="mb-3">Ready to start your culinary adventure?</p>
+							<a href="https://storymaps.arcgis.com/stories/9da596d25952432eabd8551889bfee9e"
+								   target="_blank"
+								   rel="noopener noreferrer"
+								   class="btn btn-primary btn-lg px-4 py-3">
+								<i class="bi bi-map"></i> Start Your Tour Here
+							</a>
+							<p class="text-muted mt-2 small">Click above to launch your interactive map and tour guide</p>
+						</div>
 					</div>
-				</div>
 
-				<!-- QR Code Card -->
-				<div class="card mb-4">
-					<div class="card-body text-center">
-						<h3 class="card-title">
-							<i class="bi bi-qr-code text-primary"></i> Your Tour QR Code
-						</h3>
-						<p class="mb-0">Show this QR code at each Food Stop on your Tour to claim your Tasting Experience:</p>
-						<img src="@Url.Action("QrImage", "Home", new { qrToken = Model.QrToken })" alt="QR Code" class="img-fluid" style="max-width: 300px;" />
+					<!-- QR Code Card -->
+					<div class="card mb-4">
+						<div class="card-body text-center">
+							<h3 class="card-title">
+								<i class="bi bi-qr-code text-primary"></i> Your Tour QR Code
+							</h3>
+							<p class="mb-0">Show this QR code at each Food Stop on your Tour to claim your Tasting Experience:</p>
+							<img src="@Url.Action("QrImage", "Home", new { qrToken = Model.QrToken })" alt="QR Code" class="img-fluid" style="max-width: 300px;" />
+						</div>
 					</div>
-				</div>
 
-				<!-- Tour Summary Card -->
-				<div class="card mb-4">
-					<div class="card-body text-start">
-						<h3 class="card-title text-center">
-							<i class="bi bi-card-checklist text-primary"></i> Tour Summary
-						</h3>
-						<ul class="list-group list-group-flush">
-							<li class="list-group-item">
-								<strong>Tour Date:</strong> @Model.TourDate.ToString("D")
-							</li>
-							<li class="list-group-item">
-								<strong>Selected Tasting Experiences:</strong>
-								<ul>
-									@foreach (var supplier in Model.TourSuppliers) {
-										<li>@supplier.Name - @supplier.Address</li>
-									}
-								</ul>
-							</li>
-						</ul>
+					<!-- Tour Summary Card -->
+					<div class="card mb-4">
+						<div class="card-body text-start">
+							<h3 class="card-title text-center">
+								<i class="bi bi-card-checklist text-primary"></i> Tour Summary
+							</h3>
+							<ul class="list-group list-group-flush">
+								<li class="list-group-item">
+									<strong>Tour Date:</strong> @Model.TourDate.ToString("D")
+								</li>
+								<li class="list-group-item">
+									<strong>Selected Tasting Experiences:</strong>
+									<ul>
+										@foreach (var supplier in Model.TourSuppliers) {
+											<li>@supplier.Name - @supplier.Address</li>
+										}
+									</ul>
+								</li>
+							</ul>
+						</div>
 					</div>
-				</div>
+				}
 
 				<!-- Support Card -->
 				<div class="card mb-4">

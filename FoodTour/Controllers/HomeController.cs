@@ -55,9 +55,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             return RedirectToAction("Index");
         }
 
-        var selectedSuppliers = await context.Suppliers
-            .Where(s => booking.SelectedSupplierIds.Contains(s.Id))
-            .ToListAsync();
+        var selectedSuppliers = await GetSelectedSuppliersAsync(booking);
 
         var bookingSummary = new BookingSummaryVM {
             TourDate = booking.TourDate,
@@ -156,15 +154,9 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             return RedirectToAction("Error");
         }
 
-        var tourSuppliers = await context.Suppliers
-            .Where(s => booking.SelectedSupplierIds.Contains(s.Id))
-            .ToListAsync();
-
-        var model = new FoodTourCodeVM {
-            TourDate = booking.TourDate,
-            TourSuppliers = tourSuppliers,
-            QrToken = qrToken
-        };
+        var tourSuppliers = await GetSelectedSuppliersAsync(booking);
+        bool allVisitsClaimed = await AreAllVisitsClaimedAsync(booking.Id);
+        var model = CreateFoodTourCodeViewModel(booking, tourSuppliers, allVisitsClaimed);
 
         return View(model);
     }
@@ -245,9 +237,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     }
 
     private async Task<IActionResult> CreateBookingSummaryErrorViewAsync(Booking booking, string errorMessage) {
-        var selectedSuppliers = await context.Suppliers
-            .Where(s => booking.SelectedSupplierIds.Contains(s.Id))
-            .ToListAsync();
+        var selectedSuppliers = await GetSelectedSuppliersAsync(booking);
 
         var bookingSummary = new BookingSummaryVM {
             TourDate = booking.TourDate,
@@ -288,10 +278,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     private async Task SendBookingConfirmationEmailAsync(Booking booking) {
         try {
-            var supplierIds = booking.SelectedSupplierIds;
-            var suppliers = await context.Suppliers
-                .Where(supplier => supplierIds.Contains(supplier.Id))
-                .ToListAsync();
+            var suppliers = await GetSelectedSuppliersAsync(booking);
 
             string foodTourCodeUrl = GenerateUrl("FoodTourCode", new { qrToken = booking.QrToken });
             string userSupportUrl = GenerateUrl("UserSupport");
@@ -426,6 +413,20 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         }
     }
 
+    private async Task<List<Supplier>> GetSelectedSuppliersAsync(Booking booking) {
+        return await context.Suppliers
+            .Where(s => booking.SelectedSupplierIds.Contains(s.Id))
+            .ToListAsync();
+    }
+
+    private async Task<bool> AreAllVisitsClaimedAsync(int bookingId) {
+        var visits = await context.Visits
+            .Where(v => v.BookingId == bookingId)
+            .ToListAsync();
+
+        return visits.Count > 0 && visits.All(v => v.IsClaimed);
+    }
+
     private async Task<List<Supplier>> GetUnclaimedSuppliersAsync(Booking booking) {
         var claimedSupplierIds = await context.Visits
             .Where(v => v.BookingId == booking.Id && v.IsClaimed)
@@ -451,6 +452,15 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
             TotalGuests = booking.TotalGuests
+        };
+    }
+
+    private static FoodTourCodeVM CreateFoodTourCodeViewModel(Booking booking, List<Supplier> suppliers, bool allVisitsClaimed) {
+        return new FoodTourCodeVM {
+            TourDate = booking.TourDate,
+            TourSuppliers = suppliers,
+            QrToken = booking.QrToken,
+            AllVisitsClaimed = allVisitsClaimed
         };
     }
 }

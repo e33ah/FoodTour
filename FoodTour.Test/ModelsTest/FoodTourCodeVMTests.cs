@@ -8,5 +8,6 @@ public class FoodTourCodeVMTests {
         sut.TourDate.ShouldBe(default);
         sut.TourSuppliers.ShouldBeEmpty();
         sut.QrToken.ShouldBe(Guid.Empty);
+        sut.AllVisitsClaimed.ShouldBeFalse();
     }
 }
