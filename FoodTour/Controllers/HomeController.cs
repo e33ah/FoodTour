@@ -149,9 +149,27 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     [HttpGet]
     public async Task<IActionResult> FoodTourCode(Guid qrToken) {
         Log.Debug("Loading FoodTourCode for qrtoken {qrToken}.", qrToken);
-        var booking = await TryGetValidBookingByTokenAsync(qrToken, nameof(FoodTourCode));
-        if (booking == null) {
+
+        if (qrToken == Guid.Empty) {
+            Log.Warning("FoodTourCode called with empty QrToken.");
             return RedirectToAction("Error");
+        }
+
+        var booking = await context.Bookings
+            .FirstOrDefaultAsync(b => b.QrToken == qrToken);
+
+        if (booking == null) {
+            Log.Warning("FoodTourCode could not find booking with token {QrToken}.", qrToken);
+            return RedirectToAction("Error");
+        }
+
+        if (booking.IsCancelled) {
+            Log.Information("FoodTourCode: Booking {BookingId} is cancelled, redirecting to TourCancelled page.", booking.Id);
+            return RedirectToAction("TourCancelled", new { 
+                customerEmail = booking.CustomerEmail, 
+                tourDate = booking.TourDate,
+                purchaseCode = booking.PurchaseCode
+            });
         }
 
         var tourSuppliers = await GetSelectedSuppliersAsync(booking);
@@ -200,6 +218,16 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     [HttpGet]
     public IActionResult TourCompleted() {
         return View();
+    }
+
+    [HttpGet]
+    public IActionResult TourCancelled(string? customerEmail = null, DateTime? tourDate = null, string? purchaseCode = null) {
+        var model = new TourCancelledVM {
+            CustomerEmail = customerEmail ?? string.Empty,
+            TourDate = tourDate ?? DateTime.MinValue,
+            PurchaseCode = purchaseCode ?? string.Empty
+        };
+        return View(model);
     }
 
     public IActionResult Privacy() {

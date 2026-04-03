@@ -41,7 +41,7 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
     }
 
     [Fact]
-    public async Task FoodTourCode_RedirectsToError_WhenBookingIsCancelled() {
+    public async Task FoodTourCode_RedirectsToTourCancelled_WhenBookingIsCancelled() {
         var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
         var booking = TestHelper.CreateValidBooking([1]);
         booking.IsCancelled = true;
@@ -50,8 +50,13 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
         var sut = CreateConfiguredController(context);
 
         var result = await sut.FoodTourCode(booking.QrToken);
+
         var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
-        redirectResult.ActionName.ShouldBe("Error");
+        redirectResult.ActionName.ShouldBe("TourCancelled");
+        redirectResult.RouteValues.ShouldNotBeNull();
+        redirectResult.RouteValues["customerEmail"].ShouldBe(booking.CustomerEmail);
+        redirectResult.RouteValues["tourDate"].ShouldBe(booking.TourDate);
+        redirectResult.RouteValues["purchaseCode"].ShouldBe(booking.PurchaseCode);
     }
 
     [Fact]
