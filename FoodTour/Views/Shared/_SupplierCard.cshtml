@@ -21,12 +21,10 @@
 					<i class="bi bi-geo-alt text-primary"></i> @Model.Address
 				</p>
 				@if (!string.IsNullOrWhiteSpace(Model.OpeningTimes)) {
-					<p class="card-text text-muted small mb-1">
-						<i class="bi bi-clock text-primary"></i> @Model.OpeningTimes
-					</p>
+					<p class="card-text text-muted small mb-1" style="white-space: pre-wrap;"><i class="bi bi-clock text-primary"></i> @Model.OpeningTimes</p>
 				}
 				@if (!string.IsNullOrWhiteSpace(Model.Description)) {
-					<p class="card-text mb-0">@Model.Description</p>
+					<p class="card-text mb-0" style="white-space: pre-wrap;">@Model.Description.Trim()</p>
 				}
 			</div>
 		</div>

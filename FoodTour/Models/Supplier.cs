@@ -22,7 +22,7 @@ public class Supplier {
     [MaxLength(256)]
     public string ContactEmail { get; set; } = null!;
 
-    [MaxLength(100)]
+    [MaxLength(500)]
     public string? OpeningTimes { get; set; }
 
     public bool IsActive { get; set; }

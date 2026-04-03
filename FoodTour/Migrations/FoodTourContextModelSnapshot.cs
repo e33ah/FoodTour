@@ -137,8 +137,8 @@ namespace FoodTour.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("OpeningTimes")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Tag1")
                         .HasMaxLength(50)
