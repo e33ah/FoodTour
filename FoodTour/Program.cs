@@ -53,6 +53,7 @@ public class Program {
             builder.Services.AddScoped<SupplierNotificationService>();
             builder.Services.AddScoped<IBookingValidationService, BookingValidationService>();
             builder.Services.AddScoped<IPurchaseCodeValidationService, PurchaseCodeValidationService>();
+            builder.Services.AddScoped<IBookingUpdateService, BookingUpdateService>();
 
             var app = builder.Build();
 

@@ -1,6 +1,6 @@
 namespace FoodTour.Controllers;
 
-public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions, IBookingValidationService bookingValidationService) : Controller {
+public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions, IBookingValidationService bookingValidationService, IBookingUpdateService bookingUpdateService) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
     private readonly QrImageService qrImageService = new();
     private readonly SupportSettings supportSettings = supportOptions.Value;
@@ -9,13 +9,13 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         var model = await CreateFoodTourViewModel();
 
         if (model.Suppliers.Count == 0) {
-            ViewBag.NoSuppliersMessage = "No tasting experiences are currently available for the tour. Please check back later.";
+            model.NoSuppliersMessage = "No tasting experiences are currently available for the tour. Please check back later.";
         } else if (model.Suppliers.Count < MAX_SUPPLIER_SELECTIONS) {
-            ViewBag.InsufficientSuppliersWarning = GetInsufficientSuppliersMessage(model.Suppliers.Count);
+            model.InsufficientSuppliersWarning = GetInsufficientSuppliersMessage(model.Suppliers.Count);
             Log.Warning("Insufficient active suppliers: {SupplierCount} found, {RequiredCount} required.", model.Suppliers.Count, MAX_SUPPLIER_SELECTIONS);
         }
 
-        await PopulateFormFromQrTokenAsync(model, qrToken);
+        await PopulateFormFromQrTokenAsync(qrToken, model);
 
         return View(model);
     }
@@ -23,88 +23,20 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Index(int bookingId, List<int> selectedSuppliers) {
-        // Validate that the booking ID is provided
-        if (bookingId <= 0) {
-            Log.Warning("Index POST called with invalid or missing booking ID: {BookingId}", bookingId);
-            ModelState.AddModelError(string.Empty, "Your booking could not be validated. Please enter your email and booking reference.");
-            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
-        }
-
-        // Retrieve the booking from the database
-        var booking = await context.Bookings
-            .FirstOrDefaultAsync(b => b.Id == bookingId && !b.IsCancelled);
-
+        var booking = await TryGetValidBookingAsync(bookingId);
         if (booking == null) {
-            Log.Warning("Index POST could not find active booking with ID: {BookingId}", bookingId);
-            ModelState.AddModelError(string.Empty, "Your booking could not be found or has been cancelled. Please verify your details.");
             return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
         }
 
-        // Validate supplier selections
-        var validationRequest = new BookingValidationRequest {
-            TourDate = booking.TourDate,
-            CustomerEmail = booking.CustomerEmail,
-            SelectedSupplierIds = selectedSuppliers
-        };
-
-        var validationResult = await bookingValidationService.ValidateAsync(validationRequest);
-
-        if (!validationResult.IsValid) {
-            MapValidationErrorsToModelState(validationResult);
+        if (!await ValidateSupplierSelectionsAsync(booking, selectedSuppliers)) {
             return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
         }
 
-        // Validate that all supplier IDs exist in the database
-        var existingSupplierIds = await context.Suppliers
-            .Where(s => selectedSuppliers.Contains(s.Id) && s.IsActive)
-            .Select(s => s.Id)
-            .ToListAsync();
-
-        if (existingSupplierIds.Count != selectedSuppliers.Count) {
-            Log.Warning("Booking {BookingId}: One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", bookingId, selectedSuppliers, existingSupplierIds);
-            ModelState.AddModelError(string.Empty, "One or more selected suppliers are invalid. Please refresh and try again.");
+        if (!await ValidateSupplierExistenceAsync(bookingId, selectedSuppliers)) {
             return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
         }
 
-        // Update the booking with new supplier selections
-        booking.SelectedSupplierIds = selectedSuppliers;
-
-        // Remove old BookingSuppliers
-        var oldBookingSuppliers = await context.BookingSuppliers
-            .Where(bs => bs.BookingId == booking.Id)
-            .ToListAsync();
-        context.BookingSuppliers.RemoveRange(oldBookingSuppliers);
-
-        // Add new BookingSuppliers
-        booking.BookingSuppliers = [.. selectedSuppliers.Select(id =>
-            new BookingSupplier {
-                Booking = booking,
-                SupplierId = id
-            })];
-
-        // Remove old Visits
-        var oldVisits = await context.Visits
-            .Where(v => v.BookingId == booking.Id)
-            .ToListAsync();
-        context.Visits.RemoveRange(oldVisits);
-
-        // Add new Visits
-        var newVisits = selectedSuppliers.Select(id =>
-            new Visit {
-                Booking = booking,
-                SupplierId = id,
-                IsClaimed = false
-            }).ToList();
-
-        await context.Visits.AddRangeAsync(newVisits);
-
-        try {
-            await context.SaveChangesAsync();
-            Log.Information("Booking {BookingId}: Updated for {CustomerEmail} on {TourDate:dd/MM/yyyy} with {SupplierCount} suppliers.", booking.Id, booking.CustomerEmail, booking.TourDate, selectedSuppliers.Count);
-        } catch (Exception ex) {
-            Log.Error(ex, "Booking {BookingId}: Failed to update in database.", booking.Id);
-            string supportLink = GenerateUrl("UserSupport");
-            ModelState.AddModelError(string.Empty, $"Unable to update your booking due to a system error. Please try again or <a href='{supportLink}'>contact support</a> if the problem persists.");
+        if (!await TryUpdateBookingAsync(booking, selectedSuppliers)) {
             return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
         }
 
@@ -114,14 +46,8 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     [HttpGet]
     public async Task<IActionResult> BookingSummary(Guid qrToken) {
         Log.Debug("Loading booking summary page.");
-        if (qrToken == Guid.Empty) {
-            Log.Warning("BookingSummary called with empty QrToken.");
-            return RedirectToAction("Index");
-        }
-
-        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        var booking = await TryGetValidBookingByTokenAsync(qrToken, nameof(BookingSummary));
         if (booking == null) {
-            Log.Warning("BookingSummary could not find booking with token {QrToken}.", qrToken);
             return RedirectToAction("Index");
         }
 
@@ -144,14 +70,8 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ConfirmBookingSummary(Guid qrToken) {
-        if (qrToken == Guid.Empty) {
-            Log.Warning("ConfirmBookingSummary called with empty QrToken.");
-            return RedirectToAction("Index");
-        }
-
-        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        var booking = await TryGetValidBookingByTokenAsync(qrToken, nameof(ConfirmBookingSummary));
         if (booking == null) {
-            Log.Warning("ConfirmBookingSummary could not find booking with token {QrToken}.", qrToken);
             return RedirectToAction("Index");
         }
 
@@ -185,14 +105,8 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     [HttpGet]
     public async Task<IActionResult> BookingConfirmation(Guid qrToken, bool emailWarning = false) {
-        if (qrToken == Guid.Empty) {
-            Log.Warning("BookingConfirmation called with empty QrToken.");
-            return RedirectToAction("Error");
-        }
-
-        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        var booking = await TryGetValidBookingByTokenAsync(qrToken, nameof(BookingConfirmation));
         if (booking == null) {
-            Log.Warning("BookingConfirmation could not find booking with token {QrToken}.", qrToken);
             return RedirectToAction("Error");
         }
 
@@ -213,16 +127,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     [HttpGet]
     public async Task<IActionResult> SupplierVisit(Guid qrToken) {
-        if (qrToken == Guid.Empty) {
-            Log.Warning("SupplierVisit action called with invalid token: {QrToken}.", qrToken);
-            return RedirectToAction("Error");
-        }
-
-        var booking = await context.Bookings
-            .Include(b => b.BookingSuppliers)
-            .ThenInclude(bs => bs.Supplier)
-            .FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
-
+        var booking = await TryGetValidBookingByTokenAsync(qrToken, nameof(SupplierVisit), includeBookingSuppliers: true);
         if (booking == null || booking.BookingSuppliers == null) {
             Log.Error("Booking or BookingSuppliers is null for token {QrToken}.", qrToken);
             return RedirectToAction("Error");
@@ -258,15 +163,11 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     [HttpGet]
     public async Task<IActionResult> FoodTourCode(Guid qrToken) {
         Log.Debug("Loading FoodTourCode for qrtoken {qrToken}.", qrToken);
-        if (qrToken == Guid.Empty) {
-            Log.Warning("FoodTourCode action called with invalid token: {QrToken}.", qrToken);
-            return RedirectToAction("Error");
-        }
-        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        var booking = await TryGetValidBookingByTokenAsync(qrToken, nameof(FoodTourCode));
         if (booking == null) {
-            Log.Warning("FoodTourCode action could not find booking with token {QrToken}.", qrToken);
             return RedirectToAction("Error");
         }
+
         var tourSuppliers = await context.Suppliers
             .Where(s => booking.SelectedSupplierIds.Contains(s.Id))
             .ToListAsync();
@@ -282,15 +183,11 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     [HttpGet("[controller]/qr")]
     public async Task<IActionResult> QrImage(Guid qrToken) {
-        if (qrToken == Guid.Empty) {
-            Log.Warning("QrImage action called with invalid token: {QrToken}.", qrToken);
-            return BadRequest("QR Token is required.");
-        }
-
-        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        var booking = await TryGetValidBookingByTokenAsync(qrToken, nameof(QrImage));
         if (booking == null) {
-            Log.Warning("QrImage action could not find booking with token {QrToken}.", qrToken);
-            return NotFound("Booking not found or cancelled.");
+            return qrToken == Guid.Empty 
+                ? BadRequest("QR Token is required.") 
+                : NotFound("Booking not found or cancelled.");
         }
 
         string url;
@@ -369,7 +266,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
     private async Task<IActionResult> CreateIndexViewWithErrorsAsync(List<int> selectedSuppliers) {
         var model = await CreateFoodTourViewModel();
-        ViewBag.SelectedSuppliers = selectedSuppliers;
+        model.SelectedSuppliers = selectedSuppliers;
         return View(model);
     }
 
@@ -419,21 +316,102 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return generatedUrl;
     }
 
-    private async Task PopulateFormFromQrTokenAsync(FoodTourVM model, Guid? qrToken) {
+    private async Task PopulateFormFromQrTokenAsync(Guid? qrToken, FoodTourVM model) {
         if (!qrToken.HasValue || qrToken.Value == Guid.Empty) {
             return;
         }
 
-        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.QrToken == qrToken.Value && !b.IsCancelled);
+        var booking = await TryGetValidBookingByTokenAsync(qrToken.Value, nameof(PopulateFormFromQrTokenAsync));
         if (booking == null) {
-            Log.Debug("Index: Could not find booking with QR token {QrToken} for form population.", qrToken);
             return;
         }
 
-        ViewBag.SelectedSuppliers = booking.SelectedSupplierIds;
-        ViewBag.CustomerEmail = booking.CustomerEmail;
-        ViewBag.PurchaseCode = booking.PurchaseCode;
+        model.SelectedSuppliers = booking.SelectedSupplierIds;
+        model.CustomerEmail = booking.CustomerEmail;
+        model.PurchaseCode = booking.PurchaseCode;
 
         Log.Debug("Index: Populated form from booking {BookingId} using QR token.", booking.Id);
+    }
+
+    private async Task<Booking?> TryGetValidBookingAsync(int bookingId) {
+        if (bookingId <= 0) {
+            Log.Warning("Index POST called with invalid or missing booking ID: {BookingId}", bookingId);
+            ModelState.AddModelError(string.Empty, "Your booking could not be validated. Please enter your email and booking reference.");
+            return null;
+        }
+
+        var booking = await context.Bookings
+            .FirstOrDefaultAsync(b => b.Id == bookingId && !b.IsCancelled);
+
+        if (booking == null) {
+            Log.Warning("Index POST could not find active booking with ID: {BookingId}", bookingId);
+            ModelState.AddModelError(string.Empty, "Your booking could not be found or has been cancelled. Please verify your details.");
+            return null;
+        }
+
+        return booking;
+    }
+
+    private async Task<Booking?> TryGetValidBookingByTokenAsync(Guid qrToken, string callingMethod, bool includeBookingSuppliers = false) {
+        if (qrToken == Guid.Empty) {
+            Log.Warning("{CallingMethod} called with empty QrToken.", callingMethod);
+            return null;
+        }
+
+        IQueryable<Booking> query = context.Bookings;
+        if (includeBookingSuppliers) {
+            query = query.Include(b => b.BookingSuppliers).ThenInclude(bs => bs.Supplier);
+        }
+
+        var booking = await query.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        if (booking == null) {
+            Log.Warning("{CallingMethod} could not find booking with token {QrToken}.", callingMethod, qrToken);
+            return null;
+        }
+        return booking;
+    }
+
+    private async Task<bool> ValidateSupplierSelectionsAsync(Booking booking, List<int> selectedSuppliers) {
+        var validationRequest = new BookingValidationRequest {
+            TourDate = booking.TourDate,
+            CustomerEmail = booking.CustomerEmail,
+            SelectedSupplierIds = selectedSuppliers
+        };
+
+        var validationResult = await bookingValidationService.ValidateAsync(validationRequest);
+
+        if (!validationResult.IsValid) {
+            MapValidationErrorsToModelState(validationResult);
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task<bool> ValidateSupplierExistenceAsync(int bookingId, List<int> selectedSuppliers) {
+        var existingSupplierIds = await context.Suppliers
+            .Where(s => selectedSuppliers.Contains(s.Id) && s.IsActive)
+            .Select(s => s.Id)
+            .ToListAsync();
+
+        if (existingSupplierIds.Count != selectedSuppliers.Count) {
+            Log.Warning("Booking {BookingId}: One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", bookingId, selectedSuppliers, existingSupplierIds);
+            ModelState.AddModelError(string.Empty, "One or more selected suppliers are invalid. Please refresh and try again.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task<bool> TryUpdateBookingAsync(Booking booking, List<int> selectedSuppliers) {
+        try {
+            await bookingUpdateService.UpdateBookingSupplierSelectionsAsync(booking, selectedSuppliers);
+            return true;
+        } catch (Exception ex) {
+            Log.Error(ex, "Booking {BookingId}: Failed to update in database.", booking.Id);
+            string supportLink = GenerateUrl("UserSupport");
+            ModelState.AddModelError(string.Empty, $"Unable to update your booking due to a system error. Please try again or <a href='{supportLink}'>contact support</a> if the problem persists.");
+            return false;
+        }
     }
 }

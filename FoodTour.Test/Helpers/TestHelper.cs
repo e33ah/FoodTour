@@ -5,8 +5,6 @@ public static class TestHelper {
     public const int EXPECTED_MAX_SELECTIONS = 5;
     public const string VALID_EMAIL = "customer@test.com";
     public const string VALID_CODE = "VALIDCODE123";
-    public const string NO_SUPPLIERS_MESSAGE_KEY = "NoSuppliersMessage";
-    public const string INSUFFICIENT_SUPPLIERS_WARNING_KEY = "InsufficientSuppliersWarning";
     public const string EXPECTED_NO_SUPPLIERS_MESSAGE = "No tasting experiences are currently available for the tour. Please check back later.";
     public const string SUPPLIER_NAME_1 = "Tasty Treats";
     public const string SUPPLIER_ADDRESS_1 = "123 Food Street";
@@ -202,7 +200,8 @@ public static class TestHelper {
         var bookingEmailService = new BookingEmailService();
         var supportOptions = CreateSupportOptions();
         var bookingValidationService = new BookingValidationService(context);
-        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService);
+        var bookingUpdateService = new BookingUpdateService(context);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, bookingUpdateService);
     }
 
     public static HomeController CreateHomeController(FoodTourContext context, IEmailSender? emailSender = null) {
@@ -210,7 +209,8 @@ public static class TestHelper {
         var bookingEmailService = new BookingEmailService();
         var supportOptions = CreateSupportOptions();
         var bookingValidationService = new BookingValidationService(context);
-        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService);
+        var bookingUpdateService = new BookingUpdateService(context);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, bookingUpdateService);
     }
 
     public static Mock<IEmailSender> CreateMockEmailSender() {

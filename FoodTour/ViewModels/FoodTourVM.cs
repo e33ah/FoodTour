@@ -7,4 +7,9 @@ public class FoodTourVM {
     public string SupplierDescription { get; set; } = string.Empty;
     public string SupplierAddress { get; set; } = string.Empty;
     public string SupplierOpeningTimes { get; set; } = string.Empty;
+    public List<int> SelectedSuppliers { get; set; } = [];
+    public string CustomerEmail { get; set; } = string.Empty;
+    public string PurchaseCode { get; set; } = string.Empty;
+    public string? NoSuppliersMessage { get; set; }
+    public string? InsufficientSuppliersWarning { get; set; }
 }

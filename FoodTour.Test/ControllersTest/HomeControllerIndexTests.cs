@@ -43,15 +43,14 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
         var (viewResult, model) = await GetIndexViewModel();
 
         model.Suppliers.Count.ShouldBe(0);
-        viewResult.ViewData[TestHelper.NO_SUPPLIERS_MESSAGE_KEY].ShouldBe(TestHelper.EXPECTED_NO_SUPPLIERS_MESSAGE);
+        model.NoSuppliersMessage.ShouldBe(TestHelper.EXPECTED_NO_SUPPLIERS_MESSAGE);
     }
 
     [Fact]
     public async Task Index_DoesNotSetMessages_WhenAtLeastMaxActiveSuppliersExist() {
-        var (viewResult, _) = await GetIndexViewModel(supplierCount: TestHelper.EXPECTED_MAX_SELECTIONS);
-
-        viewResult.ViewData.ContainsKey(TestHelper.NO_SUPPLIERS_MESSAGE_KEY).ShouldBeFalse();
-        viewResult.ViewData.ContainsKey(TestHelper.INSUFFICIENT_SUPPLIERS_WARNING_KEY).ShouldBeFalse();
+        var (viewResult, model) = await GetIndexViewModel(supplierCount: TestHelper.EXPECTED_MAX_SELECTIONS);
+        model.InsufficientSuppliersWarning.ShouldBeNull();
+        model.NoSuppliersMessage.ShouldBeNull();
     }
 
     [Theory]
@@ -60,43 +59,22 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
     [InlineData(3)]
     [InlineData(4)]
     public async Task Index_SetsInsufficientSuppliersWarning_WhenFewerThanMaxActiveSuppliers(int supplierCount) {
-        var (viewResult, model) = await GetIndexViewModel(supplierCount: supplierCount);
+        var (_, model) = await GetIndexViewModel(supplierCount: supplierCount);
 
         model.Suppliers.Count.ShouldBe(supplierCount);
 
         string experienceText = supplierCount == 1 ? "tasting experience is" : "tasting experiences are";
         string expectedMessage = $"Only {supplierCount} {experienceText} currently available. You need at least {TestHelper.EXPECTED_MAX_SELECTIONS} to create a tour. Please check back later.";
 
-        viewResult.ViewData[TestHelper.INSUFFICIENT_SUPPLIERS_WARNING_KEY].ShouldBe(expectedMessage);
-        viewResult.ViewData.ContainsKey(TestHelper.NO_SUPPLIERS_MESSAGE_KEY).ShouldBeFalse();
+        model.InsufficientSuppliersWarning.ShouldBe(expectedMessage);
+        model.NoSuppliersMessage.ShouldBeNull();
     }
 
     [Fact]
     public async Task Index_DoesNotSetInsufficientSuppliersWarning_WhenExactlyMaxActiveSuppliers() {
-        var (viewResult, _) = await GetIndexViewModel(supplierCount: TestHelper.EXPECTED_MAX_SELECTIONS);
+        var (viewResult, model) = await GetIndexViewModel(supplierCount: TestHelper.EXPECTED_MAX_SELECTIONS);
 
-        viewResult.ViewData.ContainsKey(TestHelper.INSUFFICIENT_SUPPLIERS_WARNING_KEY).ShouldBeFalse();
-    }
-
-    private static async Task<(ViewResult viewResult, FoodTourVM model)> GetIndexViewModel(params Supplier[] suppliers) {
-        var context = suppliers.Length > 0
-            ? TestHelper.CreateContextWithSuppliers(suppliers)
-            : TestHelper.CreateInMemoryContext();
-        var sut = TestHelper.CreateHomeController(context);
-
-
-        var result = await sut.Index(qrToken: null);
-
-        var viewResult = result.ShouldBeOfType<ViewResult>();
-        var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
-        return (viewResult, model);
-    }
-
-    private static async Task<(ViewResult viewResult, FoodTourVM model)> GetIndexViewModel(int supplierCount) {
-        var suppliers = Enumerable.Range(1, supplierCount)
-            .Select(i => TestHelper.CreateSupplier(i, $"Test Supplier {i}"))
-            .ToArray();
-        return await GetIndexViewModel(suppliers);
+        model.InsufficientSuppliersWarning.ShouldBeNull();
     }
 
     [Fact]
@@ -123,8 +101,7 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
 
-        var selectedSuppliersList = (List<int>)viewResult.ViewData["SelectedSuppliers"]!;
-        selectedSuppliersList.ShouldBe(selectedSupplierIds);
+        model.SelectedSuppliers.ShouldBe(selectedSupplierIds);
     }
 
     [Fact]
@@ -154,5 +131,25 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
 
         model.ShouldNotBeNull();
         model.Suppliers.ShouldNotBeNull();
+    }
+    private static async Task<(ViewResult viewResult, FoodTourVM model)> GetIndexViewModel(params Supplier[] suppliers) {
+        var context = suppliers.Length > 0
+            ? TestHelper.CreateContextWithSuppliers(suppliers)
+            : TestHelper.CreateInMemoryContext();
+        var sut = TestHelper.CreateHomeController(context);
+
+
+        var result = await sut.Index(qrToken: null);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
+        return (viewResult, model);
+    }
+
+    private static async Task<(ViewResult viewResult, FoodTourVM model)> GetIndexViewModel(int supplierCount) {
+        var suppliers = Enumerable.Range(1, supplierCount)
+            .Select(i => TestHelper.CreateSupplier(i, $"Test Supplier {i}"))
+            .ToArray();
+        return await GetIndexViewModel(suppliers);
     }
 }

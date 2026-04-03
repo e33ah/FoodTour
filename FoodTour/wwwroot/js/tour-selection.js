@@ -229,10 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.found) {
                 if (data.isCancelled) {
                     showBookingWarning(data.message);
-                } else if (data.bookingId) {
-                    showBookingSuccess(data.message, data.bookingId);
                 } else {
-                    showBookingWarning('Booking found but missing booking reference. Please contact support.');
+                    showBookingSuccess(data.message, data.bookingId);
                 }
             } else {
                 showBookingWarning(data.message);

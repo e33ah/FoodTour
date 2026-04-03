@@ -193,6 +193,7 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
     private static bool HasBookingChanges(Booking existingBooking, Booking updatedBooking) {
         return existingBooking.TourDate != updatedBooking.TourDate ||
                existingBooking.CustomerEmail != updatedBooking.CustomerEmail ||
+               existingBooking.CustomerName != updatedBooking.CustomerName ||
                existingBooking.TotalGuests != updatedBooking.TotalGuests;
     }
 
@@ -323,6 +324,7 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         var validationRequest = new BookingValidationRequest {
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
+            CustomerName = booking.CustomerName,
             CustomerCount = booking.TotalGuests
         };
 
@@ -394,6 +396,7 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
     private async Task UpdateExistingBooking(Booking existingBooking, Booking updatedBooking) {
         existingBooking.TourDate = updatedBooking.TourDate;
         existingBooking.CustomerEmail = updatedBooking.CustomerEmail;
+        existingBooking.CustomerName = updatedBooking.CustomerName;
         existingBooking.TotalGuests = updatedBooking.TotalGuests;
 
         try {
