@@ -9,14 +9,14 @@
     <Import_RootNamespace>_Dependencies</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)Sample_Data\PurchaseCode.sql" />
     <None Include="$(MSBuildThisFileDirectory)Sample_Data\Suppliers.sql" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Publish_Support\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(MSBuildThisFileDirectory)BookingData.json" />
+    <Content Include="$(MSBuildThisFileDirectory)Sample_Data\BookingData.json" />
     <Content Include="$(MSBuildThisFileDirectory)publish_support\app_offline.htm" />
+    <Content Include="$(MSBuildThisFileDirectory)Sample_Data\Bookings.sql" />
   </ItemGroup>
 </Project>

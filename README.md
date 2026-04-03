@@ -52,6 +52,14 @@ dotnet ef database update --project FoodTour/FoodTour.csproj --context DataProte
 3. Add Sample Data (optional):
 Run the SQL scripts in `_Dependencies/Sample_Data/` against your database to populate it.
 
+### Creating Bookings
+
+Bookings can be created in two ways:
+- **Via API**: Use the `/api/foodtour/fhwebhooks/newbooking` endpoint with the JSON in `_Dependencies/Sample_Data/` to create bookings
+- **Sample Data**: Run the `Bookings.sql` script in `_Dependencies/Sample_Data/` to add some sample bookings directly to the database
+
+You will need the email and purchase code from one of the bookings in the database to use the app and test the booking confirmation flow.
+
 ### Running the Application
 
 #### Using Visual Studio
@@ -106,5 +114,5 @@ Run:
 nuke Release
 ```
 The CD pipeline is configured to deploy to the development environment.
-The release pipeline is configured to deploy to the production environemnt.
+The release pipeline is configured to deploy to the production environment.
 The project uses GitHub Actions for continuous integration and continuous deployment.
