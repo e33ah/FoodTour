@@ -50,7 +50,7 @@ public class ExampleClass{
 - Only generate a plan if you need it for the task at hand. If you do not need a plan then do not generate one.  
 - Focus on solving the task at hand. Once you have finished the task, review all the code in any modified files and identify security issues or code quality issues. If you find any issues then suggest a prompt that
 would fix the issues. If you do not find any issues then state that no issues were found.
-
+- Only generate a summary document for changes made if you are asked for one.
 
 ## Dot Net Project Requirements
 - **Language:** Use C# as the programming language.

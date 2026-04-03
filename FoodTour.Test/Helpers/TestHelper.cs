@@ -15,6 +15,30 @@ public static class TestHelper {
     public static readonly int nextYear = DateTime.Today.AddYears(1).Year;
     public static readonly DateTime validTourDate = new(nextYear, 6, 16, 15, 32, 0);
     public static readonly string formattedTourDate = validTourDate.ToString(DATE_TIME_FORMAT);
+
+    // FoodHarbour API-specific constants
+    public const string WEYMOUTH_TOUR_NAME = "Weymouth Self-Guided Food Tour";
+    public const int DEFAULT_GUEST_COUNT = 2;
+    public const string DEFAULT_CUSTOMER_NAME = "Test Customer";
+    public const string UPDATED_CUSTOMER_NAME = "Updated Name";
+
+    // Alternative test emails for update/cancel scenarios
+    public const string UPDATED_EMAIL = "updated@test.com";
+    public const string ALTERNATIVE_EMAIL = "alternative@test.com";
+
+    // Purchase code prefixes for different test scenarios
+    public const string UPDATE_TEST_CODE = "UPDATE_TEST_001";
+    public const string CANCEL_TEST_CODE = "CANCEL_TEST_001";
+    public const string NO_CHANGE_TEST_CODE = "NO_CHANGE_TEST";
+    public const string VALIDATION_FAIL_TEST_CODE = "VALIDATION_FAIL_TEST";
+    public const string DB_FAIL_TEST_CODE = "DB_FAIL_TEST";
+
+    // Invalid data for validation tests
+    public const string INVALID_EMAIL = "invalid-email";
+    public const int INVALID_GUEST_COUNT = -1;
+
+    // Past date for validation tests
+    public static readonly DateTime pastTourDate = new(2020, 1, 1, 10, 0, 0);
     public static readonly EmailSettings testEmailSettings = new() {
         Host = "smtp.test",
         Port = 25,
