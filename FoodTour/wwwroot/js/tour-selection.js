@@ -188,6 +188,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const showBookingConfirmedModal = (qrToken) => {
+        const modal = document.getElementById('bookingConfirmedModal');
+        const viewTourDetailsLink = document.getElementById('viewTourDetailsLink');
+
+        if (modal && viewTourDetailsLink) {
+            // Set the link URL with the qrToken
+            viewTourDetailsLink.href = `/Home/FoodTourCode?qrToken=${qrToken}`;
+
+            // Show the modal using Bootstrap 5 API
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        }
+    };
+
     const checkBookingExists = async () => {
         const email = emailInput?.value.trim();
         const purchaseCode = purchaseCodeInput?.value.trim();
@@ -229,6 +243,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.found) {
                 if (data.isCancelled) {
                     showBookingWarning(data.message);
+                } else if (data.isConfirmed) {
+                    // Show modal for confirmed booking
+                    showBookingConfirmedModal(data.qrToken);
                 } else {
                     showBookingSuccess(data.message, data.bookingId);
                 }

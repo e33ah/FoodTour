@@ -152,4 +152,25 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
             .ToArray();
         return await GetIndexViewModel(suppliers);
     }
+
+    [Fact]
+    public async Task Index_Post_ReturnsViewWithError_WhenBookingIsAlreadyConfirmed() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var booking = TestHelper.CreateValidBooking([1, 2, 3, 4, 5]);
+        booking.IsConfirmed = true;
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync();
+        var sut = CreateConfiguredController(context);
+        var selectedSuppliers = new List<int> { 1, 2, 3, 4, 5 };
+
+        var result = await sut.Index(booking.Id, selectedSuppliers);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        sut.ModelState.ContainsKey("BookingAlreadyConfirmed").ShouldBeTrue();
+        string? errorMessage = sut.ModelState["BookingAlreadyConfirmed"]?.Errors[0].ErrorMessage;
+        errorMessage.ShouldNotBeNull();
+        errorMessage.ShouldContain("Tasting experiences have already been selected for this tour");
+        errorMessage.ShouldContain("View your tour details");
+        errorMessage.ShouldContain("contact support");
+    }
 }

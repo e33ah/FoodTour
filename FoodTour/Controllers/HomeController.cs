@@ -28,6 +28,10 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
         }
 
+        if (!ValidateBookingNotAlreadyConfirmed(booking)) {
+            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
+        }
+
         if (!await ValidateSupplierSelectionsAsync(booking, selectedSuppliers)) {
             return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
         }
@@ -380,6 +384,19 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         }
 
         return true;
+    }
+
+    private bool ValidateBookingNotAlreadyConfirmed(Booking booking) {
+        if (!booking.IsConfirmed) {
+            return true;
+        }
+
+        Log.Information("Index POST: Booking {BookingId} is already confirmed. User attempted to reselect suppliers.", booking.Id);
+        string foodTourCodeUrl = GenerateUrl("FoodTourCode", new { qrToken = booking.QrToken });
+        string supportUrl = GenerateUrl("UserSupport");
+        ModelState.AddModelError("BookingAlreadyConfirmed", 
+            $"Tasting experiences have already been selected for this tour. <a href='{foodTourCodeUrl}' class='alert-link'>View your tour details</a> or <a href='{supportUrl}' class='alert-link'>contact support</a> if you need assistance.");
+        return false;
     }
 
     private async Task<bool> ValidateSupplierExistenceAsync(int bookingId, List<int> selectedSuppliers) {

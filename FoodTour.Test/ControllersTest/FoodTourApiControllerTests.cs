@@ -128,6 +128,10 @@ public class FoodTourApiControllerTests {
         found.ShouldBe(true);
         object? isCancelled = value.GetType().GetProperty("isCancelled")?.GetValue(value);
         isCancelled.ShouldBe(false);
+        object? isConfirmed = value.GetType().GetProperty("isConfirmed")?.GetValue(value);
+        isConfirmed.ShouldBe(false);
+        object? qrToken = value.GetType().GetProperty("qrToken")?.GetValue(value);
+        qrToken.ShouldNotBeNull();
         string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
         message.ShouldBe("We've found your booking!");
     }
@@ -163,6 +167,46 @@ public class FoodTourApiControllerTests {
         isCancelled.ShouldBe(true);
         string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
         message.ShouldBe("This booking has been cancelled. Please contact support if you believe this is an error.");
+    }
+
+    [Fact]
+    public async Task CheckBooking_ReturnsOkWithConfirmedTrue_WhenConfirmedBookingExists() {
+        var context = TestHelper.CreateInMemoryContext();
+        var expectedQrToken = Guid.NewGuid();
+        var booking = new Booking {
+            CustomerEmail = "confirmed@example.com",
+            PurchaseCode = "CONFIRMED123",
+            TourDate = DateTime.UtcNow.AddDays(7),
+            IsCancelled = false,
+            IsConfirmed = true,
+            QrToken = expectedQrToken,
+            SelectedSupplierIds = [1, 2, 3, 4, 5]
+        };
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "confirmed@example.com",
+            PurchaseCode = "CONFIRMED123"
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        okResult.StatusCode.ShouldBe(200);
+        object? value = okResult.Value;
+        value.ShouldNotBeNull();
+        object? found = value.GetType().GetProperty("found")?.GetValue(value);
+        found.ShouldBe(true);
+        object? isCancelled = value.GetType().GetProperty("isCancelled")?.GetValue(value);
+        isCancelled.ShouldBe(false);
+        object? isConfirmed = value.GetType().GetProperty("isConfirmed")?.GetValue(value);
+        isConfirmed.ShouldBe(true);
+        object? qrToken = value.GetType().GetProperty("qrToken")?.GetValue(value);
+        qrToken.ShouldBe(expectedQrToken);
+        string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
+        message.ShouldBe("We've found your booking!");
     }
 
     [Fact]
@@ -346,5 +390,9 @@ public class FoodTourApiControllerTests {
         found.ShouldBe(true);
         object? isCancelled = value.GetType().GetProperty("isCancelled")?.GetValue(value);
         isCancelled.ShouldBe(false);
+        object? isConfirmed = value.GetType().GetProperty("isConfirmed")?.GetValue(value);
+        isConfirmed.ShouldBe(false);
+        object? qrToken = value.GetType().GetProperty("qrToken")?.GetValue(value);
+        qrToken.ShouldNotBeNull();
     }
 }

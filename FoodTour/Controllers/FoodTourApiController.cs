@@ -104,8 +104,15 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             return Ok(new { found = true, isCancelled = true, message = "This booking has been cancelled. Please contact support if you believe this is an error.", bookingId = booking.Id });
         }
 
-        Log.Information("Booking {BookingId}: Found for {CustomerEmail} with purchase code {PurchaseCode}", booking.Id, booking.CustomerEmail, booking.PurchaseCode);
-        return Ok(new { found = true, isCancelled = false, message = "We've found your booking!", bookingId = booking.Id });
+        Log.Information("Booking {BookingId}: Found for {CustomerEmail} with purchase code {PurchaseCode} (IsConfirmed: {IsConfirmed})", booking.Id, booking.CustomerEmail, booking.PurchaseCode, booking.IsConfirmed);
+        return Ok(new { 
+            found = true, 
+            isCancelled = false, 
+            isConfirmed = booking.IsConfirmed,
+            qrToken = booking.QrToken,
+            message = "We've found your booking!", 
+            bookingId = booking.Id 
+        });
     }
 
 
