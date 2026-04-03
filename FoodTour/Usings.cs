@@ -4,6 +4,7 @@ global using System.Net;
 global using System.Text.Json;
 global using FoodTour.Models;
 global using FoodTour.Services;
+global using FoodTour.ViewModels;
 global using MailKit.Net.Smtp;
 global using Microsoft.AspNetCore.DataProtection;
 global using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;

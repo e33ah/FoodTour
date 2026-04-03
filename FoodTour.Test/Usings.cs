@@ -4,6 +4,7 @@ global using System.Text.Json;
 global using FoodTour.Controllers;
 global using FoodTour.Models;
 global using FoodTour.Services;
+global using FoodTour.ViewModels;
 global using Microsoft.AspNetCore.Http;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.Mvc.Routing;

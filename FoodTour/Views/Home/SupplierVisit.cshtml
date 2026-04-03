@@ -18,6 +18,11 @@
 						<form id="supplierVisitForm" asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
 							@Html.AntiForgeryToken()
 							<div class="col-12 col-md-10 col-lg-8 py-1">
+								<div class="alert alert-info mb-3">
+									<i class="bi bi-people-fill"></i>
+									<strong>Total Tour Size:</strong> @Model.TotalGuests guest@(Model.TotalGuests != 1 ? "s" : "")
+								</div>
+
 								<label asp-for="SelectedSupplierId" class="form-label">Please select your business:</label>
 								<span asp-validation-for="SelectedSupplierId" class="text-danger"></span>
 								<select asp-for="SelectedSupplierId" class="form-select">
@@ -28,6 +33,14 @@
 										}
 									}
 								</select>
+
+								<label for="tastingExperiencesClaimed" class="form-label mt-3">Number of guests claiming:</label>
+								<select id="tastingExperiencesClaimed" name="tastingExperiencesClaimed" class="form-select">
+									@for (int i = 1; i <= Model.TotalGuests; i++) {
+										<option value="@i" selected="@(i == Model.TotalGuests)">@i</option>
+									}
+								</select>
+
 								<label for="supplierCode" class="form-label mt-3">Enter your Code:</label>
 								<input id="supplierCode" name="supplierCode" type="text" class="form-control" autocomplete="off" />
 								<button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
@@ -61,6 +74,8 @@
 		var selectedValue = select ? select.value : '';
 		var supplierCodeInput = form.querySelector('input[name="supplierCode"]');
 		var supplierCode = supplierCodeInput ? supplierCodeInput.value.trim() : '';
+		var tastingSelect = form.querySelector('select[name="tastingExperiencesClaimed"]');
+		var tastingExperiencesClaimed = tastingSelect ? Number(tastingSelect.value) : 0;
 		var errorRegion = document.getElementById('supplierErrorRegion');
 
 		if (!selectedValue) {
@@ -79,6 +94,14 @@
 		return;
 		}
 
+		if (!tastingExperiencesClaimed || tastingExperiencesClaimed <= 0) {
+		if (errorRegion) {
+		errorRegion.textContent = 'Please select the number of tasting experiences provided.';
+		errorRegion.classList.remove('d-none');
+		}
+		return;
+		}
+
 		if (errorRegion) {
 		errorRegion.classList.add('d-none');
 		errorRegion.textContent = '';
@@ -90,7 +113,8 @@
 		var payload = {
 		qrToken: '@Model.QrToken',
 		selectedSupplierId: Number(selectedValue),
-		supplierCode: supplierCode
+		supplierCode: supplierCode,
+		tastingExperiencesClaimed: tastingExperiencesClaimed
 		};
 
 		try {
@@ -104,7 +128,9 @@
 		});
 
 		if (response.ok) {
-		window.location.href = '/Home/VisitConfirmation';
+		var result = await response.json();
+		var redirectUrl = '/Home/VisitConfirmation?claimed=' + result.tastingExperiencesClaimed + '&total=' + result.totalGuests;
+		window.location.href = redirectUrl;
 		return;
 		}
 

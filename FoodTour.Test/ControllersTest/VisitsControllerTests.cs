@@ -12,7 +12,7 @@ public class VisitsControllerTests {
         context.SaveChanges();
         var sut = TestHelper.CreateVisitsController(context);
 
-        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode, 2));
 
         result.ShouldBeOfType<OkObjectResult>();
     }
@@ -26,7 +26,7 @@ public class VisitsControllerTests {
         context.SaveChanges();
         var sut = TestHelper.CreateVisitsController(context);
 
-        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, 999, supplier.ConfirmationCode));
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, 999, supplier.ConfirmationCode, 2));
 
         var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
         object response = badRequest.Value.ShouldNotBeNull();
@@ -42,7 +42,7 @@ public class VisitsControllerTests {
         context.SaveChanges();
         var sut = TestHelper.CreateVisitsController(context);
 
-        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, "WRONG_CODE"));
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, "WRONG_CODE", 2));
 
         var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
         object response = badRequest.Value.ShouldNotBeNull();
@@ -57,7 +57,7 @@ public class VisitsControllerTests {
         context.SaveChanges();
         var sut = TestHelper.CreateVisitsController(context);
 
-        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(Guid.NewGuid(), supplier.Id, supplier.ConfirmationCode));
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(Guid.NewGuid(), supplier.Id, supplier.ConfirmationCode, 2));
 
         var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
         object response = badRequest.Value.ShouldNotBeNull();
@@ -74,7 +74,7 @@ public class VisitsControllerTests {
         context.SaveChanges();
         var sut = TestHelper.CreateVisitsController(context);
 
-        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode, 2));
 
         var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
         object response = badRequest.Value.ShouldNotBeNull();
@@ -90,7 +90,7 @@ public class VisitsControllerTests {
         context.SaveChanges();
         var sut = TestHelper.CreateVisitsController(context);
 
-        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode, 2));
 
         var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
         object response = badRequest.Value.ShouldNotBeNull();
@@ -109,7 +109,7 @@ public class VisitsControllerTests {
         context.SaveChanges();
         var sut = TestHelper.CreateVisitsController(context);
 
-        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode, 2));
 
         var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
         object response = badRequest.Value.ShouldNotBeNull();
@@ -123,7 +123,7 @@ public class VisitsControllerTests {
         var sut = TestHelper.CreateVisitsController(TestHelper.CreateInMemoryContext());
         var qrToken = Guid.NewGuid();
 
-        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(qrToken, supplierId, SUPPLIER_CODE));
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(qrToken, supplierId, SUPPLIER_CODE, 2));
 
         var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
         object response = badRequest.Value.ShouldNotBeNull();
@@ -150,7 +150,7 @@ public class VisitsControllerTests {
         var sut = TestHelper.CreateVisitsController(TestHelper.CreateInMemoryContext());
 
         // null-coalescing operator is used to satisfy the non-nullable parameter, but the test will pass null to trigger the validation error
-        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(qrToken, selectedSupplierId, supplierCode!));
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(qrToken, selectedSupplierId, supplierCode!, 2));
 
         var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
         object response = badRequest.Value.ShouldNotBeNull();
@@ -167,7 +167,7 @@ public class VisitsControllerTests {
         context.SaveChanges();
         var sut = TestHelper.CreateVisitsController(context);
 
-        await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode));
+        await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode, 2));
 
         context.ChangeTracker.Clear();
         var updatedVisit = await context.Visits.FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == supplier.Id);
@@ -177,4 +177,55 @@ public class VisitsControllerTests {
         updatedVisit.ClaimedAt!.Value.ShouldBeGreaterThanOrEqualTo(beforeClaim);
         updatedVisit.ClaimedAt.Value.ShouldBeLessThanOrEqualTo(DateTime.UtcNow);
     }
+
+    [Fact]
+    public async Task RecordVisit_ReturnsBadRequest_WhenClaimedExceedsTotalGuests() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(1);
+        var booking = TestHelper.CreateBookingWithVisits(context, 1);
+        booking.TotalGuests = 3;
+        var supplier = context.Suppliers.First();
+        supplier.ConfirmationCode = SUPPLIER_CODE;
+        context.SaveChanges();
+        var sut = TestHelper.CreateVisitsController(context);
+
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode, 4));
+
+        var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
+        object response = badRequest.Value.ShouldNotBeNull();
+        string? errorMessage = response.GetType().GetProperty("error")?.GetValue(response) as string;
+        errorMessage.ShouldNotBeNull();
+        errorMessage.ShouldContain("Cannot claim 4 tasting experiences");
+        errorMessage.ShouldContain("This booking has only 3 guest(s)");
+    }
+
+    [Fact]
+    public async Task RecordVisit_AllowsMultipleSuppliersToClaimFullGuestCount() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(2);
+        var booking = TestHelper.CreateBookingWithVisits(context, 1);
+        booking.TotalGuests = 5;
+
+        var supplier1 = context.Suppliers.First();
+        supplier1.ConfirmationCode = SUPPLIER_CODE;
+
+        var supplier2 = context.Suppliers.Skip(1).First();
+        supplier2.ConfirmationCode = SUPPLIER_CODE;
+
+        var visit2 = new Visit { BookingId = booking.Id, SupplierId = supplier2.Id, IsClaimed = false };
+        context.Visits.Add(visit2);
+        context.SaveChanges();
+        var sut = TestHelper.CreateVisitsController(context);
+
+        await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier1.Id, supplier1.ConfirmationCode, 5));
+        context.ChangeTracker.Clear();
+
+        var result = await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier2.Id, supplier2.ConfirmationCode, 5));
+
+        result.ShouldBeOfType<OkObjectResult>();
+        context.ChangeTracker.Clear();
+        var visit1 = await context.Visits.FirstAsync(v => v.SupplierId == supplier1.Id && v.BookingId == booking.Id);
+        var visit2Updated = await context.Visits.FirstAsync(v => v.SupplierId == supplier2.Id && v.BookingId == booking.Id);
+        visit1.TastingExperiencesClaimed.ShouldBe(5);
+        visit2Updated.TastingExperiencesClaimed.ShouldBe(5);
+    }
 }
+

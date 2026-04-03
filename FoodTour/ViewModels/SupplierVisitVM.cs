@@ -8,4 +8,5 @@ public class SupplierVisitVM {
     public string CustomerEmail { get; set; } = string.Empty;
     public int SelectedSupplierId { get; set; }
     public string SupplierCode { get; set; } = string.Empty;
+    public int TotalGuests { get; set; }
 }

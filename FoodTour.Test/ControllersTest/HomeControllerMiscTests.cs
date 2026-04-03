@@ -27,9 +27,12 @@ public class HomeControllerMiscTests : HomeControllerTestBase {
     public void VisitConfirmation_ReturnsViewResult() {
         var sut = CreateController();
 
-        var result = sut.VisitConfirmation();
+        var result = sut.VisitConfirmation(2, 3);
 
-        result.ShouldBeOfType<ViewResult>();
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<VisitConfirmationVM>();
+        model.TastingExperiencesClaimed.ShouldBe(2);
+        model.TotalGuests.ShouldBe(3);
     }
 
     [Fact]

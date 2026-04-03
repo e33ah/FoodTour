@@ -161,7 +161,8 @@ public static class TestHelper {
             CustomerEmail = VALID_EMAIL,
             PurchaseCode = VALID_CODE,
             SelectedSupplierIds = selectedSupplierIds,
-            BookingSuppliers = [.. selectedSupplierIds.Select(id => new BookingSupplier { SupplierId = id })]
+            BookingSuppliers = [.. selectedSupplierIds.Select(id => new BookingSupplier { SupplierId = id })],
+            TotalGuests = 2
         };
     }
 

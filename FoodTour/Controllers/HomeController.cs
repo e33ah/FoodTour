@@ -133,30 +133,14 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             return RedirectToAction("Error");
         }
 
-        var claimedSupplierIds = await context.Visits
-            .Where(v => v.BookingId == booking.Id && v.IsClaimed)
-            .Select(v => v.SupplierId)
-            .ToListAsync();
-
-        var unclaimedSuppliers = booking.BookingSuppliers
-            .Where(bs => !claimedSupplierIds.Contains(bs.SupplierId))
-            .Select(bs => bs.Supplier)
-            .ToList();
-
-        Log.Debug("Booking {BookingId}: Found {ClaimedCount} claimed suppliers and {UnclaimedCount} unclaimed suppliers.", booking.Id, claimedSupplierIds.Count, unclaimedSuppliers.Count);
+        var unclaimedSuppliers = await GetUnclaimedSuppliersAsync(booking);
 
         if (unclaimedSuppliers.Count == 0) {
             Log.Information("Booking {BookingId}: All suppliers already visited, redirecting to tour completed.", booking.Id);
             return RedirectToAction("TourCompleted");
         }
 
-        var model = new SupplierVisitVM() {
-            BookingId = booking.Id,
-            QrToken = booking.QrToken,
-            Suppliers = unclaimedSuppliers,
-            TourDate = booking.TourDate,
-            CustomerEmail = booking.CustomerEmail,
-        };
+        var model = CreateSupplierVisitViewModel(booking, unclaimedSuppliers);
         return View(model);
     }
 
@@ -203,8 +187,18 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return File(qrCodeBytes, "image/png");
     }
 
-    public IActionResult VisitConfirmation() {
-        return View();
+    public IActionResult VisitConfirmation(int claimed, int total) {
+        if (claimed <= 0 || total <= 0 || claimed > total) {
+            Log.Warning("VisitConfirmation called with invalid parameters: claimed={Claimed}, total={Total}", claimed, total);
+            return RedirectToAction("Error");
+        }
+
+        var model = new VisitConfirmationVM {
+            TastingExperiencesClaimed = claimed,
+            TotalGuests = total
+        };
+
+        return View(model);
     }
 
     [HttpGet]
@@ -413,5 +407,33 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             ModelState.AddModelError(string.Empty, $"Unable to update your booking due to a system error. Please try again or <a href='{supportLink}'>contact support</a> if the problem persists.");
             return false;
         }
+    }
+
+    private async Task<List<Supplier>> GetUnclaimedSuppliersAsync(Booking booking) {
+        var claimedSupplierIds = await context.Visits
+            .Where(v => v.BookingId == booking.Id && v.IsClaimed)
+            .Select(v => v.SupplierId)
+            .ToListAsync();
+
+        var unclaimedSuppliers = booking.BookingSuppliers!
+            .Where(bs => !claimedSupplierIds.Contains(bs.SupplierId))
+            .Select(bs => bs.Supplier)
+            .ToList();
+
+        Log.Debug("Booking {BookingId}: Found {ClaimedCount} claimed suppliers and {UnclaimedCount} unclaimed suppliers.", 
+            booking.Id, claimedSupplierIds.Count, unclaimedSuppliers.Count);
+
+        return unclaimedSuppliers;
+    }
+
+    private static SupplierVisitVM CreateSupplierVisitViewModel(Booking booking, List<Supplier> unclaimedSuppliers) {
+        return new SupplierVisitVM {
+            BookingId = booking.Id,
+            QrToken = booking.QrToken,
+            Suppliers = unclaimedSuppliers,
+            TourDate = booking.TourDate,
+            CustomerEmail = booking.CustomerEmail,
+            TotalGuests = booking.TotalGuests
+        };
     }
 }

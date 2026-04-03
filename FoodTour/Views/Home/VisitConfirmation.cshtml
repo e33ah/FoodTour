@@ -1,4 +1,6 @@
-﻿@{
+﻿@model FoodTour.ViewModels.VisitConfirmationVM
+
+@{
 	ViewData["Title"] = "Visit Confirmation";
 }
 
@@ -13,7 +15,15 @@
 					</h1>
 
 					<p>Thank you, your customer's Food Tour visit has been recorded!</p>
-					<p>Please prepare the pre-agreed taster for the customer(s).</p>
+
+					<div class="alert alert-success mb-3">
+						<strong>Confirmed:</strong> @Model.TastingExperiencesClaimed tasting experience@(Model.TastingExperiencesClaimed != 1 ? "s" : "") provided
+						@if (Model.TastingExperiencesClaimed < Model.TotalGuests) {
+							<br />
+							<small class="text-muted">(@(Model.TotalGuests - Model.TastingExperiencesClaimed) of @Model.TotalGuests guest@(Model.TotalGuests != 1 ? "s" : "") not served)</small>
+						}
+					</div>
+
 					<p class="text-muted small mb-0">Kabincraft Adventures will be in contact shortly, to reimburse funds.</p>
 				</div>
 			</div>

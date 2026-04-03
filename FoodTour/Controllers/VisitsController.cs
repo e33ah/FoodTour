@@ -19,14 +19,15 @@ public class VisitsController(FoodTourContext context, AdminNotificationService 
                 .Where(v => v.Id == visit.Id && !v.IsClaimed)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(v => v.IsClaimed, true)
-                    .SetProperty(v => v.ClaimedAt, v => DateTime.UtcNow));
+                    .SetProperty(v => v.ClaimedAt, v => DateTime.UtcNow)
+                    .SetProperty(v => v.TastingExperiencesClaimed, payload!.TastingExperiencesClaimed));
 
             if (rows == 0) {
                 Log.Warning("Booking {BookingId}, Supplier {SupplierId}: Visit already claimed.", booking.Id, payload!.SelectedSupplierId);
                 return BadRequest(new { error = "This visit has already been confirmed." });
             }
 
-            Log.Information("Booking {BookingId}, Supplier {SupplierId}: Visit recorded.", booking.Id, payload!.SelectedSupplierId);
+            Log.Information("Booking {BookingId}, Supplier {SupplierId}: Visit recorded with {Count} tasting experiences.", booking.Id, payload!.SelectedSupplierId, payload.TastingExperiencesClaimed);
 
             await context.Entry(visit).ReloadAsync();
         } catch (Exception ex) {
@@ -37,10 +38,10 @@ public class VisitsController(FoodTourContext context, AdminNotificationService 
         // Note: This method handles its own exceptions internally and logs any failures
         await TrySendVisitRecordedNotificationsAsync(booking, supplier, visit);
 
-        return Ok(new { success = true });
+        return Ok(new { success = true, tastingExperiencesClaimed = payload!.TastingExperiencesClaimed, totalGuests = booking.TotalGuests });
     }
 
-    public record RecordVisitDTO(Guid QrToken, int SelectedSupplierId, string SupplierCode);
+    public record RecordVisitDTO(Guid QrToken, int SelectedSupplierId, string SupplierCode, int TastingExperiencesClaimed);
 
     private record ValidationResult<T>(bool IsValid, string ErrorMessage, T? Data = default);
 
@@ -68,6 +69,11 @@ public class VisitsController(FoodTourContext context, AdminNotificationService 
             return new ValidationResult<(Booking, Supplier, Visit)>(false, "Invalid business code provided. Please try again or contact Support.");
         }
 
+        if (payload!.TastingExperiencesClaimed > booking.TotalGuests) {
+            Log.Warning("RecordVisit: Tasting experiences claimed ({Claimed}) exceeds total guests ({Total}) for booking {BookingId}.", payload.TastingExperiencesClaimed, booking.TotalGuests, booking.Id);
+            return new ValidationResult<(Booking, Supplier, Visit)>(false, $"Cannot claim {payload.TastingExperiencesClaimed} tasting experiences. This booking has only {booking.TotalGuests} guest(s).");
+        }
+
         var visit = await context.Visits
             .SingleOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == payload.SelectedSupplierId);
 
@@ -82,6 +88,11 @@ public class VisitsController(FoodTourContext context, AdminNotificationService 
     private static bool TryValidateRecordVisitPayload(RecordVisitDTO? payload, out string errorMessage) {
         if (payload == null || payload.SelectedSupplierId <= 0 || payload.QrToken == Guid.Empty || string.IsNullOrEmpty(payload.SupplierCode)) {
             errorMessage = "Invalid booking or business information.";
+            return false;
+        }
+
+        if (payload.TastingExperiencesClaimed <= 0) {
+            errorMessage = "Number of tasting experiences must be at least 1.";
             return false;
         }
 
