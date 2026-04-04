@@ -6,7 +6,7 @@ public class BookingConfirmationVMTests {
         var sut = new BookingConfirmationVM();
 
         sut.CustomerEmail.ShouldBe(string.Empty);
-        sut.CustomerName.ShouldBe(string.Empty);
+        sut.CustomerName.ShouldBeNull();
         sut.QrToken.ShouldBe(Guid.Empty);
         sut.EmailWarning.ShouldBeNull();
     }
