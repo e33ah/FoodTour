@@ -102,7 +102,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
     }
 
     [Fact]
-    public async Task SupplierVisit_RedirectsToError_WhenBookingIsCancelled() {
+    public async Task SupplierVisit_RedirectsToTourCancelled_WhenBookingIsCancelled() {
         var supplier = TestHelper.CreateSupplier(1, "Test Supplier", true);
         var cancelledBooking = TestHelper.CreateValidBooking([1]);
         cancelledBooking.IsCancelled = true;
@@ -113,7 +113,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
 
         var redirectResult = result as RedirectToActionResult;
         redirectResult.ShouldNotBeNull();
-        redirectResult.ActionName.ShouldBe("Error");
+        redirectResult.ActionName.ShouldBe("TourCancelled");
     }
 
     [Fact]

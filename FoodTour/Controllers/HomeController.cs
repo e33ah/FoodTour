@@ -134,9 +134,12 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             Log.Error("Booking or BookingSuppliers is null for token {QrToken}.", qrToken);
             return RedirectToAction("Error");
         }
+        if (booking.IsCancelled) {
+            Log.Information("Booking {BookingId}: Booking marked as cancelled, redirecting to tour cancelled.", booking.Id);
+            return RedirectToAction("TourCancelled");
+        }
 
         var unclaimedSuppliers = await GetUnclaimedSuppliersAsync(booking);
-
         if (unclaimedSuppliers.Count == 0) {
             Log.Information("Booking {BookingId}: All suppliers already visited, redirecting to tour completed.", booking.Id);
             return RedirectToAction("TourCompleted");
@@ -183,9 +186,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     public async Task<IActionResult> QrImage(Guid qrToken) {
         var booking = await TryGetValidBookingByTokenAsync(qrToken, nameof(QrImage));
         if (booking == null) {
-            return qrToken == Guid.Empty 
-                ? BadRequest("QR Token is required.") 
-                : NotFound("Booking not found or cancelled.");
+            return qrToken == Guid.Empty ? BadRequest("QR Token is required.") : NotFound("Booking not found.");
         }
 
         string url;
@@ -376,7 +377,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             query = query.Include(b => b.BookingSuppliers).ThenInclude(bs => bs.Supplier);
         }
 
-        var booking = await query.FirstOrDefaultAsync(b => b.QrToken == qrToken && !b.IsCancelled);
+        var booking = await query.FirstOrDefaultAsync(b => b.QrToken == qrToken);
         if (booking == null) {
             Log.Warning("{CallingMethod} could not find booking with token {QrToken}.", callingMethod, qrToken);
             return null;

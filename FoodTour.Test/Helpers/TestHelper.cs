@@ -16,11 +16,13 @@ public static class TestHelper {
     public static readonly DateTime validTourDate = new(nextYear, 6, 16, 15, 32, 0);
     public static readonly string formattedTourDate = validTourDate.ToString(DATE_TIME_FORMAT);
 
-    // FoodHarbour API-specific constants
+    // FareHarbor API-specific constants
     public const string WEYMOUTH_TOUR_NAME = "Weymouth Self-Guided Food Tour";
     public const int DEFAULT_GUEST_COUNT = 2;
     public const string DEFAULT_CUSTOMER_NAME = "Test Customer";
     public const string UPDATED_CUSTOMER_NAME = "Updated Name";
+    public const string VALID_KEY = "5N8GS1ZZKC8J";
+    public const string INVALID_KEY = "WRONG_KEY";
 
     // Alternative test emails for update/cancel scenarios
     public const string UPDATED_EMAIL = "updated@test.com";

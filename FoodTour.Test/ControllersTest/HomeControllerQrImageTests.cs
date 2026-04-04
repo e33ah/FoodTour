@@ -51,21 +51,6 @@ public class HomeControllerQrImageTests : HomeControllerTestBase {
 
         var notFound = result.ShouldBeOfType<NotFoundObjectResult>();
         notFound.StatusCode.ShouldBe(404);
-        notFound.Value.ShouldBe("Booking not found or cancelled.");
-    }
-
-    [Fact]
-    public async Task QrImage_ReturnsNotFound_WhenBookingIsCancelled() {
-        var supplier = TestHelper.CreateSupplier(1, "Test Supplier", true);
-        var booking = TestHelper.CreateValidBooking([1]);
-        booking.IsCancelled = true;
-        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
-        var sut = CreateConfiguredController(context);
-
-        var result = await sut.QrImage(booking.QrToken);
-
-        var notFound = result.ShouldBeOfType<NotFoundObjectResult>();
-        notFound.StatusCode.ShouldBe(404);
-        notFound.Value.ShouldBe("Booking not found or cancelled.");
+        notFound.Value.ShouldBe("Booking not found.");
     }
 }
