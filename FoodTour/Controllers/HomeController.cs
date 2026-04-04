@@ -120,6 +120,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
         var model = new BookingConfirmationVM() {
             CustomerEmail = booking.CustomerEmail,
+            CustomerName = booking.CustomerName,
             QrToken = booking.QrToken,
             EmailWarning = emailWarningMessage
         };

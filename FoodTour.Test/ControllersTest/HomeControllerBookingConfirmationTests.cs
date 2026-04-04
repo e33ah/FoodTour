@@ -16,6 +16,7 @@ public class HomeControllerBookingConfirmationTests : HomeControllerTestBase {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
         var booking = new Booking {
             CustomerEmail = TestHelper.VALID_EMAIL,
+            CustomerName = TestHelper.DEFAULT_CUSTOMER_NAME, 
             PurchaseCode = TestHelper.VALID_CODE,
             TourDate = TestHelper.validTourDate,
             SelectedSupplierIds = [1, 2],
@@ -30,6 +31,7 @@ public class HomeControllerBookingConfirmationTests : HomeControllerTestBase {
         var view = result.ShouldBeOfType<ViewResult>();
         var model = view.Model.ShouldBeOfType<BookingConfirmationVM>();
         model.CustomerEmail.ShouldBe(booking.CustomerEmail);
+        model.CustomerName.ShouldBe(booking.CustomerName);
         model.QrToken.ShouldBe(booking.QrToken);
     }
 

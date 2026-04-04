@@ -10,44 +10,62 @@
 		<div class="col-12 col-md-8 col-lg-6">
 			<div class="card shadow-sm">
 				<div class="card-body p-4 p-md-5">
-					<h1 class="card-title mb-4">
-						<i class="bi bi-fork-knife text-primary"></i> Food Tour Visit
-					</h1>
-					<p class="text-muted">Thank you for greeting our Weymouth Food Tour customer(s).</p>
-					<div>
-						<form id="supplierVisitForm" asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
-							@Html.AntiForgeryToken()
-							<div class="col-12 col-md-10 col-lg-8 py-1">
-								<div class="alert alert-info mb-3">
-									<i class="bi bi-people-fill"></i>
-									<strong>Total Tour Size:</strong> @Model.TotalGuests guest@(Model.TotalGuests != 1 ? "s" : "")
-								</div>
 
-								<label asp-for="SelectedSupplierId" class="form-label">Please select your business:</label>
-								<span asp-validation-for="SelectedSupplierId" class="text-danger"></span>
-								<select asp-for="SelectedSupplierId" class="form-select">
-									<option value="">-- Select business --</option>
-									@if (Model?.Suppliers != null) {
-										foreach (var supplier in Model.Suppliers) {
-											<option value="@supplier.Id">@supplier.Name</option>
+					<!-- Supplier Visit can only be captured on the tour date -->
+					@if (Model.TourDate.Date < @DateTime.Today) {
+						<h1 class="card-title mb-4">
+							<i class="bi bi-exclamation-triangle text-warning"></i> This tour has ended!
+						</h1>
+						<p>This tour took place on <strong>@Model.TourDate.ToString("dd MMMM yyyy")</strong>.</p>
+						<p>Please do not provide tasting experiences for this tour.</p>
+					}
+					else if (Model.TourDate.Date > @DateTime.Today) {
+						<h1 class="card-title mb-4">
+							<i class="bi bi-exclamation-triangle text-warning"></i> Your customers are early!
+						</h1>
+						<p>Tasting experiences for this tour are only available on <strong>@Model.TourDate.ToString("dd MMMM yyyy")</strong>.</p>
+						<p>Please ask the customer to come back on the correct day to redeem them.</p>
+					}
+					else {
+						<h1 class="card-title mb-4">
+							<i class="bi bi-fork-knife text-primary"></i> Food Tour Visit
+						</h1>
+						<p class="text-muted">Thank you for greeting our Weymouth Food Tour customer(s).</p>
+						<div>
+							<form id="supplierVisitForm" asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
+								@Html.AntiForgeryToken()
+								<div class="col-12 col-md-10 col-lg-8 py-1">
+									<div class="alert alert-info mb-3">
+										<i class="bi bi-people-fill"></i>
+										<strong>Total Tour Size:</strong> @Model.TotalGuests guest@(Model.TotalGuests != 1 ? "s" : "")
+									</div>
+
+									<label asp-for="SelectedSupplierId" class="form-label">Please select your business:</label>
+									<span asp-validation-for="SelectedSupplierId" class="text-danger"></span>
+									<select asp-for="SelectedSupplierId" class="form-select">
+										<option value="">-- Select business --</option>
+										@if (Model?.Suppliers != null) {
+											foreach (var supplier in Model.Suppliers) {
+												<option value="@supplier.Id">@supplier.Name</option>
+											}
 										}
-									}
-								</select>
+									</select>
 
-								<label for="tastingExperiencesClaimed" class="form-label mt-3">Number of guests claiming:</label>
-								<select id="tastingExperiencesClaimed" name="tastingExperiencesClaimed" class="form-select">
-									@for (int i = 1; i <= Model.TotalGuests; i++) {
-										<option value="@i" selected="@(i == Model.TotalGuests)">@i</option>
-									}
-								</select>
+									<label for="tastingExperiencesClaimed" class="form-label mt-3">Number of guests claiming:</label>
+									<select id="tastingExperiencesClaimed" name="tastingExperiencesClaimed" class="form-select">
+										@for (int i = 1; i <= Model.TotalGuests; i++) {
+											<option value="@i" selected="@(i == Model.TotalGuests)">@i</option>
+										}
+									</select>
 
-								<label for="supplierCode" class="form-label mt-3">Enter your Code:</label>
-								<input id="supplierCode" name="supplierCode" type="text" class="form-control" autocomplete="off" />
-								<button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
-							</div>
-							<div id="supplierErrorRegion" class="text-danger d-none"></div>
-						</form>
-					</div>
+									<label for="supplierCode" class="form-label mt-3">Enter your Code:</label>
+									<input id="supplierCode" name="supplierCode" type="text" class="form-control" autocomplete="off" />
+									<button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
+								</div>
+								<div id="supplierErrorRegion" class="text-danger d-none"></div>
+							</form>
+						</div>
+					}
 				</div>
 			</div>
 		</div>
