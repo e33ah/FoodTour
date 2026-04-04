@@ -51,14 +51,15 @@
 										}
 									</select>
 
-									<label for="tastingExperiencesClaimed" class="form-label mt-3">Number of guests claiming:</label>
-									<select id="tastingExperiencesClaimed" name="tastingExperiencesClaimed" class="form-select">
+									<!-- Hidden as requested by Kabincraft - may be redisplayed if business rules change -->
+									<label for="tastingExperiencesClaimed" class="form-label mt-3 d-none">Number of guests claiming:</label>
+									<select id="tastingExperiencesClaimed" name="tastingExperiencesClaimed" class="form-select d-none">
 										@for (int i = 1; i <= Model.TotalGuests; i++) {
 											<option value="@i" selected="@(i == Model.TotalGuests)">@i</option>
 										}
 									</select>
 
-									<label for="supplierCode" class="form-label mt-3">Enter your Code:</label>
+									<label for="supplierCode" class="form-label mt-3">Enter your business Code:</label>
 									<input id="supplierCode" name="supplierCode" type="text" class="form-control" autocomplete="off" />
 									<button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
 								</div>

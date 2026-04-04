@@ -72,8 +72,9 @@
 							<h3 class="card-title">
 								<i class="bi bi-qr-code text-primary"></i> Your Tour QR Code
 							</h3>
-							<p class="mb-0">Show this QR code at each Food Stop on your Tour to claim your Tasting Experience:</p>
+							<p class="mb-0">Show this QR code at each Food Stop on your Tour to claim your Tasting Experience!</p>
 							<img src="@Url.Action("QrImage", "Home", new { qrToken = Model.QrToken })" alt="QR Code" class="img-fluid" style="max-width: 300px;" />
+							<p class="text-muted mb-0 small">The QR code can only be used once per Food Stop, so please place your order together</p>
 						</div>
 					</div>
 
