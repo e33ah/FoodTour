@@ -30,11 +30,11 @@ public class BookingEmailService {
                                     <tbody>
                                         <tr>
                                             <td style=""padding: 24px; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #212529; text-align: left;"">
-                                                <p style=""margin: 0 0 12px 0;"">Dear {booking.CustomerEmail},</p>
-                                                <p style=""margin: 0 0 12px 0;"">Thank you for booking your Weymouth Self-Guided Tasting Tour!<br />Here are your tour details:</p>
+                                                <p style=""margin: 0 0 12px 0;"">Dear {(string.IsNullOrWhiteSpace(booking.CustomerName) ? WebUtility.HtmlEncode(booking.CustomerEmail) : WebUtility.HtmlEncode(booking.CustomerName))},</p>
+                                                <p style=""margin: 0 0 12px 0;"">Thank you for booking your <strong>Weymouth Self-Guided Tasting Tour</strong>!<br />Here are your tour details:</p>
 
                                                 <p style=""margin: 0 0 8px 0;""><strong>Tour Date:</strong> {booking.TourDate:dd/MM/yyyy}</p>
-                                                <p style=""margin: 0 0 8px 0;""><strong>Selected Tasting Experiences:</strong></p>
+                                                <p style=""margin: 0 0 8px 0;""><strong>Tasting Experiences:</strong></p>
 
                                                 <table style=""width: 100%; margin: 0 0 12px 0; border-collapse: collapse; border-spacing: 0; text-align: left;"">
                                                     <tr>

@@ -21,6 +21,7 @@ public class SupplierNotificationService(IEmailSender emailSender) {
 
         string bookingId = WebUtility.HtmlEncode(booking.Id.ToString());
         string tourDate = booking.TourDate.ToString(TOUR_DATE_FORMAT);
+        string totalGuests = WebUtility.HtmlEncode(booking.TotalGuests.ToString());
         string supplierName = WebUtility.HtmlEncode(supplier.Name);
         string claimedAt = visit.ClaimedAt.Value.ToString(CLAIMEDAT_DATE_FORMAT);
         if (string.IsNullOrWhiteSpace(supportUrl)) {
@@ -41,6 +42,7 @@ public class SupplierNotificationService(IEmailSender emailSender) {
                 <p style=""margin: 0 0 12px 0;"">A Tasting Tour visit has been recorded at your venue.</p>
                 <p style=""margin: 0 0 8px 0;""><strong>Booking Id:</strong> {bookingId}</p>
                 <p style=""margin: 0 0 8px 0;""><strong>Tour Date:</strong> {tourDate}</p>
+                <p style=""margin: 0 0 8px 0;""><strong>Tour Guests:</strong> {totalGuests}</p>
                 <p style=""margin: 0 0 8px 0;""><strong>Claimed At (UTC):</strong> {claimedAt}</p>
                 <p style=""margin: 12px 0 0 0;"">If you require any assistance, please visit our <a href=""{supportUrl}"" style=""color: #0d6efd;"">Support</a> page.</p>
                 <p style=""margin: 12px 0 0 0;"">Kabincraft Adventures will be in contact shortly to reimburse funds.</p>

@@ -72,6 +72,7 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
             QrToken = Guid.NewGuid(),
             TourDate = TestHelper.validTourDate,
             CustomerEmail = TestHelper.VALID_EMAIL,
+            CustomerName = TestHelper.DEFAULT_CUSTOMER_NAME,
             PurchaseCode = TestHelper.VALID_CODE,
             SelectedSupplierIds = [1, 2, 3],
             IsConfirmed = false
@@ -86,6 +87,7 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
         var model = view.Model.ShouldBeOfType<BookingSummaryVM>();
         model.QrToken.ShouldBe(booking.QrToken);
         model.CustomerEmail.ShouldBe(booking.CustomerEmail);
+        model.CustomerName.ShouldBe(booking.CustomerName);
         model.SelectedSuppliers.Count.ShouldBe(3);
     }
 

@@ -20,6 +20,7 @@ public class AdminNotificationService(IEmailSender emailSender, IOptions<AdminNo
         string bookingId = WebUtility.HtmlEncode(booking.Id.ToString());
         string customerEmail = WebUtility.HtmlEncode(booking.CustomerEmail);
         string tourDate = booking.TourDate.ToString("dd/MM/yyyy");
+        string totalGuests = WebUtility.HtmlEncode(booking.TotalGuests.ToString());
         string supplierName = WebUtility.HtmlEncode(supplier.Name);
         string claimedAt = visit.ClaimedAt!.Value.ToString("HH:mm dd/MM/yyyy");
 
@@ -36,6 +37,7 @@ public class AdminNotificationService(IEmailSender emailSender, IOptions<AdminNo
                 <p style=""margin: 0 0 8px 0;""><strong>Booking Id:</strong> {bookingId}</p>
                 <p style=""margin: 0 0 8px 0;""><strong>Customer Email:</strong> {customerEmail}</p>
                 <p style=""margin: 0 0 8px 0;""><strong>Tour Date:</strong> {tourDate}</p>
+                <p style=""margin: 0 0 8px 0;""><strong>Tour Guests:</strong> {totalGuests}</p>
                 <p style=""margin: 0 0 8px 0;""><strong>Supplier:</strong> {supplierName}</p>
                 <p style=""margin: 0 0 8px 0;""><strong>Claimed At (UTC):</strong> {claimedAt}</p>
 
@@ -45,6 +47,7 @@ public class AdminNotificationService(IEmailSender emailSender, IOptions<AdminNo
                             <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Booking Id</strong></th>
                             <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Customer Email</strong></th>
                             <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Tour Date</strong></th>
+                            <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Tour Guests</strong></th>
                             <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Supplier</strong></th>
                             <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Claimed At (UTC)</strong></th>
                         </tr>
@@ -54,6 +57,7 @@ public class AdminNotificationService(IEmailSender emailSender, IOptions<AdminNo
                             <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{bookingId}</td>
                             <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{customerEmail}</td>
                             <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{tourDate}</td>
+                            <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{totalGuests}</td>
                             <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{supplierName}</td>
                             <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{claimedAt}</td>
                         </tr>

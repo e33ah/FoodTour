@@ -60,6 +60,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         var bookingSummary = new BookingSummaryVM {
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
+            CustomerName = booking.CustomerName,
             PurchaseCode = booking.PurchaseCode,
             SelectedSupplierIds = booking.SelectedSupplierIds,
             SelectedSuppliers = selectedSuppliers,
