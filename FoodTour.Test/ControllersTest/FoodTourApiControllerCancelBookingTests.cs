@@ -1,6 +1,6 @@
 namespace FoodTour.Test.Controllers;
 
-public class FoodTourApiControllerCancelBookingTests {
+public class FoodTourApiControllerCancelBookingTests : TestBase {
     [Fact]
     public async Task CancelBooking_MarksBookingAsCancelled_WhenValid() {
         var context = TestHelper.CreateInMemoryContext();
@@ -13,7 +13,7 @@ public class FoodTourApiControllerCancelBookingTests {
             IsCancelled = false
         };
         context.Bookings.Add(existingBooking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
 
         var controller = TestHelper.CreateFoodTourApiController(context);
 
@@ -36,7 +36,7 @@ public class FoodTourApiControllerCancelBookingTests {
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
 
-        var cancelledBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == TestHelper.CANCEL_TEST_CODE);
+        var cancelledBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == TestHelper.CANCEL_TEST_CODE, CancellationToken);
         cancelledBooking.ShouldNotBeNull();
         cancelledBooking.IsCancelled.ShouldBeTrue();
     }

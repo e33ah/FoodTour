@@ -15,7 +15,7 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
         redirect.ActionName.ShouldBe(nameof(HomeController.BookingSummary));
 
         // Verify booking was updated
-        var bookings = await context.Bookings.ToListAsync();
+        var bookings = await context.Bookings.ToListAsync(CancellationToken);
         bookings.ShouldHaveSingleItem();
         var updatedBooking = bookings[0];
         updatedBooking.CustomerEmail.ShouldBe(TestHelper.VALID_EMAIL);
@@ -34,10 +34,10 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
 
         await sut.Index(booking.Id, selectedSuppliers);
 
-        var visits = await context.Visits.ToListAsync();
+        var visits = await context.Visits.ToListAsync(CancellationToken);
         visits.Count.ShouldBe(5);
 
-        var updatedBooking = await context.Bookings.FirstOrDefaultAsync();
+        var updatedBooking = await context.Bookings.FirstOrDefaultAsync(CancellationToken);
         updatedBooking.ShouldNotBeNull();
 
         foreach (int supplierId in selectedSuppliers) {
@@ -77,8 +77,8 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
             SelectedSupplierIds = [1, 2, 3],
             IsConfirmed = false
         };
-        await context.Bookings.AddAsync(booking);
-        await context.SaveChangesAsync();
+        await context.Bookings.AddAsync(booking, CancellationToken);
+        await context.SaveChangesAsync(CancellationToken);
         var sut = CreateConfiguredController(context);
 
         var result = await sut.BookingSummary(booking.QrToken);
@@ -122,8 +122,8 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
             SelectedSupplierIds = [1, 2, 3],
             IsConfirmed = false
         };
-        await context.Bookings.AddAsync(booking);
-        await context.SaveChangesAsync();
+        await context.Bookings.AddAsync(booking, CancellationToken);
+        await context.SaveChangesAsync(CancellationToken);
         var sut = CreateConfiguredControllerWithUrl(context, "BookingConfirmation");
 
         var result = await sut.ConfirmBookingSummary(booking.QrToken);
@@ -132,7 +132,7 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
         redirect.ActionName.ShouldBe(nameof(HomeController.BookingConfirmation));
 
         // Verify booking was updated
-        var updatedBooking = await context.Bookings.FirstOrDefaultAsync(b => b.Id == booking.Id);
+        var updatedBooking = await context.Bookings.FirstOrDefaultAsync(b => b.Id == booking.Id, CancellationToken);
         updatedBooking.ShouldNotBeNull();
         updatedBooking.IsConfirmed.ShouldBeTrue();
     }
@@ -158,8 +158,8 @@ public class HomeControllerBookingFlowTests : HomeControllerTestBase {
             SelectedSupplierIds = [1, 2, 3],
             IsConfirmed = true // Already confirmed
         };
-        await context.Bookings.AddAsync(booking);
-        await context.SaveChangesAsync();
+        await context.Bookings.AddAsync(booking, CancellationToken);
+        await context.SaveChangesAsync(CancellationToken);
         var sut = CreateConfiguredControllerWithUrl(context, "BookingConfirmation");
 
         var result = await sut.ConfirmBookingSummary(booking.QrToken);

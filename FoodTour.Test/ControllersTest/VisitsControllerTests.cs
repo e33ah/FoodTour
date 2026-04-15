@@ -1,6 +1,6 @@
 namespace FoodTour.Test.Controllers;
 
-public class VisitsControllerTests {
+public class VisitsControllerTests : TestBase {
     private const string SUPPLIER_CODE = "TEST123";
 
     [Fact]
@@ -170,7 +170,7 @@ public class VisitsControllerTests {
         await sut.RecordVisit(new VisitsController.RecordVisitDTO(booking.QrToken, supplier.Id, supplier.ConfirmationCode, 2));
 
         context.ChangeTracker.Clear();
-        var updatedVisit = await context.Visits.FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == supplier.Id);
+        var updatedVisit = await context.Visits.FirstOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == supplier.Id, CancellationToken);
         updatedVisit.ShouldNotBeNull();
         updatedVisit.IsClaimed.ShouldBeTrue();
         updatedVisit.ClaimedAt.ShouldNotBeNull();
@@ -222,8 +222,8 @@ public class VisitsControllerTests {
 
         result.ShouldBeOfType<OkObjectResult>();
         context.ChangeTracker.Clear();
-        var visit1 = await context.Visits.FirstAsync(v => v.SupplierId == supplier1.Id && v.BookingId == booking.Id);
-        var visit2Updated = await context.Visits.FirstAsync(v => v.SupplierId == supplier2.Id && v.BookingId == booking.Id);
+        var visit1 = await context.Visits.FirstAsync(v => v.SupplierId == supplier1.Id && v.BookingId == booking.Id, CancellationToken);
+        var visit2Updated = await context.Visits.FirstAsync(v => v.SupplierId == supplier2.Id && v.BookingId == booking.Id, CancellationToken);
         visit1.TastingExperiencesClaimed.ShouldBe(5);
         visit2Updated.TastingExperiencesClaimed.ShouldBe(5);
     }

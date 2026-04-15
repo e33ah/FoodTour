@@ -1,6 +1,6 @@
 namespace FoodTour.Test.Controllers;
 
-public class FoodTourApiControllerCheckBookingTests {
+public class FoodTourApiControllerCheckBookingTests : TestBase {
     [Fact]
     public async Task CheckBooking_ReturnsOkWithFoundTrue_WhenActiveBookingExists() {
         var context = TestHelper.CreateInMemoryContext();
@@ -12,7 +12,7 @@ public class FoodTourApiControllerCheckBookingTests {
             SelectedSupplierIds = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS)
         };
         context.Bookings.Add(booking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var controller = TestHelper.CreateFoodTourApiController(context);
 
         var request = new BookingCheckRequest {
@@ -49,7 +49,7 @@ public class FoodTourApiControllerCheckBookingTests {
             SelectedSupplierIds = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS)
         };
         context.Bookings.Add(booking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var controller = TestHelper.CreateFoodTourApiController(context);
 
         var request = new BookingCheckRequest {
@@ -85,7 +85,7 @@ public class FoodTourApiControllerCheckBookingTests {
             SelectedSupplierIds = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS)
         };
         context.Bookings.Add(booking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var controller = TestHelper.CreateFoodTourApiController(context);
 
         var request = new BookingCheckRequest {
@@ -144,7 +144,7 @@ public class FoodTourApiControllerCheckBookingTests {
             SelectedSupplierIds = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS)
         };
         context.Bookings.Add(booking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var controller = TestHelper.CreateFoodTourApiController(context);
 
         var request = new BookingCheckRequest {
@@ -173,7 +173,7 @@ public class FoodTourApiControllerCheckBookingTests {
             SelectedSupplierIds = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS)
         };
         context.Bookings.Add(booking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var controller = TestHelper.CreateFoodTourApiController(context);
 
         var request = new BookingCheckRequest {
@@ -275,7 +275,7 @@ public class FoodTourApiControllerCheckBookingTests {
             SelectedSupplierIds = TestHelper.CreateSupplierIdList(TestHelper.EXPECTED_MAX_SELECTIONS)
         };
         context.Bookings.Add(booking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var controller = TestHelper.CreateFoodTourApiController(context);
 
         var request = new BookingCheckRequest {

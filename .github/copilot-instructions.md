@@ -60,7 +60,7 @@ would fix the issues. If you do not find any issues then state that no issues we
 
 ## Test Project Requirements
 - **Integration:** .ITest projects are Integration Tests.  Tests which require external resources, such as databases or file systems, should be placed in an .ITest project.
-- **Unit:** .Test projects are Unit Tests.  Use XUnit for all unit tests.
+- **Unit:** .Test projects are Unit Tests.  Use XUnit.v3 for all unit tests.
 - **NoComments:** Do not include comments for Arrange, Act, Assert sections but prefer to adopt that style of test.  Ensure that the primary subject of the test is named 'sut'. 
 - **Naming:** When creating new unit tests, use the following naming convention: `MethodUnderTest_ExpectedBehavior_WhenCondition`. For example, `AddMeta_ReturnsOk_WhenMetaAddedSuccessfully`. This convention clearly communicates what is being tested, the expected outcome, and the scenario or condition.
 - **Spacing:** Leave a single blank new line between the Arrange, Act, and Assert sections.  Prefer to use intermediary variables to help keep the arrange, act and assert sections separate.

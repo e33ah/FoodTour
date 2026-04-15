@@ -15,3 +15,4 @@ global using Microsoft.Extensions.Options;
 global using Moq;
 global using QRCoder;
 global using Shouldly;
+global using Xunit;

@@ -92,7 +92,7 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
 
         var context = TestHelper.CreateInMemoryContext();
         context.Bookings.Add(booking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
 
         var sut = TestHelper.CreateHomeController(context);
 
@@ -159,7 +159,7 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
         var booking = TestHelper.CreateValidBooking([1, 2, 3, 4, 5]);
         booking.IsConfirmed = true;
         context.Bookings.Add(booking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = new List<int> { 1, 2, 3, 4, 5 };
 

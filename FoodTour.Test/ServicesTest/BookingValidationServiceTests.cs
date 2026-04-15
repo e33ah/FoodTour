@@ -1,6 +1,6 @@
 namespace FoodTour.Test.Services;
 
-public class BookingValidationServiceTests {
+public class BookingValidationServiceTests : TestBase {
     [Fact]
     public async Task ValidateAsync_ReturnsValid_WhenAllDataIsValid() {
         using var context = TestHelper.CreateInMemoryContext();
@@ -11,7 +11,7 @@ public class BookingValidationServiceTests {
             TestHelper.CreateSupplier(4),
             TestHelper.CreateSupplier(5)
         ]);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var sut = new BookingValidationService(context);
 
         var request = new BookingValidationRequest {
@@ -145,7 +145,7 @@ public class BookingValidationServiceTests {
             TestHelper.CreateSupplier(4),
             TestHelper.CreateSupplier(5)
         ]);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var sut = new BookingValidationService(context);
 
         var request = new BookingValidationRequest {
@@ -208,7 +208,7 @@ public class BookingValidationServiceTests {
             .Select(i => TestHelper.CreateSupplier(i))
             .ToArray();
         context.Suppliers.AddRange(suppliers);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var sut = new BookingValidationService(context);
 
         var selectedSupplierIds = Enumerable.Range(1, supplierCount).ToList();
@@ -232,7 +232,7 @@ public class BookingValidationServiceTests {
             .Select(i => TestHelper.CreateSupplier(i))
             .ToArray();
         context.Suppliers.AddRange(suppliers);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var sut = new BookingValidationService(context);
 
         var selectedSupplierIds = Enumerable.Range(1, TestHelper.EXPECTED_MAX_SELECTIONS).ToList();
@@ -378,7 +378,7 @@ public class BookingValidationServiceTests {
             TestHelper.CreateSupplier(4),
             TestHelper.CreateSupplier(5)
         ]);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var sut = new BookingValidationService(context);
 
         var request = new BookingValidationRequest {
@@ -405,7 +405,7 @@ public class BookingValidationServiceTests {
             TestHelper.CreateSupplier(4),
             TestHelper.CreateSupplier(5)
         ]);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var sut = new BookingValidationService(context);
 
         var request = new BookingValidationRequest {
@@ -432,7 +432,7 @@ public class BookingValidationServiceTests {
             TestHelper.CreateSupplier(4),
             TestHelper.CreateSupplier(5)
         ]);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var sut = new BookingValidationService(context);
 
         var request = new BookingValidationRequest {
@@ -459,7 +459,7 @@ public class BookingValidationServiceTests {
             TestHelper.CreateSupplier(4),
             TestHelper.CreateSupplier(5)
         ]);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var sut = new BookingValidationService(context);
         string longName = new('A', 1024);
 

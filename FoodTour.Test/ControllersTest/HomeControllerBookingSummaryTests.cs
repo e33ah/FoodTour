@@ -12,8 +12,8 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
             SelectedSupplierIds = [1, 3],
             IsConfirmed = false
         };
-        await context.Bookings.AddAsync(booking);
-        await context.SaveChangesAsync();
+        await context.Bookings.AddAsync(booking, CancellationToken);
+        await context.SaveChangesAsync(CancellationToken);
         var sut = CreateConfiguredController(context);
 
         var result = await sut.BookingSummary(booking.QrToken);
@@ -56,8 +56,8 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
             SelectedSupplierIds = [1, 2, 3],
             IsConfirmed = false
         };
-        await context.Bookings.AddAsync(booking);
-        await context.SaveChangesAsync();
+        await context.Bookings.AddAsync(booking, CancellationToken);
+        await context.SaveChangesAsync(CancellationToken);
         var sut = CreateConfiguredControllerWithUrl(context, "BookingConfirmation");
 
         var result = await sut.ConfirmBookingSummary(booking.QrToken);
@@ -66,7 +66,7 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
         redirect.ActionName.ShouldBe(nameof(HomeController.BookingConfirmation));
 
         // Verify booking was updated
-        var updatedBooking = await context.Bookings.FirstOrDefaultAsync(b => b.Id == booking.Id);
+        var updatedBooking = await context.Bookings.FirstOrDefaultAsync(b => b.Id == booking.Id, CancellationToken);
         updatedBooking.ShouldNotBeNull();
         updatedBooking.IsConfirmed.ShouldBeTrue();
     }
@@ -81,8 +81,8 @@ public class HomeControllerBookingSummaryTests : HomeControllerTestBase {
             SelectedSupplierIds = [1, 2],
             QrToken = Guid.NewGuid()
         };
-        await context.Bookings.AddAsync(booking);
-        await context.SaveChangesAsync();
+        await context.Bookings.AddAsync(booking, CancellationToken);
+        await context.SaveChangesAsync(CancellationToken);
         var controller = CreateConfiguredController(context);
 
         // Use reflection to call the private method for testing

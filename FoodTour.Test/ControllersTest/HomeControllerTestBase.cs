@@ -1,7 +1,8 @@
 namespace FoodTour.Test.Controllers;
 
-public abstract class HomeControllerTestBase {
+public abstract class HomeControllerTestBase : TestBase {
     private const string BASE_URL = "http://localhost/Home";
+
     protected static HomeController CreateController() {
         var context = TestHelper.CreateInMemoryContext();
         return CreateConfiguredController(context);

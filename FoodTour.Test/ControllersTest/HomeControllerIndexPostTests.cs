@@ -49,7 +49,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
         var booking = await TestHelper.CreateBookingInDatabase(context);
         booking.IsCancelled = true;
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
         var sut = CreateConfiguredController(context);
         var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
 
@@ -135,7 +135,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         redirect.RouteValues.ShouldNotBeNull();
         redirect.RouteValues["qrToken"].ShouldBe(booking.QrToken);
 
-        var updatedBooking = await context.Bookings.FindAsync(booking.Id);
+        var updatedBooking = await context.Bookings.FindAsync([booking.Id], CancellationToken);
         updatedBooking.ShouldNotBeNull();
         updatedBooking.SelectedSupplierIds.ShouldBe(selectedSuppliers);
     }
@@ -151,7 +151,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
 
         var bookingSuppliers = await context.BookingSuppliers
             .Where(bs => bs.BookingId == booking.Id)
-            .ToListAsync();
+            .ToListAsync(CancellationToken);
         
         bookingSuppliers.Count.ShouldBe(5);
         
@@ -171,7 +171,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
 
         var visits = await context.Visits
             .Where(v => v.BookingId == booking.Id)
-            .ToListAsync();
+            .ToListAsync(CancellationToken);
         
         visits.Count.ShouldBe(5);
         
@@ -195,8 +195,8 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
             new() { BookingId = booking.Id, SupplierId = 4 },
             new() { BookingId = booking.Id, SupplierId = 5 }
         };
-        await context.BookingSuppliers.AddRangeAsync(oldBookingSuppliers);
-        await context.SaveChangesAsync();
+        await context.BookingSuppliers.AddRangeAsync(oldBookingSuppliers, CancellationToken);
+        await context.SaveChangesAsync(CancellationToken);
 
         var sut = CreateConfiguredController(context);
         var newSelectedSuppliers = new List<int> { 2, 3, 4, 6, 7 };
@@ -205,7 +205,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
 
         var bookingSuppliers = await context.BookingSuppliers
             .Where(bs => bs.BookingId == booking.Id)
-            .ToListAsync();
+            .ToListAsync(CancellationToken);
         
         bookingSuppliers.Count.ShouldBe(5);
         bookingSuppliers.Any(bs => bs.SupplierId == 1).ShouldBeFalse();
@@ -226,8 +226,8 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
             new() { BookingId = booking.Id, SupplierId = 4 },
             new() { BookingId = booking.Id, SupplierId = 5 }
         };
-        await context.Visits.AddRangeAsync(oldVisits);
-        await context.SaveChangesAsync();
+        await context.Visits.AddRangeAsync(oldVisits, CancellationToken);
+        await context.SaveChangesAsync(CancellationToken);
 
         var sut = CreateConfiguredController(context);
         var newSelectedSuppliers = new List<int> { 2, 3, 4, 6, 7 };
@@ -236,7 +236,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
 
         var visits = await context.Visits
             .Where(v => v.BookingId == booking.Id)
-            .ToListAsync();
+            .ToListAsync(CancellationToken);
         
         visits.Count.ShouldBe(5);
         visits.Any(v => v.SupplierId == 1).ShouldBeFalse();

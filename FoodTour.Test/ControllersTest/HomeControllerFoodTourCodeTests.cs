@@ -83,7 +83,7 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
         var visit1 = new Visit { BookingId = booking.Id, SupplierId = 1, IsClaimed = true, ClaimedAt = DateTime.UtcNow, TastingExperiencesClaimed = 2 };
         var visit2 = new Visit { BookingId = booking.Id, SupplierId = 2, IsClaimed = false };
         await context.Visits.AddRangeAsync([visit1, visit2]);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
 
         var sut = CreateConfiguredController(context);
 
@@ -104,7 +104,7 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
         var visit1 = new Visit { BookingId = booking.Id, SupplierId = 1, IsClaimed = true, ClaimedAt = DateTime.UtcNow, TastingExperiencesClaimed = 2 };
         var visit2 = new Visit { BookingId = booking.Id, SupplierId = 2, IsClaimed = true, ClaimedAt = DateTime.UtcNow, TastingExperiencesClaimed = 2 };
         await context.Visits.AddRangeAsync([visit1, visit2]);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
 
         var sut = CreateConfiguredController(context);
 

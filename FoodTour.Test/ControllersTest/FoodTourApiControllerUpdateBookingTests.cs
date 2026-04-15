@@ -1,6 +1,6 @@
 namespace FoodTour.Test.Controllers;
 
-public class FoodTourApiControllerUpdateBookingTests {
+public class FoodTourApiControllerUpdateBookingTests : TestBase {
     [Fact]
     public async Task UpdateBooking_UpdatesBooking_WhenValidDataReceived() {
         var context = TestHelper.CreateInMemoryContext();
@@ -12,7 +12,7 @@ public class FoodTourApiControllerUpdateBookingTests {
             TotalGuests = TestHelper.DEFAULT_GUEST_COUNT
         };
         context.Bookings.Add(existingBooking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
 
         var controller = TestHelper.CreateFoodTourApiController(context);
 
@@ -41,7 +41,7 @@ public class FoodTourApiControllerUpdateBookingTests {
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
 
-        var updatedBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == TestHelper.UPDATE_TEST_CODE);
+        var updatedBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == TestHelper.UPDATE_TEST_CODE, CancellationToken);
         updatedBooking.ShouldNotBeNull();
         updatedBooking.CustomerEmail.ShouldBe(TestHelper.UPDATED_EMAIL);
         updatedBooking.CustomerName.ShouldBe(TestHelper.UPDATED_CUSTOMER_NAME);
@@ -126,7 +126,7 @@ public class FoodTourApiControllerUpdateBookingTests {
             TotalGuests = 3
         };
         context.Bookings.Add(existingBooking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
 
         var controller = TestHelper.CreateFoodTourApiController(context);
 
@@ -178,7 +178,7 @@ public class FoodTourApiControllerUpdateBookingTests {
             TotalGuests = TestHelper.DEFAULT_GUEST_COUNT
         };
         context.Bookings.Add(existingBooking);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken);
 
         var controller = TestHelper.CreateFoodTourApiController(context);
 
