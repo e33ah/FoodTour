@@ -97,6 +97,75 @@ public class FoodTourApiControllerCreateBookingTests {
         // Both calls should return successfully, but only one booking should be created
         // The duplicate prevention is logged, not exposed in the API response for security
     }
+
+    [Fact]
+    public async Task CreateNewBooking_SavesVoucherNumber_WhenVoucherNumberProvided() {
+        var context = TestHelper.CreateInMemoryContext();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+        string jsonString = $$"""
+            {
+                "booking": {
+                    "pk": "{{TestHelper.VALID_CODE}}",
+                    "contact": {
+                        "email": "{{TestHelper.VALID_EMAIL}}",
+                        "name": "{{TestHelper.DEFAULT_CUSTOMER_NAME}}"
+                    },
+                    "availability": {
+                        "start_at": "{{TestHelper.validTourDate:yyyy-MM-ddTHH:mm:ssZ}}",
+                        "item": {
+                            "name": "{{TestHelper.WEYMOUTH_TOUR_NAME}}"
+                        }
+                    },
+                    "customer_count": {{TestHelper.DEFAULT_GUEST_COUNT}},
+                    "voucher_number": "{{TestHelper.VALID_VOUCHER}}"
+                }
+            }
+            """;
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+
+        var result = await controller.CreateNewBooking(jsonElement, TestHelper.VALID_KEY);
+
+        result.ShouldBeOfType<OkObjectResult>();
+
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == TestHelper.VALID_CODE, TestContext.Current.CancellationToken);
+        booking.ShouldNotBeNull();
+        booking.VoucherNumber.ShouldBe(TestHelper.VALID_VOUCHER);
+    }
+
+    [Fact]
+    public async Task CreateNewBooking_AllowsNullVoucherNumber_WhenVoucherNumberIsNull() {
+        var context = TestHelper.CreateInMemoryContext();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+        string jsonString = $$"""
+            {
+                "booking": {
+                    "pk": "{{TestHelper.UPDATE_TEST_CODE}}",
+                    "contact": {
+                        "email": "{{TestHelper.VALID_EMAIL}}",
+                        "name": "{{TestHelper.DEFAULT_CUSTOMER_NAME}}"
+                    },
+                    "availability": {
+                        "start_at": "{{TestHelper.validTourDate:yyyy-MM-ddTHH:mm:ssZ}}",
+                        "item": {
+                            "name": "{{TestHelper.WEYMOUTH_TOUR_NAME}}"
+                        }
+                    },
+                    "customer_count": {{TestHelper.DEFAULT_GUEST_COUNT}},
+                    "voucher_number": null
+                }
+            }
+            """;
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+
+        var result = await controller.CreateNewBooking(jsonElement, TestHelper.VALID_KEY);
+
+        result.ShouldBeOfType<OkObjectResult>();
+
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == TestHelper.UPDATE_TEST_CODE, TestContext.Current.CancellationToken);
+        booking.ShouldNotBeNull();
+        booking.VoucherNumber.ShouldBeNull();
+    }
+
     [Fact]
     public async Task CreateNewBooking_ReturnsUnauthorised_WhenInvalidKey() {
         var controller = TestHelper.CreateFoodTourApiController();

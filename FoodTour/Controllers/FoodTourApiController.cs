@@ -92,8 +92,9 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         }
 
         var booking = await context.Bookings
-            .FirstOrDefaultAsync(b => b.CustomerEmail.ToLower() == request.CustomerEmail.ToLower() && b.PurchaseCode == request.PurchaseCode);
-
+            .FirstOrDefaultAsync(b => b.CustomerEmail.ToLower() == request.CustomerEmail.ToLower()
+                && (b.PurchaseCode == request.PurchaseCode || b.VoucherNumber == request.PurchaseCode));
+       
         if (booking == null) {
             Log.Debug("No booking found for email {Email} and purchase code {PurchaseCode}", request.CustomerEmail, request.PurchaseCode);
             return Ok(new { found = false, message = "We couldn't find your booking. Please check your booking reference and email address for any typos, or contact support if the problem continues" });
@@ -135,7 +136,8 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             { "contact.email", "Contact Email" },
             { "availability.start_at", "Tour Start Time" },
             { FH_ITEM_NAME_KEY, "Item Name" },
-            { "customer_count", "Customer Count" }
+            { "customer_count", "Customer Count" },
+            { "voucher_number", "Voucher Number" }
         };
 
     private record ValidationResult {
@@ -210,7 +212,8 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         return existingBooking.TourDate != updatedBooking.TourDate ||
                existingBooking.CustomerEmail != updatedBooking.CustomerEmail ||
                existingBooking.CustomerName != updatedBooking.CustomerName ||
-               existingBooking.TotalGuests != updatedBooking.TotalGuests;
+               existingBooking.TotalGuests != updatedBooking.TotalGuests ||
+               existingBooking.VoucherNumber != updatedBooking.VoucherNumber;
     }
 
     private async Task ProcessCancelFoodTourBooking(JsonElement bookingElement) {
@@ -274,6 +277,11 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
                 } else {
                     Log.Information("JSON data {DisplayName}: invalid number format", displayName);
                 }
+                break;
+
+            case "Voucher Number":
+                booking.VoucherNumber = ExtractOptionalStringValue(element.Value);
+                LogValue(displayName, booking.VoucherNumber ?? "(null)");
                 break;
 
             case "Item Name":
@@ -414,6 +422,7 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         existingBooking.CustomerEmail = updatedBooking.CustomerEmail;
         existingBooking.CustomerName = updatedBooking.CustomerName;
         existingBooking.TotalGuests = updatedBooking.TotalGuests;
+        existingBooking.VoucherNumber = updatedBooking.VoucherNumber;
 
         try {
             context.Bookings.Update(existingBooking);
@@ -445,6 +454,15 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         JsonValueKind.True => "true",
         JsonValueKind.False => "false",
         JsonValueKind.Null => "null",
+        _ => element.GetRawText()
+    };
+
+    private static string? ExtractOptionalStringValue(JsonElement element) => element.ValueKind switch {
+        JsonValueKind.String => string.IsNullOrWhiteSpace(element.GetString()) ? null : element.GetString(),
+        JsonValueKind.Number => element.GetRawText(),
+        JsonValueKind.True => "true",
+        JsonValueKind.False => "false",
+        JsonValueKind.Null => null,
         _ => element.GetRawText()
     };
 

@@ -2,13 +2,21 @@
 
 public class Booking {
     public int Id { get; set; }
+
     [Required]
     public DateTime TourDate { get; set; }
+
     [Required]
     [EmailAddress]
     public string CustomerEmail { get; set; } = string.Empty;
+
     [Required]
-    public string PurchaseCode { get; set; } = string.Empty;
+    [MaxLength(100)]
+    public string PurchaseCode { get; set; } = string.Empty;    // Fareharbor booking reference
+
+    [MaxLength(100)]
+    public string? VoucherNumber { get; set; }  // Affiliate booking reference, optional
+
     public List<int> SelectedSupplierIds { get; set; } = [];
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

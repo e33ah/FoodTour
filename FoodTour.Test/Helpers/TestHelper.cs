@@ -5,6 +5,8 @@ public static class TestHelper {
     public const int EXPECTED_MAX_SELECTIONS = 5;
     public const string VALID_EMAIL = "customer@test.com";
     public const string VALID_CODE = "VALIDCODE123";
+    public const string VALID_VOUCHER = "VOUCHER123";
+    public const string NEW_VOUCHER = "NEWVOUCHER";
     public const string EXPECTED_NO_SUPPLIERS_MESSAGE = "No tasting experiences are currently available for the tour. Please check back later.";
     public const string SUPPLIER_NAME_1 = "Tasty Treats";
     public const string SUPPLIER_ADDRESS_1 = "123 Food Street";
@@ -13,7 +15,7 @@ public static class TestHelper {
     public const string SUPPORT_URL = "http://localhost/Home/UserSupport";
     private const string DATE_TIME_FORMAT = "HH:mm dd/MM/yyyy";
     public static readonly int nextYear = DateTime.Today.AddYears(1).Year;
-    public static readonly DateTime validTourDate = new(nextYear, 6, 16, 15, 32, 0);
+    public static readonly DateTime validTourDate = new(nextYear, 6, 16, 11, 15, 0);
     public static readonly string formattedTourDate = validTourDate.ToString(DATE_TIME_FORMAT);
 
     // FareHarbor API-specific constants

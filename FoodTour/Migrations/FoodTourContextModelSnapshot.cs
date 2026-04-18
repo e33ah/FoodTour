@@ -17,7 +17,7 @@ namespace FoodTour.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.5")
+                .HasAnnotation("ProductVersion", "10.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -51,7 +51,8 @@ namespace FoodTour.Migrations
 
                     b.Property<string>("PurchaseCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<Guid>("QrToken")
                         .HasColumnType("uniqueidentifier");
@@ -65,6 +66,10 @@ namespace FoodTour.Migrations
 
                     b.Property<DateTime>("TourDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("VoucherNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
@@ -113,8 +118,7 @@ namespace FoodTour.Migrations
 
                     b.Property<string>("ContactEmail")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ContactName")
                         .IsRequired()

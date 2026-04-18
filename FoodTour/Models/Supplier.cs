@@ -19,7 +19,6 @@ public class Supplier {
 
     [Required]
     [SemicolonSeparatedEmailAddresses]
-    [MaxLength(256)]
     public string ContactEmail { get; set; } = null!;
 
     [MaxLength(500)]

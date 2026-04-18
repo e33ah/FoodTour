@@ -9,7 +9,8 @@ public class FoodTourApiControllerUpdateBookingTests : TestBase {
             CustomerEmail = "original@test.com",
             CustomerName = "Original Name",
             TourDate = DateTime.UtcNow.AddDays(30),
-            TotalGuests = TestHelper.DEFAULT_GUEST_COUNT
+            TotalGuests = TestHelper.DEFAULT_GUEST_COUNT,
+            VoucherNumber = "OLDVOUCHER"
         };
         context.Bookings.Add(existingBooking);
         await context.SaveChangesAsync(CancellationToken);
@@ -30,7 +31,8 @@ public class FoodTourApiControllerUpdateBookingTests : TestBase {
                         "name": "{{TestHelper.UPDATED_CUSTOMER_NAME}}"
                     },
                     "customer_count": 4,
-                    "pk": "{{TestHelper.UPDATE_TEST_CODE}}"
+                    "pk": "{{TestHelper.UPDATE_TEST_CODE}}",
+                    "voucher_number": "{{TestHelper.NEW_VOUCHER}}"
                 }
             }
             """;
@@ -46,6 +48,53 @@ public class FoodTourApiControllerUpdateBookingTests : TestBase {
         updatedBooking.CustomerEmail.ShouldBe(TestHelper.UPDATED_EMAIL);
         updatedBooking.CustomerName.ShouldBe(TestHelper.UPDATED_CUSTOMER_NAME);
         updatedBooking.TotalGuests.ShouldBe(4);
+        updatedBooking.VoucherNumber.ShouldBe(TestHelper.NEW_VOUCHER);
+    }
+
+    [Fact]
+    public async Task UpdateBooking_ClearsVoucherNumber_WhenWebhookProvidesNullVoucherNumber() {
+        var context = TestHelper.CreateInMemoryContext();
+        var existingBooking = new Booking {
+            PurchaseCode = TestHelper.NO_CHANGE_TEST_CODE,
+            CustomerEmail = "original@test.com",
+            CustomerName = "Original Name",
+            TourDate = DateTime.UtcNow.AddDays(30),
+            TotalGuests = TestHelper.DEFAULT_GUEST_COUNT,
+            VoucherNumber = "OLDCODE"
+        };
+        context.Bookings.Add(existingBooking);
+        await context.SaveChangesAsync(CancellationToken);
+
+        var controller = TestHelper.CreateFoodTourApiController(context);
+
+        string jsonString = $$"""
+            {
+                "booking": {
+                    "availability": {
+                        "start_at": "{{DateTime.UtcNow.AddDays(45):yyyy-MM-ddTHH:mm:ssZ}}",
+                        "item": {
+                            "name": "{{TestHelper.WEYMOUTH_TOUR_NAME}}"
+                        }
+                    },
+                    "contact": {
+                        "email": "{{TestHelper.UPDATED_EMAIL}}",
+                        "name": "{{TestHelper.UPDATED_CUSTOMER_NAME}}"
+                    },
+                    "customer_count": 4,
+                    "pk": "{{TestHelper.NO_CHANGE_TEST_CODE}}",
+                    "voucher_number": null
+                }
+            }
+            """;
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+
+        var result = await controller.UpdateBooking(jsonElement, TestHelper.VALID_KEY);
+
+        result.ShouldBeOfType<OkObjectResult>();
+
+        var updatedBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == TestHelper.NO_CHANGE_TEST_CODE, CancellationToken);
+        updatedBooking.ShouldNotBeNull();
+        updatedBooking.VoucherNumber.ShouldBeNull();
     }
 
     [Fact]

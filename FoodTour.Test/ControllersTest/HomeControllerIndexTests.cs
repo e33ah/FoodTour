@@ -40,7 +40,7 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
 
     [Fact]
     public async Task Index_SetsNoSuppliersMessage_WhenNoActiveSuppliers() {
-        var (viewResult, model) = await GetIndexViewModel();
+        var (_, model) = await GetIndexViewModel();
 
         model.Suppliers.Count.ShouldBe(0);
         model.NoSuppliersMessage.ShouldBe(TestHelper.EXPECTED_NO_SUPPLIERS_MESSAGE);
@@ -48,7 +48,7 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
 
     [Fact]
     public async Task Index_DoesNotSetMessages_WhenAtLeastMaxActiveSuppliersExist() {
-        var (viewResult, model) = await GetIndexViewModel(supplierCount: TestHelper.EXPECTED_MAX_SELECTIONS);
+        var (_, model) = await GetIndexViewModel(supplierCount: TestHelper.EXPECTED_MAX_SELECTIONS);
         model.InsufficientSuppliersWarning.ShouldBeNull();
         model.NoSuppliersMessage.ShouldBeNull();
     }
@@ -72,7 +72,7 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
 
     [Fact]
     public async Task Index_DoesNotSetInsufficientSuppliersWarning_WhenExactlyMaxActiveSuppliers() {
-        var (viewResult, model) = await GetIndexViewModel(supplierCount: TestHelper.EXPECTED_MAX_SELECTIONS);
+        var (_, model) = await GetIndexViewModel(supplierCount: TestHelper.EXPECTED_MAX_SELECTIONS);
 
         model.InsufficientSuppliersWarning.ShouldBeNull();
     }
@@ -156,8 +156,7 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
         var selectedSuppliers = new List<int> { 1, 2, 3, 4, 5 };
 
         var result = await sut.Index(booking.Id, selectedSuppliers);
-
-        var viewResult = result.ShouldBeOfType<ViewResult>();
+        _ = result.ShouldBeOfType<ViewResult>();
         sut.ModelState.ContainsKey("BookingAlreadyConfirmed").ShouldBeTrue();
         string? errorMessage = sut.ModelState["BookingAlreadyConfirmed"]?.Errors[0].ErrorMessage;
         errorMessage.ShouldNotBeNull();

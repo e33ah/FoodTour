@@ -158,17 +158,6 @@ public class SupplierTests {
     }
 
     [Fact]
-    public void Supplier_ContactEmailProperty_HasMaxLengthAttribute() {
-        var property = typeof(Supplier).GetProperty(nameof(Supplier.ContactEmail));
-        var maxLengthAttribute = property!.GetCustomAttributes(typeof(MaxLengthAttribute), false)
-            .Cast<MaxLengthAttribute>()
-            .FirstOrDefault();
-
-        maxLengthAttribute.ShouldNotBeNull();
-        maxLengthAttribute.Length.ShouldBe(256);
-    }
-
-    [Fact]
     public void Supplier_FailsValidation_WhenNameExceedsMaxLength() {
         var sut = new Supplier {
             Name = new string('A', 201),
