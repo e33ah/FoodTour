@@ -2,6 +2,57 @@ namespace FoodTour.Test.Models;
 
 public class SupplierTests {
     [Theory]
+    [InlineData(DayOfWeek.Monday, "Monday 9am - 5pm")]
+    [InlineData(DayOfWeek.Tuesday, "Tuesday 10am - 6pm")]
+    [InlineData(DayOfWeek.Wednesday, "Wednesday 11am - 7pm")]
+    [InlineData(DayOfWeek.Thursday, "Thursday 12pm - 8pm")]
+    [InlineData(DayOfWeek.Friday, "Friday 1pm - 9pm")]
+    [InlineData(DayOfWeek.Saturday, "Saturday 2pm - 10pm")]
+    [InlineData(DayOfWeek.Sunday, "Sunday 3pm - 11pm")]
+    public void GetOpeningTimesForDay_ReturnsDaySpecificOpeningTimes_WhenDayHasOverride(DayOfWeek dayOfWeek, string expectedOpeningTimes) {
+        var sut = TestHelper.CreateSupplier(1);
+        sut.OpeningTimes = "General 9am - 5pm";
+        sut.OpeningTimesMonday = "Monday 9am - 5pm";
+        sut.OpeningTimesTuesday = "Tuesday 10am - 6pm";
+        sut.OpeningTimesWednesday = "Wednesday 11am - 7pm";
+        sut.OpeningTimesThursday = "Thursday 12pm - 8pm";
+        sut.OpeningTimesFriday = "Friday 1pm - 9pm";
+        sut.OpeningTimesSaturday = "Saturday 2pm - 10pm";
+        sut.OpeningTimesSunday = "Sunday 3pm - 11pm";
+
+        string? result = sut.GetOpeningTimesForDay(dayOfWeek);
+
+        result.ShouldBe(expectedOpeningTimes);
+    }
+
+    [Theory]
+    [InlineData(DayOfWeek.Monday)]
+    [InlineData(DayOfWeek.Tuesday)]
+    [InlineData(DayOfWeek.Wednesday)]
+    [InlineData(DayOfWeek.Thursday)]
+    [InlineData(DayOfWeek.Friday)]
+    [InlineData(DayOfWeek.Saturday)]
+    [InlineData(DayOfWeek.Sunday)]
+    public void GetOpeningTimesForDay_ReturnsGeneralOpeningTimes_WhenDaySpecificOpeningTimesMissing(DayOfWeek dayOfWeek) {
+        var sut = TestHelper.CreateSupplier(1);
+        sut.OpeningTimes = "General 9am - 5pm";
+
+        string? result = sut.GetOpeningTimesForDay(dayOfWeek);
+
+        result.ShouldBe("General 9am - 5pm");
+    }
+
+    [Fact]
+    public void GetOpeningTimesForDay_ReturnsGeneralOpeningTimes_WhenDayOfWeekIsInvalid() {
+        var sut = TestHelper.CreateSupplier(1);
+        sut.OpeningTimes = "General 9am - 5pm";
+
+        string? result = sut.GetOpeningTimesForDay((DayOfWeek)(-1));
+
+        result.ShouldBe("General 9am - 5pm");
+    }
+
+    [Theory]
     [InlineData("Test Supplier", "John Doe", "john@test.com", true)]
     [InlineData("Another Supplier", "Jane Smith", "jane@example.com", false)]
     public void Supplier_CanBeCreated_WithValidRequiredProperties(string name, string contactName, string contactEmail, bool isActive) {

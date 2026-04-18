@@ -92,6 +92,23 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
     }
 
     [Fact]
+    public async Task Index_ReturnsViewWithTourDate_WhenSupplierSelectionsAreInvalid() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        DateTime tourDate = new(2026, 4, 21);
+        var booking = await TestHelper.CreateBookingInDatabase(context, tourDate: tourDate);
+        var sut = CreateConfiguredController(context);
+        var selectedSuppliers = TestHelper.CreateSupplierIdList(3);
+
+        var result = await sut.Index(booking.Id, selectedSuppliers);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
+
+        model.TourDate.ShouldBe(tourDate);
+        model.SelectedSuppliers.ShouldBe(selectedSuppliers);
+    }
+
+    [Fact]
     public async Task Index_ReturnsBadRequest_WhenTooManySuppliersSelected() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(7);
         var booking = await TestHelper.CreateBookingInDatabase(context);

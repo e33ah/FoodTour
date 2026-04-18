@@ -82,16 +82,9 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
         var selectedSupplierIds = new List<int> { 1, 2, 3 };
         var qrToken = Guid.NewGuid();
 
-        var booking = new Booking {
-            TourDate = new DateTime(2024, 6, 15),
-            CustomerEmail = "test@example.com",
-            PurchaseCode = "TEST123",
-            SelectedSupplierIds = selectedSupplierIds,
-            QrToken = qrToken,
-        };
-
-        var context = TestHelper.CreateInMemoryContext();
-        context.Bookings.Add(booking);
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(3);
+        var booking = await TestHelper.CreateBookingInDatabase(context, selectedSupplierIds: selectedSupplierIds);
+        booking.QrToken = qrToken;
         await context.SaveChangesAsync(CancellationToken);
 
         var sut = TestHelper.CreateHomeController(context);
@@ -100,7 +93,6 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
 
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
-
         model.SelectedSuppliers.ShouldBe(selectedSupplierIds);
     }
 
