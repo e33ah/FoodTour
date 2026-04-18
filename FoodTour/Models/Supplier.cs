@@ -25,6 +25,27 @@ public class Supplier {
     [MaxLength(500)]
     public string? OpeningTimes { get; set; }
 
+    [MaxLength(500)]
+    public string? OpeningTimesMonday { get; set; }
+
+    [MaxLength(500)]
+    public string? OpeningTimesTuesday { get; set; }
+
+    [MaxLength(500)]
+    public string? OpeningTimesWednesday { get; set; }
+
+    [MaxLength(500)]
+    public string? OpeningTimesThursday { get; set; }
+
+    [MaxLength(500)]
+    public string? OpeningTimesFriday { get; set; }
+
+    [MaxLength(500)]
+    public string? OpeningTimesSaturday { get; set; }
+
+    [MaxLength(500)]
+    public string? OpeningTimesSunday { get; set; }
+
     public bool IsActive { get; set; }
 
     [MaxLength(50)]
@@ -43,4 +64,20 @@ public class Supplier {
     public string ConfirmationCode { get; set; } = null!;
 
     public bool EmailNotificationsEnabled { get; set; }
+
+    /// <summary>
+    /// Gets the opening times for a specific day of the week.
+    /// Falls back to the general OpeningTimes if day-specific time is not set.
+    /// </summary>
+    public string? GetOpeningTimesForDay(DayOfWeek dayOfWeek) =>
+        dayOfWeek switch {
+            DayOfWeek.Monday => OpeningTimesMonday ?? OpeningTimes,
+            DayOfWeek.Tuesday => OpeningTimesTuesday ?? OpeningTimes,
+            DayOfWeek.Wednesday => OpeningTimesWednesday ?? OpeningTimes,
+            DayOfWeek.Thursday => OpeningTimesThursday ?? OpeningTimes,
+            DayOfWeek.Friday => OpeningTimesFriday ?? OpeningTimes,
+            DayOfWeek.Saturday => OpeningTimesSaturday ?? OpeningTimes,
+            DayOfWeek.Sunday => OpeningTimesSunday ?? OpeningTimes,
+            _ => OpeningTimes
+        };
 }

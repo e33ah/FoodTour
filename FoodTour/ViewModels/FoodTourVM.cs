@@ -12,4 +12,5 @@ public class FoodTourVM {
     public string PurchaseCode { get; set; } = string.Empty;
     public string? NoSuppliersMessage { get; set; }
     public string? InsufficientSuppliersWarning { get; set; }
+    public DateTime? TourDate { get; set; }
 }

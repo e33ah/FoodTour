@@ -29,19 +29,19 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         }
 
         if (!ValidateBookingNotAlreadyConfirmed(booking)) {
-            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
+            return await CreateIndexViewWithErrorsAsync(selectedSuppliers, booking.TourDate);
         }
 
         if (!await ValidateSupplierSelectionsAsync(booking, selectedSuppliers)) {
-            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
+            return await CreateIndexViewWithErrorsAsync(selectedSuppliers, booking.TourDate);
         }
 
         if (!await ValidateSupplierExistenceAsync(bookingId, selectedSuppliers)) {
-            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
+            return await CreateIndexViewWithErrorsAsync(selectedSuppliers, booking.TourDate);
         }
 
         if (!await TryUpdateBookingAsync(booking, selectedSuppliers)) {
-            return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
+            return await CreateIndexViewWithErrorsAsync(selectedSuppliers, booking.TourDate);
         }
 
         return RedirectToAction("BookingSummary", new { qrToken = booking.QrToken });
@@ -252,7 +252,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return View(result);
     }
 
-    private async Task<FoodTourVM> CreateFoodTourViewModel() {
+    private async Task<FoodTourVM> CreateFoodTourViewModel(DateTime? tourDate = null) {
         List<Supplier> suppliers;
         try {
             suppliers = await context.Suppliers.Where(s => s.IsActive).ToListAsync();
@@ -261,9 +261,11 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             Log.Error(ex, "Failed to retrieve active suppliers from the database.");
             suppliers = [];
         }
+
         return new FoodTourVM {
             Suppliers = suppliers,
-            MaxSelections = MAX_SUPPLIER_SELECTIONS
+            MaxSelections = MAX_SUPPLIER_SELECTIONS,
+            TourDate = tourDate
         };
     }
 
@@ -283,8 +285,8 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return View("BookingSummary", bookingSummary);
     }
 
-    private async Task<IActionResult> CreateIndexViewWithErrorsAsync(List<int> selectedSuppliers) {
-        var model = await CreateFoodTourViewModel();
+    private async Task<IActionResult> CreateIndexViewWithErrorsAsync(List<int> selectedSuppliers, DateTime? tourDate = null) {
+        var model = await CreateFoodTourViewModel(tourDate);
         model.SelectedSuppliers = selectedSuppliers;
         return View(model);
     }
@@ -345,6 +347,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         model.SelectedSuppliers = booking.SelectedSupplierIds;
         model.CustomerEmail = booking.CustomerEmail;
         model.PurchaseCode = booking.PurchaseCode;
+        model.TourDate = booking.TourDate;
 
         Log.Debug("Index: Populated form from booking {BookingId} using QR token.", booking.Id);
     }

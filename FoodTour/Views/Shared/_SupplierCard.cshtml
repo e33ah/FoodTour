@@ -2,6 +2,10 @@
 
 @{
 	var tags = new[] { Model.Tag1, Model.Tag2, Model.Tag3, Model.Tag4 };
+	var tourDate = ViewData["TourDate"] as DateTime?;
+	var displayOpeningTimes = tourDate.HasValue 
+		? Model.GetOpeningTimesForDay(tourDate.Value.DayOfWeek)
+		: Model.OpeningTimes;
 }
 <div class="card mb-3 supplier-card" data-supplier-id="@Model.Id">
 	<div class="card-body">
@@ -20,8 +24,8 @@
 				<p class="card-text text-muted small mb-1">
 					<i class="bi bi-geo-alt text-primary"></i> @Model.Address
 				</p>
-				@if (!string.IsNullOrWhiteSpace(Model.OpeningTimes)) {
-					<p class="card-text text-muted small mb-1" style="white-space: pre-wrap;"><i class="bi bi-clock text-primary"></i> @Model.OpeningTimes</p>
+				@if (!string.IsNullOrWhiteSpace(displayOpeningTimes)) {
+					<p class="card-text text-muted small mb-1" style="white-space: pre-wrap;"><i class="bi bi-clock text-primary"></i> @displayOpeningTimes</p>
 				}
 				@if (!string.IsNullOrWhiteSpace(Model.Description)) {
 					<p class="card-text mb-0" style="white-space: pre-wrap;">@Model.Description.Trim()</p>
