@@ -114,7 +114,7 @@ public class VisitsController(FoodTourContext context, AdminNotificationService 
 
         try {
             string supportUrl = "/Home/UserSupport"; // Simplified for API controller
-            await supplierNotificationService.NotifyVisitRecordedAsync(booking, supplier, visit, supportUrl);
+            await supplierNotificationService.NotifySupplierVisitRecordedAsync(booking, supplier, visit, supportUrl);
             Log.Information("Visit ID {VisitId}: Supplier notification email sent to {SupplierEmail}", visit.Id, supplier.ContactEmail);
         } catch (Exception emailEx) {
             Log.Error(emailEx, "Visit ID {VisitId}: Visit recorded but failed to notify supplier. BookingId {BookingId}, SupplierId {SupplierId}.", visit.Id, booking.Id, supplier.Id);

@@ -316,7 +316,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             string foodTourCodeUrl = GenerateUrl("FoodTourCode", new { qrToken = booking.QrToken });
             string userSupportUrl = GenerateUrl("UserSupport");
 
-            var (subject, body) = bookingEmailService.GenerateBookingConfirmationEmail(booking, suppliers, foodTourCodeUrl, userSupportUrl);
+            var (subject, body) = await bookingEmailService.GenerateBookingConfirmationEmailAsync(booking, suppliers, foodTourCodeUrl, userSupportUrl);
             await emailSender.SendEmailAsync(booking.CustomerEmail, subject, body);
 
             Log.Information("Booking {BookingId}: Sent confirmation email to {CustomerEmail}.", booking.Id, booking.CustomerEmail);

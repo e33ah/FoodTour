@@ -1,4 +1,4 @@
-namespace FoodTour.Test.ServicesTest;
+namespace FoodTour.Test.Services;
 
 public class QrImageServiceTests {
     private readonly QrImageService sut = new();

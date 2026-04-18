@@ -1,0 +1,36 @@
+@model FoodTour.Models.SupplierVisitRecordedEmailModel
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.Subject</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa;">
+    <table style="width: 100%; background-color: #f8f9fa; border-collapse: collapse; border-spacing: 0;">
+        <tbody>
+            <tr>
+                <td style="padding: 24px 12px; text-align: center;">
+                    <table style="width: 600px; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; border-collapse: separate; border-spacing: 0;">
+                        <tbody>
+                            <tr>
+                                <td style="padding: 24px; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #212529; text-align: left;">
+                                    <p style="margin: 0 0 12px 0;">Dear @Model.SupplierName,</p>
+                                    <p style="margin: 0 0 12px 0;">A Tasting Tour visit has been recorded at your venue.</p>
+                                    <p style="margin: 0 0 8px 0;"><strong>Booking Ref:</strong> #@Model.BookingRef</p>
+                                    <p style="margin: 0 0 8px 0;"><strong>Tour Date:</strong> @Model.TourDate</p>
+                                    <p style="margin: 0 0 8px 0;"><strong>Tour Guests:</strong> @Model.TotalGuests</p>
+                                    <p style="margin: 0 0 8px 0;"><strong>Claimed At (UTC):</strong> @Model.ClaimedAt</p>
+                                    <p style="margin: 12px 0 0 0;">If you require any assistance, please visit our <a href="@Model.SupportUrl" style="color: #0d6efd;">Support</a> page.</p>
+                                    <p style="margin: 12px 0 0 0;">Kabincraft Adventures will be in contact shortly to reimburse funds.</p>
+                                    <p style="margin: 16px 0 0 0;">Kind regards,<br /><strong>Kabincraft Adventures</strong><br /><span class="text-muted small">Weymouth Self-Guided Tasting Tour</span></p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

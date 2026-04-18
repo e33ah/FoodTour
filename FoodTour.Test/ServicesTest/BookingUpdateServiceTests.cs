@@ -1,4 +1,4 @@
-namespace FoodTour.Test.ServicesTest;
+namespace FoodTour.Test.Services;
 
 public class BookingUpdateServiceTests : TestBase {
     private readonly FoodTourContext context;

@@ -48,6 +48,7 @@ public class Program {
                 builder.Configuration.GetSection("AdminNotificationSettings"));
 
             builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+            builder.Services.AddScoped<IRazorTemplateRenderer, RazorTemplateRenderer>();
             builder.Services.AddScoped<BookingEmailService>();
             builder.Services.AddScoped<AdminNotificationService>();
             builder.Services.AddScoped<SupplierNotificationService>();

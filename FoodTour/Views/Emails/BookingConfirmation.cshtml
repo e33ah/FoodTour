@@ -1,0 +1,73 @@
+@model FoodTour.Models.BookingConfirmationEmailModel
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.Subject</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa;">
+    <table style="width: 100%; background-color: #f8f9fa; border-collapse: collapse; border-spacing: 0;">
+        <tbody>
+            <tr>
+                <td style="padding: 24px 12px; text-align: center;">
+                    <table style="width: 600px; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; border-collapse: separate; border-spacing: 0;">
+                        <tbody>
+                            <tr>
+                                <td style="padding: 24px; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #212529; text-align: left;">
+                                    <p style="margin: 0 0 12px 0;">Dear @Model.CustomerName,</p>
+                                    <p style="margin: 0 0 12px 0;">Thank you for booking your <strong>Weymouth Self-Guided Tasting Tour</strong>!<br />Here are your tour details:</p>
+
+                                    <p style="margin: 0 0 8px 0;"><strong>Tour Date:</strong> @Model.TourDate</p>
+                                    <p style="margin: 0 0 8px 0;"><strong>Tasting Experiences:</strong></p>
+
+                                    <table style="width: 100%; margin: 0 0 12px 0; border-collapse: collapse; border-spacing: 0; text-align: left;">
+                                        <tr>
+                                            <td style="padding-left: 18px;">
+                                                <ul style="margin: 0; padding: 0; list-style-position: outside; text-align: left;">
+                                                    @if (Model.TastingExperiences.Count == 0)
+                                                    {
+                                                        <li>No tasting experiences selected.</li>
+                                                    }
+                                                    else
+                                                    {
+                                                        @foreach (var experience in Model.TastingExperiences)
+                                                        {
+                                                            <li>@experience.Name - @experience.Address</li>
+                                                        }
+                                                    }
+                                                </ul>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <p style="margin: 0 0 12px 0;">On the day of your tour, use the button below to access your map and QR code.
+                                        You will need to present your QR code as proof of purchase at each Tasting Experience.</p>
+
+                                    <table style="margin: 0 auto 12px auto; border-collapse: collapse; border-spacing: 0;">
+                                        <tr>
+                                            <td style="border-radius: 6px; background-color: #0d6efd; text-align: center;">
+                                                <a href="@Model.FoodTourCodeUrl" style="display: inline-block; padding: 10px 14px; font-family: Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;">Start your Tour</a>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <p style="margin: 0 0 8px 0;">If the button does not work, copy and paste this link into your browser:</p>
+                                    <p style="margin: 0 0 12px 0; word-break: break-word;"><a href="@Model.FoodTourCodeUrl" style="color: #0d6efd;">@Model.FoodTourCodeUrl</a></p>
+
+                                    <p style="margin: 0 0 12px 0;">We look forward to seeing you!</p>
+                                    <p style="margin: 0 0 16px 0;">Best regards,<br /><strong>Kabincraft Adventures</strong></p>
+
+                                    <hr style="margin: 16px 0; border: 0; border-top: 1px solid #e5e5e5;" />
+                                    <p style="margin: 0 0 8px 0; font-size: 14px;">Need help or want to make changes to your tour? Visit our <a href="@Model.UserSupportUrl" style="color: #0d6efd;">Support</a> page.</p>
+                                    <p style="margin: 0; color: #6c757d; font-size: 14px;">This email was sent from an unattended mailbox. Please do not reply.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

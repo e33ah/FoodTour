@@ -22,8 +22,6 @@ public abstract class HomeControllerTestBase : TestBase {
     protected static (HomeController controller, Mock<IEmailSender> emailSenderMock) CreateConfiguredControllerWithEmailSenderMock(FoodTourContext context) {
         string urlPath = "FoodTourCode?qrToken=abc";
         var (controller, emailSenderMock) = TestHelper.CreateHomeControllerWithEmailSenderMock(context);
-        var adminNotificationService = new AdminNotificationService(emailSenderMock.Object, TestHelper.CreateAdminNotificationOptions());
-        var supplierNotificationService = new SupplierNotificationService(emailSenderMock.Object);
 
         controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };

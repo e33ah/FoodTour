@@ -1,6 +1,9 @@
 namespace FoodTour.Services;
 
-public class AdminNotificationService(IEmailSender emailSender, IOptions<AdminNotificationSettings> options) {
+public class AdminNotificationService(IEmailSender emailSender, IOptions<AdminNotificationSettings> options, IRazorTemplateRenderer templateRenderer) {
+    private const string TOUR_DATE_FORMAT = "dd/MM/yyyy";
+    private const string CLAIMEDAT_DATE_FORMAT = "HH:mm dd/MM/yyyy";
+
     private readonly AdminNotificationSettings settings = options.Value;
 
     public async Task NotifyVisitRecordedAsync(Booking booking, Supplier supplier, Visit visit) {
@@ -9,69 +12,41 @@ public class AdminNotificationService(IEmailSender emailSender, IOptions<AdminNo
             return;
         }
 
+        ValidateParameters(booking, supplier, visit);
+
+        string claimedAt = visit.ClaimedAt!.Value.ToString(CLAIMEDAT_DATE_FORMAT);
+        string subject = $"FoodTour: visit recorded for {WebUtility.HtmlEncode(supplier.Name)}";
+
+        var model = new AdminVisitRecordedEmailModel {
+            BookingRef = WebUtility.HtmlEncode(booking.PurchaseCode),
+            CustomerEmail = WebUtility.HtmlEncode(booking.CustomerEmail),
+            TourDate = booking.TourDate.ToString(TOUR_DATE_FORMAT),
+            TotalGuests = WebUtility.HtmlEncode(booking.TotalGuests.ToString()),
+            SupplierName = WebUtility.HtmlEncode(supplier.Name),
+            ClaimedAt = claimedAt,
+            Subject = subject
+        };
+
+        string body = await templateRenderer.RenderTemplateAsync("Emails/AdminVisitRecorded", model);
+
+        await emailSender.SendEmailAsync(settings.AdminEmail!, subject, body);
+    }
+
+    private void ValidateParameters(Booking booking, Supplier supplier, Visit visit) {
         if (string.IsNullOrWhiteSpace(settings.AdminEmail)) {
             throw new InvalidOperationException("AdminNotificationSettings.AdminEmail is not configured.");
         }
-        if (AreParametersInvalid(booking, supplier, visit)) {
-            throw new InvalidOperationException("Supplier name, customer email, or visit claim timestamp is missing or invalid");
+
+        if (string.IsNullOrWhiteSpace(supplier.Name)) {
+            throw new InvalidOperationException("Supplier.Name is required.");
         }
 
-        string subject = $"FoodTour: visit recorded for {WebUtility.HtmlEncode(supplier.Name)}";
-        string bookingId = WebUtility.HtmlEncode(booking.Id.ToString());
-        string customerEmail = WebUtility.HtmlEncode(booking.CustomerEmail);
-        string tourDate = booking.TourDate.ToString("dd/MM/yyyy");
-        string totalGuests = WebUtility.HtmlEncode(booking.TotalGuests.ToString());
-        string supplierName = WebUtility.HtmlEncode(supplier.Name);
-        string claimedAt = visit.ClaimedAt!.Value.ToString("HH:mm dd/MM/yyyy");
+        if (string.IsNullOrWhiteSpace(booking.CustomerEmail)) {
+            throw new InvalidOperationException("Booking.CustomerEmail is required.");
+        }
 
-        string body = $@"
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset=""utf-8"" />
-                <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
-                <title>{subject}</title>
-            </head>
-            <body style=""font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6;"">
-                <p style=""margin: 0 0 12px 0;""><strong>Notification:</strong> A Food Tour visit has been recorded.</p>
-                <p style=""margin: 0 0 8px 0;""><strong>Booking Id:</strong> {bookingId}</p>
-                <p style=""margin: 0 0 8px 0;""><strong>Customer Email:</strong> {customerEmail}</p>
-                <p style=""margin: 0 0 8px 0;""><strong>Tour Date:</strong> {tourDate}</p>
-                <p style=""margin: 0 0 8px 0;""><strong>Tour Guests:</strong> {totalGuests}</p>
-                <p style=""margin: 0 0 8px 0;""><strong>Supplier:</strong> {supplierName}</p>
-                <p style=""margin: 0 0 8px 0;""><strong>Claimed At (UTC):</strong> {claimedAt}</p>
-
-                <table style=""width: 100%; border-collapse: collapse; margin-top: 12px;"">
-                    <thead>
-                        <tr>
-                            <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Booking Id</strong></th>
-                            <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Customer Email</strong></th>
-                            <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Tour Date</strong></th>
-                            <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Tour Guests</strong></th>
-                            <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Supplier</strong></th>
-                            <th style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;""><strong>Claimed At (UTC)</strong></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{bookingId}</td>
-                            <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{customerEmail}</td>
-                            <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{tourDate}</td>
-                            <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{totalGuests}</td>
-                            <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{supplierName}</td>
-                            <td style=""border: 1px solid #e5e5e5; text-align: left; padding: 8px;"">{claimedAt}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </body>
-            </html>";
-
-        await emailSender.SendEmailAsync(settings.AdminEmail, subject, body);
-    }
-
-    private static bool AreParametersInvalid(Booking booking, Supplier supplier, Visit visit) {
-        return string.IsNullOrEmpty(supplier.Name)
-            || string.IsNullOrEmpty(booking.CustomerEmail)
-            || visit.ClaimedAt == null;
+        if (visit.ClaimedAt == null) {
+            throw new InvalidOperationException("Visit.ClaimedAt is required.");
+        }
     }
 }

@@ -1,4 +1,4 @@
-namespace FoodTour.Test.ServicesTest;
+namespace FoodTour.Test.Services;
 
 public class AdminNotificationServiceTests {
     [Fact]
@@ -6,12 +6,7 @@ public class AdminNotificationServiceTests {
         var booking = TestHelper.CreateValidBooking();
         var supplier = TestHelper.CreateSupplier(1);
         var visit = TestHelper.CreateVisit();
-        var emailSenderMock = new Mock<IEmailSender>();
-        var options = Options.Create(new AdminNotificationSettings {
-            AdminEmail = TestHelper.ADMIN_EMAIL,
-            NotifyOnVisitRecorded = false
-        });
-        var sut = new AdminNotificationService(emailSenderMock.Object, options);
+        var (sut, emailSenderMock, _) = TestHelper.CreateAdminNotificationService(notifyOnVisitRecorded: false);
 
         await sut.NotifyVisitRecordedAsync(booking, supplier, visit);
 
@@ -23,12 +18,7 @@ public class AdminNotificationServiceTests {
         var booking = TestHelper.CreateValidBooking();
         var supplier = TestHelper.CreateSupplier(1);
         var visit = TestHelper.CreateVisit();
-        var emailSenderMock = new Mock<IEmailSender>();
-        var options = Options.Create(new AdminNotificationSettings {
-            AdminEmail = "   ",
-            NotifyOnVisitRecorded = true
-        });
-        var sut = new AdminNotificationService(emailSenderMock.Object, options);
+        var (sut, emailSenderMock, _) = TestHelper.CreateAdminNotificationService(adminEmail: "   ");
 
         var result = await Should.ThrowAsync<InvalidOperationException>(() => sut.NotifyVisitRecordedAsync(booking, supplier, visit));
 
@@ -41,12 +31,9 @@ public class AdminNotificationServiceTests {
         var booking = TestHelper.CreateValidBooking();
         var supplier = TestHelper.CreateSupplier(1);
         var visit = TestHelper.CreateVisit();
-        var emailSenderMock = new Mock<IEmailSender>();
-        var options = Options.Create(new AdminNotificationSettings {
-            AdminEmail = TestHelper.ADMIN_EMAIL,
-            NotifyOnVisitRecorded = true
-        });
-        var sut = new AdminNotificationService(emailSenderMock.Object, options);
+        var (sut, emailSenderMock, templateRendererMock) = TestHelper.CreateAdminNotificationService();
+        templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync((string path, object model) => $"<html>Email body with {supplier.Name} and {TestHelper.formattedTourDate}</html>");
 
         await sut.NotifyVisitRecordedAsync(booking, supplier, visit);
 

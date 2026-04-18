@@ -178,8 +178,11 @@ public static class TestHelper {
 
     public static VisitsController CreateVisitsController(FoodTourContext context) {
         var emailSenderMock = new Mock<IEmailSender>();
-        var adminNotificationService = new AdminNotificationService(emailSenderMock.Object, CreateAdminNotificationOptions());
-        var supplierNotificationService = new SupplierNotificationService(emailSenderMock.Object);
+        var templateRendererMock = new Mock<IRazorTemplateRenderer>();
+        templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync("<html>Mock email body</html>");
+        var adminNotificationService = new AdminNotificationService(emailSenderMock.Object, CreateAdminNotificationOptions(), templateRendererMock.Object);
+        var supplierNotificationService = new SupplierNotificationService(emailSenderMock.Object, templateRendererMock.Object);
 
         return new VisitsController(context, adminNotificationService, supplierNotificationService);
     }
@@ -224,7 +227,10 @@ public static class TestHelper {
         var context = CreateContextWithActiveSuppliersCount(contextSupplierCount);
         await context.SaveChangesAsync();
         var emailSender = Mock.Of<IEmailSender>();
-        var bookingEmailService = new BookingEmailService();
+        var templateRendererMock = new Mock<IRazorTemplateRenderer>();
+        templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync("<html>Mock email body</html>");
+        var bookingEmailService = new BookingEmailService(templateRendererMock.Object);
         var supportOptions = CreateSupportOptions();
         var bookingValidationService = new BookingValidationService(context);
         var bookingUpdateService = new BookingUpdateService(context);
@@ -233,7 +239,10 @@ public static class TestHelper {
 
     public static HomeController CreateHomeController(FoodTourContext context, IEmailSender? emailSender = null) {
         emailSender ??= Mock.Of<IEmailSender>();
-        var bookingEmailService = new BookingEmailService();
+        var templateRendererMock = new Mock<IRazorTemplateRenderer>();
+        templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync("<html>Mock email body</html>");
+        var bookingEmailService = new BookingEmailService(templateRendererMock.Object);
         var supportOptions = CreateSupportOptions();
         var bookingValidationService = new BookingValidationService(context);
         var bookingUpdateService = new BookingUpdateService(context);
@@ -272,5 +281,30 @@ public static class TestHelper {
         await context.SaveChangesAsync();
 
         return booking;
+    }
+
+    public static Mock<IRazorTemplateRenderer> CreateMockTemplateRenderer() {
+        var templateRendererMock = new Mock<IRazorTemplateRenderer>();
+        templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync("<html>Mock email body</html>");
+        return templateRendererMock;
+    }
+
+    public static (SupplierNotificationService service, Mock<IEmailSender> emailSenderMock, Mock<IRazorTemplateRenderer> templateRendererMock) CreateSupplierNotificationService() {
+        var emailSenderMock = new Mock<IEmailSender>();
+        var templateRendererMock = CreateMockTemplateRenderer();
+        var service = new SupplierNotificationService(emailSenderMock.Object, templateRendererMock.Object);
+        return (service, emailSenderMock, templateRendererMock);
+    }
+
+    public static (AdminNotificationService service, Mock<IEmailSender> emailSenderMock, Mock<IRazorTemplateRenderer> templateRendererMock) CreateAdminNotificationService(bool notifyOnVisitRecorded = true, string? adminEmail = null) {
+        var emailSenderMock = new Mock<IEmailSender>();
+        var templateRendererMock = CreateMockTemplateRenderer();
+        var options = Options.Create(new AdminNotificationSettings {
+            AdminEmail = adminEmail ?? ADMIN_EMAIL,
+            NotifyOnVisitRecorded = notifyOnVisitRecorded
+        });
+        var service = new AdminNotificationService(emailSenderMock.Object, options, templateRendererMock.Object);
+        return (service, emailSenderMock, templateRendererMock);
     }
 }

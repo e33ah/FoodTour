@@ -1,4 +1,4 @@
-namespace FoodTour.Test.ServicesTest;
+namespace FoodTour.Test.Services;
 
 public class SmtpEmailSenderTests {
     private const string TO_EMAIL = "recipient@test.com";
