@@ -1,36 +1,48 @@
 @model FoodTour.Models.Supplier
 
 @{
-	var tags = new[] { Model.Tag1, Model.Tag2, Model.Tag3, Model.Tag4 };
-	var tourDate = ViewData["TourDate"] as DateTime?;
-	var displayOpeningTimes = tourDate.HasValue 
-		? Model.GetOpeningTimesForDay(tourDate.Value.DayOfWeek)
-		: Model.OpeningTimes;
+    var tags = new[] { Model.Tag1, Model.Tag2, Model.Tag3, Model.Tag4 };
+    var tourDate = ViewData["TourDate"] as DateTime?;
+    var displayOpeningTimes = tourDate.HasValue
+        ? Model.GetOpeningTimesForDay(tourDate.Value.DayOfWeek)
+        : Model.OpeningTimes;
 }
-<div class="card mb-3 supplier-card" data-supplier-id="@Model.Id">
-	<div class="card-body">
-		<div class="d-flex align-items-center">
-			<input type="checkbox" name="selectedSuppliers" value="@Model.Id" class="visually-hidden supplier-checkbox" id="supplier-@Model.Id" />
-			<label for="supplier-@Model.Id" class="visually-hidden">Select @Model.Name</label>
-			<div class="flex-grow-1 text-start">
-				<h3 class="card-title mb-1">
-					@Model.Name
-					@foreach (var tag in tags) {
-						if (!string.IsNullOrWhiteSpace(tag)) {
-							<span class="badge border border-info text-dark fw-normal ms-1" style="font-size: 0.8rem; background-color: transparent;">@tag</span>
-						}
-					}
-				</h3>
-				<p class="card-text text-muted small mb-1">
-					<i class="bi bi-geo-alt text-primary"></i> @Model.Address
-				</p>
-				@if (!string.IsNullOrWhiteSpace(displayOpeningTimes)) {
-					<p class="card-text text-muted small mb-1" style="white-space: pre-wrap;"><i class="bi bi-clock text-primary"></i> @displayOpeningTimes</p>
-				}
-				@if (!string.IsNullOrWhiteSpace(Model.Description)) {
-					<p class="card-text mb-0" style="white-space: pre-wrap;">@Model.Description.Trim()</p>
-				}
-			</div>
-		</div>
-	</div>
+<div class="card mb-3 supplier-card"
+     data-supplier-id="@Model.Id"
+     data-opening-times-initial="@displayOpeningTimes"
+     data-opening-times-general="@Model.OpeningTimes"
+     data-opening-times-monday="@Model.OpeningTimesMonday"
+     data-opening-times-tuesday="@Model.OpeningTimesTuesday"
+     data-opening-times-wednesday="@Model.OpeningTimesWednesday"
+     data-opening-times-thursday="@Model.OpeningTimesThursday"
+     data-opening-times-friday="@Model.OpeningTimesFriday"
+     data-opening-times-saturday="@Model.OpeningTimesSaturday"
+     data-opening-times-sunday="@Model.OpeningTimesSunday">
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+            <input type="checkbox" name="selectedSuppliers" value="@Model.Id" class="visually-hidden supplier-checkbox" id="supplier-@Model.Id" />
+            <label for="supplier-@Model.Id" class="visually-hidden">Select @Model.Name</label>
+            <div class="flex-grow-1 text-start">
+                <h3 class="card-title mb-1">
+                    @Model.Name
+                    @foreach (var tag in tags)
+                    {
+                        if (!string.IsNullOrWhiteSpace(tag))
+                        {
+                            <span class="badge border border-info text-dark fw-normal ms-1" style="font-size: 0.8rem; background-color: transparent;">@tag</span>
+                        }
+                    }
+                </h3>
+                <p class="card-text text-muted small mb-1">
+                    <i class="bi bi-geo-alt text-primary"></i> @Model.Address
+                </p>
+                @if (!string.IsNullOrWhiteSpace(displayOpeningTimes)) {
+                    <p class="card-text text-muted small mb-1" style="white-space: pre-wrap;" data-opening-times-display><i class="bi bi-clock text-primary"></i> <span data-opening-times-text>@displayOpeningTimes</span></p>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Description)) {
+                    <p class="card-text mb-0" style="white-space: pre-wrap;">@Model.Description.Trim()</p>
+                }
+            </div>
+        </div>
+    </div>
 </div>

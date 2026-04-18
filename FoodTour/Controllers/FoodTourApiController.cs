@@ -101,7 +101,15 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
 
         if (booking.IsCancelled) {
             Log.Information("Booking {BookingId}: Found but cancelled for {CustomerEmail} with purchase code {PurchaseCode}", booking.Id, booking.CustomerEmail, booking.PurchaseCode);
-            return Ok(new { found = true, isCancelled = true, message = "This booking has been cancelled. Please contact support if you believe this is an error.", bookingId = booking.Id });
+            return Ok(new {
+                found = true,
+                isCancelled = true,
+                isConfirmed = booking.IsConfirmed,
+                qrToken = booking.QrToken,
+                message = "This booking has been cancelled. Please contact support if you believe this is an error.",
+                bookingId = booking.Id,
+                tourDate = booking.TourDate
+            });
         }
 
         Log.Information("Booking {BookingId}: Found for {CustomerEmail} with purchase code {PurchaseCode} (IsConfirmed: {IsConfirmed})", booking.Id, booking.CustomerEmail, booking.PurchaseCode, booking.IsConfirmed);
@@ -111,7 +119,8 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             isConfirmed = booking.IsConfirmed,
             qrToken = booking.QrToken,
             message = "We've found your booking!", 
-            bookingId = booking.Id 
+            bookingId = booking.Id,
+            tourDate = booking.TourDate
         });
     }
 

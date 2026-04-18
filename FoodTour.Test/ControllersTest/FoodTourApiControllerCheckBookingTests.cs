@@ -34,6 +34,8 @@ public class FoodTourApiControllerCheckBookingTests : TestBase {
         isConfirmed.ShouldBe(false);
         object? qrToken = value.GetType().GetProperty("qrToken")?.GetValue(value);
         qrToken.ShouldNotBeNull();
+        object? tourDate = value.GetType().GetProperty("tourDate")?.GetValue(value);
+        tourDate.ShouldBe(TestHelper.validTourDate);
         string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
         message.ShouldBe("We've found your booking!");
     }
@@ -67,6 +69,8 @@ public class FoodTourApiControllerCheckBookingTests : TestBase {
         found.ShouldBe(true);
         object? isCancelled = value.GetType().GetProperty("isCancelled")?.GetValue(value);
         isCancelled.ShouldBe(true);
+        object? tourDate = value.GetType().GetProperty("tourDate")?.GetValue(value);
+        tourDate.ShouldBe(TestHelper.validTourDate);
         string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
         message.ShouldBe("This booking has been cancelled. Please contact support if you believe this is an error.");
     }
@@ -107,6 +111,8 @@ public class FoodTourApiControllerCheckBookingTests : TestBase {
         isConfirmed.ShouldBe(true);
         object? qrToken = value.GetType().GetProperty("qrToken")?.GetValue(value);
         qrToken.ShouldBe(expectedQrToken);
+        object? tourDate = value.GetType().GetProperty("tourDate")?.GetValue(value);
+        tourDate.ShouldBe(TestHelper.validTourDate);
         string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
         message.ShouldBe("We've found your booking!");
     }
@@ -129,6 +135,8 @@ public class FoodTourApiControllerCheckBookingTests : TestBase {
         value.ShouldNotBeNull();
         object? found = value.GetType().GetProperty("found")?.GetValue(value);
         found.ShouldBe(false);
+        object? tourDate = value.GetType().GetProperty("tourDate")?.GetValue(value);
+        tourDate.ShouldBeNull();
         string? message = value.GetType().GetProperty("message")?.GetValue(value) as string;
         message.ShouldBe("We couldn't find your booking. Please check your booking reference and email address for any typos, or contact support if the problem continues");
     }

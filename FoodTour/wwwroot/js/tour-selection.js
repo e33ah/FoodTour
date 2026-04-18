@@ -23,6 +23,83 @@ document.addEventListener('DOMContentLoaded', () => {
         card.classList.toggle('selected', checkbox.checked);
     };
 
+    const getOpeningTimesElements = (card) => ({
+        container: card.querySelector('[data-opening-times-display]'),
+        text: card.querySelector('[data-opening-times-text]')
+    });
+
+    const setOpeningTimesDisplay = (card, openingTimes) => {
+        const { container, text } = getOpeningTimesElements(card);
+        if (!container || !text) {
+            return;
+        }
+
+        if (openingTimes && openingTimes.trim()) {
+            text.textContent = openingTimes;
+            container.classList.remove('d-none');
+        } else {
+            text.textContent = '';
+            container.classList.add('d-none');
+        }
+    };
+
+    const restoreInitialOpeningTimes = () => {
+        supplierCards.forEach(card => {
+            setOpeningTimesDisplay(card, card.dataset.openingTimesInitial || '');
+        });
+    };
+
+    const getOpeningTimesForDay = (card, dayOfWeek) => {
+        const generalOpeningTimes = card.dataset.openingTimesGeneral || '';
+
+        switch (dayOfWeek) {
+            case 0:
+                return card.dataset.openingTimesSunday || generalOpeningTimes;
+            case 1:
+                return card.dataset.openingTimesMonday || generalOpeningTimes;
+            case 2:
+                return card.dataset.openingTimesTuesday || generalOpeningTimes;
+            case 3:
+                return card.dataset.openingTimesWednesday || generalOpeningTimes;
+            case 4:
+                return card.dataset.openingTimesThursday || generalOpeningTimes;
+            case 5:
+                return card.dataset.openingTimesFriday || generalOpeningTimes;
+            case 6:
+                return card.dataset.openingTimesSaturday || generalOpeningTimes;
+            default:
+                return generalOpeningTimes;
+        }
+    };
+
+    const getDayOfWeekFromTourDate = (tourDate) => {
+        if (!tourDate) {
+            return null;
+        }
+
+        const datePart = tourDate.split('T')[0];
+        const dateParts = datePart.split('-').map(Number);
+        if (dateParts.length !== 3 || dateParts.some(Number.isNaN)) {
+            return null;
+        }
+
+        const [year, month, day] = dateParts;
+        const parsedDate = new Date(year, month - 1, day);
+        return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.getDay();
+    };
+
+    const applyTourDateOpeningTimes = (tourDate) => {
+        const dayOfWeek = getDayOfWeekFromTourDate(tourDate);
+        if (dayOfWeek === null) {
+            restoreInitialOpeningTimes();
+            return;
+        }
+
+        supplierCards.forEach(card => {
+            setOpeningTimesDisplay(card, getOpeningTimesForDay(card, dayOfWeek));
+        });
+    };
+
     const showMaxSelectionMessage = (card) => {
         const messageElement = document.createElement('div');
         messageElement.className = 'alert alert-warning mt-2 mb-3';
@@ -138,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookingIdInput = document.getElementById('BookingId');
 
     const showBookingSuccess = (message, bookingId) => {
-        clearBookingMessages();
+        clearBookingMessages(false);
         validatedBookingId = bookingId;
         if (bookingIdInput) {
             bookingIdInput.value = bookingId;
@@ -174,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const clearBookingMessages = () => {
+    const clearBookingMessages = (resetOpeningTimes = true) => {
         const existingMessage = document.querySelector('.booking-message');
         if (existingMessage) {
             existingMessage.remove();
@@ -185,6 +262,9 @@ document.addEventListener('DOMContentLoaded', () => {
         validatedBookingId = null;
         if (bookingIdInput) {
             bookingIdInput.value = '';
+        }
+        if (resetOpeningTimes) {
+            restoreInitialOpeningTimes();
         }
     };
 
@@ -244,10 +324,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.isCancelled) {
                     showBookingWarning(data.message);
                 } else if (data.isConfirmed) {
+                    applyTourDateOpeningTimes(data.tourDate);
                     // Show modal for confirmed booking
                     showBookingConfirmedModal(data.qrToken);
                 } else {
                     showBookingSuccess(data.message, data.bookingId);
+                    applyTourDateOpeningTimes(data.tourDate);
                 }
             } else {
                 showBookingWarning(data.message);
