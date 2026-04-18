@@ -18,6 +18,11 @@ public class SupplierNotificationService(IEmailSender emailSender) {
             throw new InvalidOperationException("Parameter details not valid");
         }
 
+        string[] recipientEmailAddresses = supplier.GetContactEmailAddresses();
+        if (recipientEmailAddresses.Length == 0) {
+            throw new InvalidOperationException("Supplier.ContactEmail is not configured.");
+        }
+
 
         string bookingId = WebUtility.HtmlEncode(booking.Id.ToString());
         string tourDate = booking.TourDate.ToString(TOUR_DATE_FORMAT);
@@ -50,6 +55,8 @@ public class SupplierNotificationService(IEmailSender emailSender) {
             </body>
             </html>";
 
-        await emailSender.SendEmailAsync(supplier.ContactEmail, subject, body);
+        foreach (string recipientEmailAddress in recipientEmailAddresses) {
+            await emailSender.SendEmailAsync(recipientEmailAddress, subject, body);
+        }
     }
 }

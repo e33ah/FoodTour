@@ -32,4 +32,33 @@ public class SupplierNotificationServiceTests {
             It.Is<string>(body => body.Contains(supplier.Name))
         ), Times.Once);
     }
+
+    [Fact]
+    public async Task NotifyVisitRecordedAsync_SendsEmailToEachRecipient_WhenMultipleEmailAddressesConfigured() {
+        var booking = TestHelper.CreateValidBooking();
+        var supplier = TestHelper.CreateSupplier(1);
+        supplier.EmailNotificationsEnabled = true;
+        supplier.ContactEmail = "first@test.com; second@test.com ;third@test.com";
+        var visit = TestHelper.CreateVisit();
+        var emailSenderMock = new Mock<IEmailSender>();
+        var sut = new SupplierNotificationService(emailSenderMock.Object);
+
+        await sut.NotifyVisitRecordedAsync(booking, supplier, visit, TestHelper.SUPPORT_URL);
+
+        emailSenderMock.Verify(x => x.SendEmailAsync(
+            "first@test.com",
+            It.Is<string>(subject => subject.Contains(TestHelper.formattedTourDate)),
+            It.Is<string>(body => body.Contains(supplier.Name))
+        ), Times.Once);
+        emailSenderMock.Verify(x => x.SendEmailAsync(
+            "second@test.com",
+            It.Is<string>(subject => subject.Contains(TestHelper.formattedTourDate)),
+            It.Is<string>(body => body.Contains(supplier.Name))
+        ), Times.Once);
+        emailSenderMock.Verify(x => x.SendEmailAsync(
+            "third@test.com",
+            It.Is<string>(subject => subject.Contains(TestHelper.formattedTourDate)),
+            It.Is<string>(body => body.Contains(supplier.Name))
+        ), Times.Once);
+    }
 }

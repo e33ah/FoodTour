@@ -18,7 +18,7 @@ public class Supplier {
     public string ContactName { get; set; } = null!;
 
     [Required]
-    [EmailAddress]
+    [SemicolonSeparatedEmailAddresses]
     [MaxLength(256)]
     public string ContactEmail { get; set; } = null!;
 
@@ -64,6 +64,18 @@ public class Supplier {
     public string ConfirmationCode { get; set; } = null!;
 
     public bool EmailNotificationsEnabled { get; set; }
+
+
+    /// <summary>
+    /// Returns an array of email addresses parsed from the ContactEmail property.
+    /// </summary>
+    public string[] GetContactEmailAddresses() {
+        if (string.IsNullOrWhiteSpace(ContactEmail)) {
+            return [];
+        }
+
+        return ContactEmail.Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+    }
 
     /// <summary>
     /// Gets the opening times for a specific day of the week.

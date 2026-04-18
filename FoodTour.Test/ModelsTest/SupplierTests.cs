@@ -71,7 +71,10 @@ public class SupplierTests {
 
     [Theory]
     [InlineData("john@test.com", true)]
+    [InlineData("john@test.com;jane@test.com", true)]
+    [InlineData("john@test.com; jane@test.com", true)]
     [InlineData("jane.smith@example.co.uk", true)]
+    [InlineData("john@test.com;invalid-email", false)]
     [InlineData("invalid-email", false)]
     [InlineData("@example.com", false)]
     [InlineData("test@", false)]
@@ -91,6 +94,16 @@ public class SupplierTests {
         if (!shouldBeValid) {
             validationResults.ShouldContain(vr => vr.MemberNames.Contains("ContactEmail"));
         }
+    }
+
+    [Fact]
+    public void GetContactEmailAddresses_ReturnsTrimmedEmailAddresses_WhenMultipleAddressesConfigured() {
+        var sut = TestHelper.CreateSupplier(1);
+        sut.ContactEmail = "first@test.com; second@test.com ;third@test.com";
+
+        string[] result = sut.GetContactEmailAddresses();
+
+        result.ShouldBe(["first@test.com", "second@test.com", "third@test.com"]);
     }
 
     [Fact]
