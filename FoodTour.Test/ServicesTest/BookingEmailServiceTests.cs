@@ -51,4 +51,24 @@ public class BookingEmailServiceTests {
 
         body.ShouldContain("No tasting experiences selected");
     }
+
+    [Fact]
+    public async Task GeneratePartnerBookingConfirmationEmailAsync_IncludesValidationAndPrivacyLinks() {
+        const string validationUrl = "https://example.test/Home/CompletePartnerBookingConfirmation?validation=abc";
+        const string privacyPolicyUrl = "https://example.test/Home/Privacy";
+        var templateRendererMock = new Mock<IRazorTemplateRenderer>();
+        templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync((string path, object model) => {
+                var typedModel = model as FoodTour.Models.PartnerBookingConfirmationEmailModel;
+                return $"<html>{typedModel!.ValidationUrl} {typedModel.PrivacyPolicyUrl} {typedModel.BookingReference}</html>";
+            });
+        var sut = new BookingEmailService(templateRendererMock.Object);
+
+        var (subject, body) = await sut.GeneratePartnerBookingConfirmationEmailAsync(TestHelper.VALID_EMAIL, TestHelper.VALID_VOUCHER, validationUrl, privacyPolicyUrl);
+
+        subject.ShouldContain("Confirm your Weymouth Self-Guided Tasting Tour booking");
+        body.ShouldContain(validationUrl);
+        body.ShouldContain(privacyPolicyUrl);
+        body.ShouldContain(TestHelper.VALID_VOUCHER);
+    }
 }

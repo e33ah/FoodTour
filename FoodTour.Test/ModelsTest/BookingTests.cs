@@ -16,6 +16,7 @@ public class BookingTests {
         sut.IsConfirmed.ShouldBeFalse();
         sut.TotalGuests.ShouldBe(0);
         sut.CustomerName.ShouldBeNull();
+        sut.RequiresEmailConfirmation.ShouldBeFalse();
     }
 
     [Fact]

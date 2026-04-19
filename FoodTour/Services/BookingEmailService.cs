@@ -28,4 +28,20 @@ public class BookingEmailService(IRazorTemplateRenderer templateRenderer) {
 
         return (subject, body);
     }
+
+    public async Task<(string Subject, string Body)> GeneratePartnerBookingConfirmationEmailAsync(string customerEmail, string bookingReference, string validationUrl, string privacyPolicyUrl) {
+        string subject = $"Confirm your Weymouth Self-Guided Tasting Tour booking - {bookingReference}";
+
+        var model = new PartnerBookingConfirmationEmailModel {
+            CustomerEmail = WebUtility.HtmlEncode(customerEmail),
+            BookingReference = WebUtility.HtmlEncode(bookingReference),
+            ValidationUrl = validationUrl,
+            PrivacyPolicyUrl = privacyPolicyUrl,
+            Subject = subject
+        };
+
+        string body = await templateRenderer.RenderTemplateAsync("Emails/PartnerBookingConfirmation", model);
+
+        return (subject, body);
+    }
 }

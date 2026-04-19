@@ -10,7 +10,8 @@ public class FoodTourApiControllerUpdateBookingTests : TestBase {
             CustomerName = "Original Name",
             TourDate = DateTime.UtcNow.AddDays(30),
             TotalGuests = TestHelper.DEFAULT_GUEST_COUNT,
-            VoucherNumber = "OLDVOUCHER"
+            VoucherNumber = "OLDVOUCHER",
+            RequiresEmailConfirmation = true
         };
         context.Bookings.Add(existingBooking);
         await context.SaveChangesAsync(CancellationToken);
@@ -49,6 +50,7 @@ public class FoodTourApiControllerUpdateBookingTests : TestBase {
         updatedBooking.CustomerName.ShouldBe(TestHelper.UPDATED_CUSTOMER_NAME);
         updatedBooking.TotalGuests.ShouldBe(4);
         updatedBooking.VoucherNumber.ShouldBe(TestHelper.NEW_VOUCHER);
+        updatedBooking.RequiresEmailConfirmation.ShouldBeTrue();
     }
 
     [Fact]
@@ -95,6 +97,52 @@ public class FoodTourApiControllerUpdateBookingTests : TestBase {
         var updatedBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == TestHelper.NO_CHANGE_TEST_CODE, CancellationToken);
         updatedBooking.ShouldNotBeNull();
         updatedBooking.VoucherNumber.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task UpdateBooking_PreservesConfirmedEmail_WhenVoucherBookingAlreadyConfirmed() {
+        var context = TestHelper.CreateInMemoryContext();
+        var existingBooking = new Booking {
+            PurchaseCode = TestHelper.UPDATE_TEST_CODE,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            CustomerName = "Original Name",
+            TourDate = DateTime.UtcNow.AddDays(30),
+            TotalGuests = TestHelper.DEFAULT_GUEST_COUNT,
+            VoucherNumber = "OLDVOUCHER",
+            RequiresEmailConfirmation = false
+        };
+        context.Bookings.Add(existingBooking);
+        await context.SaveChangesAsync(CancellationToken);
+
+        var controller = TestHelper.CreateFoodTourApiController(context);
+
+        string jsonString = $$"""
+            {
+                "booking": {
+                    "availability": {
+                        "start_at": "{{DateTime.UtcNow.AddDays(45):yyyy-MM-ddTHH:mm:ssZ}}",
+                        "item": {
+                            "name": "{{TestHelper.WEYMOUTH_TOUR_NAME}}"
+                        }
+                    },
+                    "contact": {
+                        "email": "pseudo@partner.test",
+                        "name": "{{TestHelper.UPDATED_CUSTOMER_NAME}}"
+                    },
+                    "customer_count": 4,
+                    "pk": "{{TestHelper.UPDATE_TEST_CODE}}",
+                    "voucher_number": "{{TestHelper.NEW_VOUCHER}}"
+                }
+            }
+            """;
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+
+        await controller.UpdateBooking(jsonElement, TestHelper.VALID_KEY);
+
+        var updatedBooking = await context.Bookings.FirstOrDefaultAsync(b => b.PurchaseCode == TestHelper.UPDATE_TEST_CODE, CancellationToken);
+        updatedBooking.ShouldNotBeNull();
+        updatedBooking.CustomerEmail.ShouldBe(TestHelper.VALID_EMAIL);
+        updatedBooking.RequiresEmailConfirmation.ShouldBeFalse();
     }
 
     [Fact]

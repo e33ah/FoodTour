@@ -1,11 +1,13 @@
 namespace FoodTour.Controllers;
 
-public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions, IBookingValidationService bookingValidationService, IBookingUpdateService bookingUpdateService) : Controller {
+public class HomeController(FoodTourContext context, IEmailSender emailSender, BookingEmailService bookingEmailService, IOptions<SupportSettings> supportOptions, IBookingValidationService bookingValidationService, IBookingUpdateService bookingUpdateService, PartnerBookingConfirmationService partnerBookingConfirmationService) : Controller {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
+    private const string EXPIRED_LINK_MESSAGE = "This link has expired, please request a new one.";
+    private const string INVALID_LINK_MESSAGE = "This confirmation link is invalid. Please request a new one.";
     private readonly QrImageService qrImageService = new();
     private readonly SupportSettings supportSettings = supportOptions.Value;
 
-    public async Task<IActionResult> Index(Guid? qrToken) {
+    public async Task<IActionResult> Index(Guid? qrToken, string? bookingReference = null) {
         var model = await CreateFoodTourViewModel();
 
         if (model.Suppliers.Count == 0) {
@@ -15,7 +17,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             Log.Warning("Insufficient active suppliers: {SupplierCount} found, {RequiredCount} required.", model.Suppliers.Count, MAX_SUPPLIER_SELECTIONS);
         }
 
-        await PopulateFormFromQrTokenAsync(qrToken, model);
+        await PopulateFormFromQrTokenAsync(qrToken, model, bookingReference);
 
         return View(model);
     }
@@ -252,6 +254,69 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return View(result);
     }
 
+    [HttpGet]
+    public IActionResult PartnerBookingConfirmation(string bookingReference = "", string customerEmail = "", string? linkError = null) {
+        var result = new PartnerBookingConfirmationVM {
+            BookingReference = bookingReference,
+            CustomerEmail = customerEmail,
+            LinkErrorMessage = GetPartnerBookingLinkErrorMessage(linkError)
+        };
+
+        return View(result);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PartnerBookingConfirmation(PartnerBookingConfirmationVM model) {
+        if (!ModelState.IsValid) {
+            return View(model);
+        }
+
+        string bookingReference = model.BookingReference.Trim();
+        string customerEmail = model.CustomerEmail.Trim();
+
+        var booking = await GetPendingPartnerBookingAsync(bookingReference);
+        if (booking == null) {
+            ModelState.AddModelError(string.Empty, "We could not find a partner booking awaiting email confirmation for that reference.");
+            return View(model);
+        }
+
+        try {
+            string validation = partnerBookingConfirmationService.CreateValidationToken(booking.Id, customerEmail, bookingReference);
+            string validationUrl = GenerateUrl("CompletePartnerBookingConfirmation", new { validation });
+            string privacyPolicyUrl = GenerateUrl("Privacy");
+
+            var (subject, body) = await bookingEmailService.GeneratePartnerBookingConfirmationEmailAsync(customerEmail, bookingReference, validationUrl, privacyPolicyUrl);
+            await emailSender.SendEmailAsync(customerEmail, subject, body);
+        } catch (Exception ex) {
+            Log.Error(ex, "Booking {BookingId}: Failed to send partner booking confirmation email to {CustomerEmail}.", booking.Id, customerEmail);
+            ModelState.AddModelError(string.Empty, "We were unable to send your confirmation email. Please try again or contact support if the problem persists.");
+            return View(model);
+        }
+
+        model.CustomerEmail = customerEmail;
+        model.BookingReference = bookingReference;
+        model.EmailSent = true;
+        return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CompletePartnerBookingConfirmation(string validation) {
+        var result = await partnerBookingConfirmationService.TryConfirmAsync(validation);
+        if (result.Status != PartnerBookingConfirmationService.PartnerBookingConfirmationStatus.Success || result.Booking == null) {
+            return RedirectToAction(nameof(PartnerBookingConfirmation), new {
+                bookingReference = result.BookingReference ?? string.Empty,
+                customerEmail = result.CustomerEmail ?? string.Empty,
+                linkError = result.Status == PartnerBookingConfirmationService.PartnerBookingConfirmationStatus.Expired ? "expired" : "invalid"
+            });
+        }
+
+        return RedirectToAction(nameof(Index), new {
+            qrToken = result.Booking.QrToken,
+            bookingReference = result.Booking.VoucherNumber ?? result.Booking.PurchaseCode
+        });
+    }
+
     private async Task<FoodTourVM> CreateFoodTourViewModel(DateTime? tourDate = null) {
         List<Supplier> suppliers;
         try {
@@ -334,7 +399,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return generatedUrl;
     }
 
-    private async Task PopulateFormFromQrTokenAsync(Guid? qrToken, FoodTourVM model) {
+    private async Task PopulateFormFromQrTokenAsync(Guid? qrToken, FoodTourVM model, string? bookingReference) {
         if (!qrToken.HasValue || qrToken.Value == Guid.Empty) {
             return;
         }
@@ -346,7 +411,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
         model.SelectedSuppliers = booking.SelectedSupplierIds;
         model.CustomerEmail = booking.CustomerEmail;
-        model.PurchaseCode = booking.PurchaseCode;
+        model.PurchaseCode = string.IsNullOrWhiteSpace(bookingReference) ? booking.PurchaseCode : bookingReference;
         model.TourDate = booking.TourDate;
 
         Log.Debug("Index: Populated form from booking {BookingId} using QR token.", booking.Id);
@@ -497,4 +562,22 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             AllVisitsClaimed = allVisitsClaimed
         };
     }
+
+    private static string? GetPartnerBookingLinkErrorMessage(string? linkError) {
+        return linkError switch {
+            "expired" => EXPIRED_LINK_MESSAGE,
+            "invalid" => INVALID_LINK_MESSAGE,
+            _ => null
+        };
+    }
+
+    private async Task<Booking?> GetPendingPartnerBookingAsync(string bookingReference) {
+        if (string.IsNullOrWhiteSpace(bookingReference)) {
+            return null;
+        }
+
+        return await context.Bookings
+            .FirstOrDefaultAsync(b => b.VoucherNumber == bookingReference && b.RequiresEmailConfirmation && !b.IsCancelled);
+    }
+
 }

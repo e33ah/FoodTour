@@ -5,6 +5,7 @@ global using FoodTour.Controllers;
 global using FoodTour.Models;
 global using FoodTour.Services;
 global using FoodTour.ViewModels;
+global using Microsoft.AspNetCore.DataProtection;
 global using Microsoft.AspNetCore.Http;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.Mvc.Routing;

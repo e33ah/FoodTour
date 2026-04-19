@@ -52,6 +52,7 @@ public class Program {
             builder.Services.AddScoped<BookingEmailService>();
             builder.Services.AddScoped<AdminNotificationService>();
             builder.Services.AddScoped<SupplierNotificationService>();
+            builder.Services.AddScoped<PartnerBookingConfirmationService>();
             builder.Services.AddScoped<IBookingValidationService, BookingValidationService>();
             builder.Services.AddScoped<IPurchaseCodeValidationService, PurchaseCodeValidationService>();
             builder.Services.AddScoped<IBookingUpdateService, BookingUpdateService>();

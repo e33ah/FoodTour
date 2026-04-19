@@ -320,7 +320,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
 
-            if (data.found) {
+            if (data.requiresPartnerConfirmation) {
+                const encodedReference = encodeURIComponent(purchaseCode);
+                const encodedEmail = encodeURIComponent(email);
+                window.location.href = `/Home/PartnerBookingConfirmation?bookingReference=${encodedReference}&customerEmail=${encodedEmail}`;
+            } else if (data.found) {
                 if (data.isCancelled) {
                     showBookingWarning(data.message);
                 } else if (data.isConfirmed) {

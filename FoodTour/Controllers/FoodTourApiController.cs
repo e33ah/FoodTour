@@ -6,6 +6,7 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
     private const string FH_ITEM_NAME_KEY = "availability.item.name";
     private const string FH_ITEM_NAME_VALUE = "Weymouth Self-Guided Food Tour";
     private const string KEY = "5N8GS1ZZKC8J";
+    private const string PARTNER_BOOKING_CONFIRMATION_MESSAGE = "We found a partner booking for that reference. Please confirm your email address to continue.";
 
     [HttpPost("fhwebhook/newbooking")]
     public async Task<IActionResult> CreateNewBooking([FromBody] JsonElement jsonData, [FromQuery] string key) {
@@ -91,38 +92,32 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             return BadRequest(new { found = false, message = "Email and booking reference are required." });
         }
 
+        string customerEmail = request.CustomerEmail.Trim();
+        string bookingReference = request.PurchaseCode.Trim();
+
         var booking = await context.Bookings
-            .FirstOrDefaultAsync(b => b.CustomerEmail.ToLower() == request.CustomerEmail.ToLower()
-                && (b.PurchaseCode == request.PurchaseCode || b.VoucherNumber == request.PurchaseCode));
-       
-        if (booking == null) {
-            Log.Debug("No booking found for email {Email} and purchase code {PurchaseCode}", request.CustomerEmail, request.PurchaseCode);
-            return Ok(new { found = false, message = "We couldn't find your booking. Please check your booking reference and email address for any typos, or contact support if the problem continues" });
+            .FirstOrDefaultAsync(b => b.CustomerEmail.ToLower() == customerEmail.ToLower()
+                && (b.PurchaseCode == bookingReference || b.VoucherNumber == bookingReference));
+
+        if (booking != null) {
+            Log.Information("Booking {BookingId}: Found for {CustomerEmail} with reference {BookingReference} (IsConfirmed: {IsConfirmed})", booking.Id, booking.CustomerEmail, bookingReference, booking.IsConfirmed);
+            return Ok(CreateBookingLookupResponse(booking));
         }
 
-        if (booking.IsCancelled) {
-            Log.Information("Booking {BookingId}: Found but cancelled for {CustomerEmail} with purchase code {PurchaseCode}", booking.Id, booking.CustomerEmail, booking.PurchaseCode);
+        var partnerBooking = await context.Bookings
+            .FirstOrDefaultAsync(b => b.VoucherNumber == bookingReference);
+
+        if (partnerBooking?.RequiresEmailConfirmation == true) {
+            Log.Information("Booking {BookingId}: Partner booking matched voucher number but requires email confirmation.", partnerBooking.Id);
             return Ok(new {
-                found = true,
-                isCancelled = true,
-                isConfirmed = booking.IsConfirmed,
-                qrToken = booking.QrToken,
-                message = "This booking has been cancelled. Please contact support if you believe this is an error.",
-                bookingId = booking.Id,
-                tourDate = booking.TourDate
+                found = false,
+                requiresPartnerConfirmation = true,
+                message = PARTNER_BOOKING_CONFIRMATION_MESSAGE
             });
         }
 
-        Log.Information("Booking {BookingId}: Found for {CustomerEmail} with purchase code {PurchaseCode} (IsConfirmed: {IsConfirmed})", booking.Id, booking.CustomerEmail, booking.PurchaseCode, booking.IsConfirmed);
-        return Ok(new { 
-            found = true, 
-            isCancelled = false, 
-            isConfirmed = booking.IsConfirmed,
-            qrToken = booking.QrToken,
-            message = "We've found your booking!", 
-            bookingId = booking.Id,
-            tourDate = booking.TourDate
-        });
+        Log.Debug("No booking found for email {Email} and purchase code {PurchaseCode}", customerEmail, bookingReference);
+        return Ok(new { found = false, message = "We couldn't find your booking. Please check your booking reference and email address for any typos, or contact support if the problem continues" });
     }
 
 
@@ -173,6 +168,8 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             PopulateBookingFromJson(bookingElement, field.Key, field.Value, newBooking);
         }
 
+        newBooking.RequiresEmailConfirmation = ShouldRequireEmailConfirmationBeEnabled(newBooking.VoucherNumber);
+
         var validationResults = await ValidateNewBooking(newBooking);
         if (!validationResults.IsValid) {
             LogValidationErrors(newBooking.CustomerEmail, validationResults.ErrorMessages);
@@ -209,11 +206,15 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
     }
 
     private static bool HasBookingChanges(Booking existingBooking, Booking updatedBooking) {
+        string updatedCustomerEmail = GetUpdatedCustomerEmail(existingBooking, updatedBooking);
+        bool updatedRequiresEmailConfirmation = GetUpdatedRequiresEmailConfirmation(existingBooking, updatedBooking);
+
         return existingBooking.TourDate != updatedBooking.TourDate ||
-               existingBooking.CustomerEmail != updatedBooking.CustomerEmail ||
+               existingBooking.CustomerEmail != updatedCustomerEmail ||
                existingBooking.CustomerName != updatedBooking.CustomerName ||
                existingBooking.TotalGuests != updatedBooking.TotalGuests ||
-               existingBooking.VoucherNumber != updatedBooking.VoucherNumber;
+               existingBooking.VoucherNumber != updatedBooking.VoucherNumber ||
+               existingBooking.RequiresEmailConfirmation != updatedRequiresEmailConfirmation;
     }
 
     private async Task ProcessCancelFoodTourBooking(JsonElement bookingElement) {
@@ -418,11 +419,13 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
     }
 
     private async Task UpdateExistingBooking(Booking existingBooking, Booking updatedBooking) {
+        bool updatedRequiresEmailConfirmation = GetUpdatedRequiresEmailConfirmation(existingBooking, updatedBooking);
         existingBooking.TourDate = updatedBooking.TourDate;
-        existingBooking.CustomerEmail = updatedBooking.CustomerEmail;
+        existingBooking.CustomerEmail = GetUpdatedCustomerEmail(existingBooking, updatedBooking);
         existingBooking.CustomerName = updatedBooking.CustomerName;
         existingBooking.TotalGuests = updatedBooking.TotalGuests;
         existingBooking.VoucherNumber = updatedBooking.VoucherNumber;
+        existingBooking.RequiresEmailConfirmation = updatedRequiresEmailConfirmation;
 
         try {
             context.Bookings.Update(existingBooking);
@@ -483,5 +486,57 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         }
         result = default;
         return false;
+    }
+
+    private static bool ShouldRequireEmailConfirmationBeEnabled(string? voucherNumber) {
+        return !string.IsNullOrWhiteSpace(voucherNumber);
+    }
+
+    private static bool GetUpdatedRequiresEmailConfirmation(Booking existingBooking, Booking updatedBooking) {
+        if (!ShouldRequireEmailConfirmationBeEnabled(updatedBooking.VoucherNumber)) {
+            return false;
+        }
+
+        if (ShouldRequireEmailConfirmationBeEnabled(existingBooking.VoucherNumber) && !existingBooking.RequiresEmailConfirmation) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static string GetUpdatedCustomerEmail(Booking existingBooking, Booking updatedBooking) {
+        if (GetUpdatedRequiresEmailConfirmation(existingBooking, updatedBooking)) {
+            return updatedBooking.CustomerEmail;
+        }
+
+        if (ShouldRequireEmailConfirmationBeEnabled(updatedBooking.VoucherNumber)) {
+            return existingBooking.CustomerEmail;
+        }
+
+        return updatedBooking.CustomerEmail;
+    }
+
+    private static object CreateBookingLookupResponse(Booking booking) {
+        if (booking.IsCancelled) {
+            return new {
+                found = true,
+                isCancelled = true,
+                isConfirmed = booking.IsConfirmed,
+                qrToken = booking.QrToken,
+                message = "This booking has been cancelled. Please contact support if you believe this is an error.",
+                bookingId = booking.Id,
+                tourDate = booking.TourDate
+            };
+        }
+
+        return new {
+            found = true,
+            isCancelled = false,
+            isConfirmed = booking.IsConfirmed,
+            qrToken = booking.QrToken,
+            message = "We've found your booking!",
+            bookingId = booking.Id,
+            tourDate = booking.TourDate
+        };
     }
 }

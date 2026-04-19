@@ -1,6 +1,8 @@
 namespace FoodTour.Test;
 
 public static class TestHelper {
+    private static readonly IDataProtectionProvider sharedDataProtectionProvider = new EphemeralDataProtectionProvider();
+
     // Shared test data/constants used across unit tests
     public const int EXPECTED_MAX_SELECTIONS = 5;
     public const string VALID_EMAIL = "customer@test.com";
@@ -64,6 +66,14 @@ public static class TestHelper {
             AdminEmail = ADMIN_EMAIL,
             NotifyOnVisitRecorded = true
         });
+    }
+
+    public static IDataProtectionProvider CreateDataProtectionProvider() {
+        return sharedDataProtectionProvider;
+    }
+
+    public static PartnerBookingConfirmationService CreatePartnerBookingConfirmationService(FoodTourContext context) {
+        return new PartnerBookingConfirmationService(context, CreateDataProtectionProvider());
     }
 
     public static FoodTourContext CreateInMemoryContext() {
@@ -236,7 +246,8 @@ public static class TestHelper {
         var supportOptions = CreateSupportOptions();
         var bookingValidationService = new BookingValidationService(context);
         var bookingUpdateService = new BookingUpdateService(context);
-        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, bookingUpdateService);
+        var partnerBookingConfirmationService = CreatePartnerBookingConfirmationService(context);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, bookingUpdateService, partnerBookingConfirmationService);
     }
 
     public static HomeController CreateHomeController(FoodTourContext context, IEmailSender? emailSender = null) {
@@ -248,7 +259,8 @@ public static class TestHelper {
         var supportOptions = CreateSupportOptions();
         var bookingValidationService = new BookingValidationService(context);
         var bookingUpdateService = new BookingUpdateService(context);
-        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, bookingUpdateService);
+        var partnerBookingConfirmationService = CreatePartnerBookingConfirmationService(context);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, bookingUpdateService, partnerBookingConfirmationService);
     }
 
     public static Mock<IEmailSender> CreateMockEmailSender() {

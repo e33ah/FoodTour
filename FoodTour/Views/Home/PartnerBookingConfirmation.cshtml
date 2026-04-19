@@ -1,0 +1,82 @@
+@model FoodTour.ViewModels.PartnerBookingConfirmationVM
+
+@{
+    ViewData["Title"] = "Confirm your booking email";
+}
+
+<div class="container mt-5">
+    <img src="~/images/logo_with_wording.png" alt="Kabincraft Food Tours Logo" class="img-fluid mb-3 mx-auto d-block page-logo" />
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <h1 class="mb-2">
+                            <span class="text-primary me-2">
+                                <i class="bi bi-envelope" aria-hidden="true"></i>
+                            </span>Confirm your booking email
+                        </h1>
+                    </div>
+
+                    @if (Model.EmailSent) {
+                        <div class="alert alert-success text-center" role="alert">
+                            <i class="bi bi-envelope-check-fill" aria-hidden="true"></i>
+                            We have sent a confirmation email to <strong>@Model.CustomerEmail</strong>. Please use the validation link in that email to continue.
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.LinkErrorMessage)) {
+                        <div class="alert alert-warning text-center" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                            @Model.LinkErrorMessage
+                        </div>
+                    }
+
+                    <div class="d-flex flex-column align-items-center gap-3 text-center">
+                        <div class="flex-grow-1">
+                            <p class="mb-3">
+                                As your booking was made through a partner site, please confirm your email address so we can locate your booking.
+                            </p>
+                            <p class="mb-4">
+                                Your email address will only be used to confirm your tasting experience booking. 
+                                You can find more information about how we process your data in our <a asp-action="Privacy" asp-controller="Home">Privacy Policy</a>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <form asp-action="PartnerBookingConfirmation" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3 text-start">
+                            <label asp-for="CustomerEmail" class="form-label">Email address</label>
+                            <input asp-for="CustomerEmail" class="form-control" autocomplete="email" />
+                            <span asp-validation-for="CustomerEmail" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4 text-start">
+                            <label asp-for="BookingReference" class="form-label">Booking reference</label>
+                            <input asp-for="BookingReference" class="form-control" readonly />
+                            <span asp-validation-for="BookingReference" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-send" aria-hidden="true"></i> Send confirmation email
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <p class="text-muted mb-0">
+                    Need help? Visit our
+                    <a asp-controller="Home" asp-action="UserSupport">Support</a> page.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
