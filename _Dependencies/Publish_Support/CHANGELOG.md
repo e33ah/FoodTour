@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-04-19
+
+### Added
+
+#### Booking Flow
+- Optional voucher number support for booking creation, updates, and lookup
+- Day-specific supplier opening times in the supplier data model and booking experience
+- Supplier opening times that adapt to the looked-up booking's tour date
+
+#### Notifications
+- Support for multiple semicolon-separated supplier email addresses
+- Strongly-typed Razor email templates for booking confirmations and visit notifications
+
+### Changed
+
+- Supplier opening-times messaging now restores the default display when booking lookup feedback is cleared
+- Supplier contact email length restrictions were relaxed to support the updated notification flow
+- Email notification rendering is now centralised for more consistent customer, supplier, and admin emails
+
 ## [1.0.0] - 2026-04-04 Kilimanjaro
 
 ### Added
@@ -53,4 +72,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflow with automated GitHub release creation
 - `IsLocalDeployEnabled` flag for controlling auto-migrations per environment
 
+[1.0.1]: https://github.com/e33ah/FoodTour/releases/tag/v1.0.1
 [1.0.0]: https://github.com/e33ah/FoodTour/releases/tag/v1.0.0
