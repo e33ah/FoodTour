@@ -39,7 +39,7 @@ public class ExampleClass{
 - **Modularity & Maintainability:** Encourage modular design, maintainability, and reusability; follow DRY (Do Not Repeat Yourself) principle.
 - **Explicitness:** Only implement changes explicitly requested.
 - **Testing:** Suggest or include unit tests for new or modified code, covering edge cases and error handling.
-- **Comments:** Use comments sparingly and only when meaningful.
+- **Comments:** Use comments sparingly and only when meaningful. Do not remove comments that have previously been added unless the associated functionality has also been removed.
 - **Verification:** Always ensure that the code compiles and passes existing tests after your changes.
 
 ### Making Edits

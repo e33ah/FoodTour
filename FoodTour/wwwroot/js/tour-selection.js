@@ -212,7 +212,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Booking check functionality
     let validatedBookingId = null;
+    let partnerConfirmationUrl = null;
     const bookingIdInput = document.getElementById('BookingId');
+    const bookingStatusMessage = document.getElementById('bookingStatusMessage');
+    const bookingStatusIcon = document.getElementById('bookingStatusIcon');
+    const bookingStatusText = document.getElementById('bookingStatusText');
+    const partnerConfirmationPrompt = document.getElementById('partnerConfirmationPrompt');
+    const partnerConfirmationMessage = document.getElementById('partnerConfirmationMessage');
+    const partnerConfirmationLink = document.getElementById('partnerConfirmationLink');
+
+    const showBookingMessage = (alertClass, iconClass, message) => {
+        if (bookingStatusMessage && bookingStatusIcon && bookingStatusText) {
+            bookingStatusMessage.className = `alert ${alertClass} mb-4`;
+            bookingStatusIcon.className = `bi ${iconClass}`;
+            bookingStatusText.textContent = ` ${message}`;
+            bookingStatusMessage.classList.remove('d-none');
+        }
+    };
 
     const showBookingSuccess = (message, bookingId) => {
         clearBookingMessages(false);
@@ -220,46 +236,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (bookingIdInput) {
             bookingIdInput.value = bookingId;
         }
-        if (purchaseCodeInput) {
-            const card = purchaseCodeInput.closest('.card');
-            if (card) {
-                const successElement = document.createElement('div');
-                successElement.className = 'alert alert-success mb-4 booking-message';
-                successElement.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${message}`;
-                card.parentNode.insertBefore(successElement, card.nextSibling);
-            }
-        }
+        showBookingMessage('alert-success', 'bi-check-circle-fill', message);
     };
 
     const showBookingWarning = (message) => {
         clearBookingMessages();
-        if (purchaseCodeInput) {
-            const card = purchaseCodeInput.closest('.card');
-            if (card) {
-                const warningElement = document.createElement('div');
-                warningElement.className = 'alert alert-warning mb-4 booking-message';
-                warningElement.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> ${message}`;
-                card.parentNode.insertBefore(warningElement, card.nextSibling);
-            }
-        }
+        showBookingMessage('alert-warning', 'bi-exclamation-triangle-fill', message);
     };
 
-    const clearBookingSuccess = () => {
-        const existingMessage = document.querySelector('.booking-success-message');
-        if (existingMessage) {
-            existingMessage.remove();
+    const showPartnerConfirmationPrompt = (message, confirmationUrl) => {
+        clearBookingMessages();
+        partnerConfirmationUrl = confirmationUrl;
+        if (partnerConfirmationPrompt && partnerConfirmationMessage && partnerConfirmationLink) {
+            partnerConfirmationMessage.innerHTML = `<i class="bi bi-info-circle-fill"></i> ${message}`;
+            partnerConfirmationLink.href = confirmationUrl;
+            partnerConfirmationPrompt.classList.remove('d-none');
         }
     };
 
     const clearBookingMessages = (resetOpeningTimes = true) => {
-        const existingMessage = document.querySelector('.booking-message');
-        if (existingMessage) {
-            existingMessage.remove();
+        if (bookingStatusMessage) {
+            bookingStatusMessage.classList.add('d-none');
         }
-        // Also clear old success messages for backwards compatibility
-        clearBookingSuccess();
+        if (partnerConfirmationPrompt) {
+            partnerConfirmationPrompt.classList.add('d-none');
+        }
         // Clear validated booking ID
         validatedBookingId = null;
+        partnerConfirmationUrl = null;
         if (bookingIdInput) {
             bookingIdInput.value = '';
         }
@@ -323,7 +327,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.requiresPartnerConfirmation) {
                 const encodedReference = encodeURIComponent(purchaseCode);
                 const encodedEmail = encodeURIComponent(email);
-                window.location.href = `/Home/PartnerBookingConfirmation?bookingReference=${encodedReference}&customerEmail=${encodedEmail}`;
+                const confirmationUrl = `/Home/PartnerBookingConfirmation?bookingReference=${encodedReference}&customerEmail=${encodedEmail}`;
+                showPartnerConfirmationPrompt(data.message, confirmationUrl);
             } else if (data.found) {
                 if (data.isCancelled) {
                     showBookingWarning(data.message);
@@ -402,6 +407,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     showPurchaseCodeError('Please enter your booking reference to validate your booking.');
                     purchaseCodeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     purchaseCodeInput.focus();
+                } else if (partnerConfirmationUrl) {
+                    showPartnerConfirmationPrompt('We\'ve located your booking through one of our partner sites.  Please confirm your email address to continue.', partnerConfirmationUrl);
+                    emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    emailInput.focus();
                 } else {
                     // Both fields have values but booking not found
                     showBookingWarning('We couldn\'t find your booking. Please check your email and booking reference are correct.');

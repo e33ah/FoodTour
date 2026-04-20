@@ -1,7 +1,7 @@
 @model FoodTour.ViewModels.PartnerBookingConfirmationVM
 
 @{
-    ViewData["Title"] = "Confirm your booking email";
+    ViewData["Title"] = "Confirm your email";
 }
 
 <div class="container mt-5">
@@ -14,7 +14,7 @@
                         <h1 class="mb-2">
                             <span class="text-primary me-2">
                                 <i class="bi bi-envelope" aria-hidden="true"></i>
-                            </span>Confirm your booking email
+                            </span>Confirm your email
                         </h1>
                     </div>
 
@@ -36,33 +36,42 @@
                             <p class="mb-3">
                                 As your booking was made through a partner site, please confirm your email address so we can locate your booking.
                             </p>
-                            <p class="mb-4">
-                                Your email address will only be used to confirm your tasting experience booking. 
-                                You can find more information about how we process your data in our <a asp-action="Privacy" asp-controller="Home">Privacy Policy</a>.
-                            </p>
                         </div>
                     </div>
 
                     <form asp-action="PartnerBookingConfirmation" method="post">
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                        <div class="mb-3 text-start">
-                            <label asp-for="CustomerEmail" class="form-label">Email address</label>
-                            <input asp-for="CustomerEmail" class="form-control" autocomplete="email" />
+                        <div class="mt-2 mb-3 text-start">
+                            <h3 class="card-title mb-2 text-center">
+                                <i class="bi bi-send text-primary"></i> Email
+                            </h3>
+                            <label asp-for="CustomerEmail" class="form-label visually-hidden">Email</label>
+                            <input asp-for="CustomerEmail" class="form-control" autocomplete="email" placeholder="your.email@example.com" />
                             <span asp-validation-for="CustomerEmail" class="text-danger"></span>
                         </div>
 
-                        <div class="mb-4 text-start">
-                            <label asp-for="BookingReference" class="form-label">Booking reference</label>
-                            <input asp-for="BookingReference" class="form-control" readonly />
+                        <div class="mt-4 mb-4 text-start">
+                            <h3 class="card-title mb-2 text-center">
+                                <i class="bi bi-hash text-primary"></i> Booking Reference
+                            </h3>
+                            <label asp-for="BookingReference" class="form-label visually-hidden">Booking Reference</label>
+                            <div class="d-flex justify-content-center">
+                                <span class="input-group-text bg-transparent text-muted">#</span>
+                                <input asp-for="BookingReference" class="form-control w-auto" style="max-width: 220px;" readonly />
+                            </div>
                             <span asp-validation-for="BookingReference" class="text-danger"></span>
                         </div>
 
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-send" aria-hidden="true"></i> Send confirmation email
+                                <i aria-hidden="true"></i> Send confirmation email
                             </button>
                         </div>
+
+                        <p class="text-muted small text-center mt-3 mb-0">
+                            Your email will only be used to confirm your booking. See our <a asp-action="Privacy" asp-controller="Home">Privacy Policy</a>.
+                        </p>
                     </form>
                 </div>
             </div>
