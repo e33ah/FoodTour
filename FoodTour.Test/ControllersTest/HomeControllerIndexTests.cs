@@ -97,23 +97,6 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
     }
 
     [Fact]
-    public async Task Index_PopulatesVoucherReference_WhenBookingReferenceProvided() {
-        var qrToken = Guid.NewGuid();
-        var context = TestHelper.CreateContextWithActiveSuppliersCount(3);
-        var booking = await TestHelper.CreateBookingInDatabase(context, selectedSupplierIds: [1, 2, 3]);
-        booking.QrToken = qrToken;
-        booking.VoucherNumber = TestHelper.VALID_VOUCHER;
-        await context.SaveChangesAsync(CancellationToken);
-        var sut = TestHelper.CreateHomeController(context);
-
-        var result = await sut.Index(qrToken, TestHelper.VALID_VOUCHER);
-
-        var viewResult = result.ShouldBeOfType<ViewResult>();
-        var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
-        model.PurchaseCode.ShouldBe(TestHelper.VALID_VOUCHER);
-    }
-
-    [Fact]
     public async Task Index_HandlesEmptyQrToken_WithoutErrors() {
         var context = TestHelper.CreateInMemoryContext();
         var sut = TestHelper.CreateHomeController(context);

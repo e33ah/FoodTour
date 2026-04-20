@@ -7,7 +7,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     private readonly QrImageService qrImageService = new();
     private readonly SupportSettings supportSettings = supportOptions.Value;
 
-    public async Task<IActionResult> Index(Guid? qrToken, string? bookingReference = null) {
+    public async Task<IActionResult> Index(Guid? qrToken) {
         var model = await CreateFoodTourViewModel();
 
         if (model.Suppliers.Count == 0) {
@@ -17,7 +17,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             Log.Warning("Insufficient active suppliers: {SupplierCount} found, {RequiredCount} required.", model.Suppliers.Count, MAX_SUPPLIER_SELECTIONS);
         }
 
-        await PopulateFormFromQrTokenAsync(qrToken, model, bookingReference);
+        await PopulateFormFromQrTokenAsync(qrToken, model);
 
         return View(model);
     }
@@ -399,7 +399,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         return generatedUrl;
     }
 
-    private async Task PopulateFormFromQrTokenAsync(Guid? qrToken, FoodTourVM model, string? bookingReference) {
+    private async Task PopulateFormFromQrTokenAsync(Guid? qrToken, FoodTourVM model) {
         if (!qrToken.HasValue || qrToken.Value == Guid.Empty) {
             return;
         }
@@ -411,7 +411,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
         model.SelectedSuppliers = booking.SelectedSupplierIds;
         model.CustomerEmail = booking.CustomerEmail;
-        model.PurchaseCode = string.IsNullOrWhiteSpace(bookingReference) ? booking.PurchaseCode : bookingReference;
+        model.PurchaseCode = !string.IsNullOrWhiteSpace(booking.VoucherNumber) ? booking.VoucherNumber : booking.PurchaseCode;
         model.TourDate = booking.TourDate;
 
         Log.Debug("Index: Populated form from booking {BookingId} using QR token.", booking.Id);
