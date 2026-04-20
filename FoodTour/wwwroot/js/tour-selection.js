@@ -217,9 +217,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookingStatusMessage = document.getElementById('bookingStatusMessage');
     const bookingStatusIcon = document.getElementById('bookingStatusIcon');
     const bookingStatusText = document.getElementById('bookingStatusText');
+    const bookingConfirmedModalElement = document.getElementById('bookingConfirmedModal');
+    const viewTourDetailsLink = document.getElementById('viewTourDetailsLink');
     const partnerConfirmationPrompt = document.getElementById('partnerConfirmationPrompt');
     const partnerConfirmationMessage = document.getElementById('partnerConfirmationMessage');
     const partnerConfirmationLink = document.getElementById('partnerConfirmationLink');
+    const bookingConfirmedModal = bookingConfirmedModalElement ? bootstrap.Modal.getOrCreateInstance(bookingConfirmedModalElement) : null;
+    // Tracks the booking key for the confirmation modal that is currently displayed.
+    let activeConfirmedBookingKey = null;
+    // Tracks the booking key for the most recently dismissed confirmation modal to prevent it from being shown again for the same booking.
+    let dismissedConfirmedBookingKey = null;
+
+    if (bookingConfirmedModalElement) {
+        bookingConfirmedModalElement.addEventListener('hidden.bs.modal', () => {
+            dismissedConfirmedBookingKey = activeConfirmedBookingKey;
+            activeConfirmedBookingKey = null;
+        });
+    }
 
     const showBookingMessage = (alertClass, iconClass, message) => {
         if (bookingStatusMessage && bookingStatusIcon && bookingStatusText) {
@@ -272,17 +286,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const showBookingConfirmedModal = (qrToken) => {
-        const modal = document.getElementById('bookingConfirmedModal');
-        const viewTourDetailsLink = document.getElementById('viewTourDetailsLink');
+    const showBookingConfirmedModal = (email, purchaseCode, qrToken) => {
+        const normalisedEmail = email?.trim().toLowerCase();
+        const normalisedPurchaseCode = purchaseCode?.trim();
+        const confirmedBookingKey = `${normalisedEmail}|${normalisedPurchaseCode}|${qrToken}`;
 
-        if (modal && viewTourDetailsLink) {
-            // Set the link URL with the qrToken
+        if (bookingConfirmedModal && bookingConfirmedModalElement && viewTourDetailsLink) {
+            if (dismissedConfirmedBookingKey === confirmedBookingKey) {
+                return;
+            }
+
+            if (activeConfirmedBookingKey === confirmedBookingKey && bookingConfirmedModalElement.classList.contains('show')) {
+                return;
+            }
+
             viewTourDetailsLink.href = `/Home/FoodTourCode?qrToken=${qrToken}`;
-
-            // Show the modal using Bootstrap 5 API
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
+            activeConfirmedBookingKey = confirmedBookingKey;
+            dismissedConfirmedBookingKey = null;
+            bookingConfirmedModal.show();
         }
     };
 
@@ -334,8 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showBookingWarning(data.message);
                 } else if (data.isConfirmed) {
                     applyTourDateOpeningTimes(data.tourDate);
-                    // Show modal for confirmed booking
-                    showBookingConfirmedModal(data.qrToken);
+                    showBookingConfirmedModal(email, purchaseCode, data.qrToken);
                 } else {
                     showBookingSuccess(data.message, data.bookingId);
                     applyTourDateOpeningTimes(data.tourDate);
