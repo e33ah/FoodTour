@@ -146,7 +146,27 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
     }
 
     [Fact]
-    public async Task Index_Post_ReturnsViewWithError_WhenBookingIsAlreadyConfirmed() {
+    public async Task Index_Post_ReturnsViewWithErrorAndPreservesEnteredDetails_WhenBookingIdIsInvalid() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var sut = CreateConfiguredController(context);
+        sut.ControllerContext.HttpContext.Request.Form = new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues> {
+            ["customerEmail"] = TestHelper.VALID_EMAIL,
+            ["purchaseCode"] = TestHelper.VALID_CODE
+        });
+        var selectedSuppliers = new List<int> { 1, 2, 3, 4, 5 };
+
+        var result = await sut.Index(0, selectedSuppliers);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourVM>();
+        model.CustomerEmail.ShouldBe(TestHelper.VALID_EMAIL);
+        model.PurchaseCode.ShouldBe(TestHelper.VALID_CODE);
+        sut.ModelState.ContainsKey(string.Empty).ShouldBeTrue();
+        sut.ModelState[string.Empty]!.Errors[0].ErrorMessage.ShouldContain("could not be validated");
+    }
+
+    [Fact]
+    public async Task Index_Post_RedirectsToFoodTourCode_WhenBookingIsAlreadyConfirmed() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
         var booking = TestHelper.CreateValidBooking([1, 2, 3, 4, 5]);
         booking.IsConfirmed = true;
@@ -156,12 +176,52 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
         var selectedSuppliers = new List<int> { 1, 2, 3, 4, 5 };
 
         var result = await sut.Index(booking.Id, selectedSuppliers);
-        _ = result.ShouldBeOfType<ViewResult>();
-        sut.ModelState.ContainsKey("BookingAlreadyConfirmed").ShouldBeTrue();
-        string? errorMessage = sut.ModelState["BookingAlreadyConfirmed"]?.Errors[0].ErrorMessage;
-        errorMessage.ShouldNotBeNull();
-        errorMessage.ShouldContain("Tasting experiences have already been selected for this tour");
-        errorMessage.ShouldContain("View your tour details");
-        errorMessage.ShouldContain("contact support");
+
+        var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
+        redirectResult.ActionName.ShouldBe(nameof(HomeController.FoodTourCode));
+        redirectResult.RouteValues.ShouldNotBeNull();
+        redirectResult.RouteValues["qrToken"].ShouldBe(booking.QrToken);
+    }
+
+    [Fact]
+    public async Task Index_Post_RedirectsToTourCompleted_WhenBookingIsAlreadyConfirmedAndAllVisitsAreClaimed() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var booking = TestHelper.CreateValidBooking([1, 2, 3, 4, 5]);
+        booking.IsConfirmed = true;
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync(CancellationToken);
+        context.Visits.AddRange(booking.SelectedSupplierIds.Select(supplierId => new Visit {
+            BookingId = booking.Id,
+            SupplierId = supplierId,
+            IsClaimed = true
+        }));
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateConfiguredController(context);
+        var selectedSuppliers = new List<int> { 1, 2, 3, 4, 5 };
+
+        var result = await sut.Index(booking.Id, selectedSuppliers);
+
+        var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
+        redirectResult.ActionName.ShouldBe(nameof(HomeController.TourCompleted));
+    }
+
+    [Fact]
+    public async Task Index_Post_RedirectsToTourCancelled_WhenBookingIsCancelled() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var booking = TestHelper.CreateValidBooking([1, 2, 3, 4, 5]);
+        booking.IsCancelled = true;
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateConfiguredController(context);
+        var selectedSuppliers = new List<int> { 1, 2, 3, 4, 5 };
+
+        var result = await sut.Index(booking.Id, selectedSuppliers);
+
+        var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
+        redirectResult.ActionName.ShouldBe(nameof(HomeController.TourCancelled));
+        redirectResult.RouteValues.ShouldNotBeNull();
+        redirectResult.RouteValues["customerEmail"].ShouldBe(booking.CustomerEmail);
+        redirectResult.RouteValues["tourDate"].ShouldBe(booking.TourDate);
+        redirectResult.RouteValues["purchaseCode"].ShouldBe(booking.PurchaseCode);
     }
 }

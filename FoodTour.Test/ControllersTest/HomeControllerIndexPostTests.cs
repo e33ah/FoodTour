@@ -41,11 +41,11 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         result.ShouldBeOfType<ViewResult>();
         sut.ModelState.IsValid.ShouldBeFalse();
         sut.ModelState[string.Empty]!.Errors.ShouldHaveSingleItem();
-        sut.ModelState[string.Empty]!.Errors[0].ErrorMessage.ShouldBe("Your booking could not be found or has been cancelled. Please verify your details.");
+        sut.ModelState[string.Empty]!.Errors[0].ErrorMessage.ShouldBe("Your booking could not be found. Please verify your details.");
     }
 
     [Fact]
-    public async Task Index_ReturnsBadRequest_WhenBookingIsCancelled() {
+    public async Task Index_RedirectsToTourCancelled_WhenBookingIsCancelled() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
         var booking = await TestHelper.CreateBookingInDatabase(context);
         booking.IsCancelled = true;
@@ -55,10 +55,12 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
 
         var result = await sut.Index(booking.Id, selectedSuppliers);
 
-        result.ShouldBeOfType<ViewResult>();
-        sut.ModelState.IsValid.ShouldBeFalse();
-        sut.ModelState[string.Empty]!.Errors.ShouldHaveSingleItem();
-        sut.ModelState[string.Empty]!.Errors[0].ErrorMessage.ShouldBe("Your booking could not be found or has been cancelled. Please verify your details.");
+        var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
+        redirectResult.ActionName.ShouldBe(nameof(HomeController.TourCancelled));
+        redirectResult.RouteValues.ShouldNotBeNull();
+        redirectResult.RouteValues["customerEmail"].ShouldBe(booking.CustomerEmail);
+        redirectResult.RouteValues["tourDate"].ShouldBe(booking.TourDate);
+        redirectResult.RouteValues["purchaseCode"].ShouldBe(booking.PurchaseCode);
     }
 
     [Fact]

@@ -23,12 +23,18 @@
 	<div class="container">
 		<div class="row justify-content-center">
 			<div class="col-md-8 col-lg-6">
-				@if (ViewData.ModelState.ContainsKey("BookingAlreadyConfirmed")) {
-					<div class="alert alert-info alert-dismissible fade show" role="alert">
-						<i class="bi bi-info-circle-fill"></i>
-						<strong>Booking Already Confirmed</strong>
-						<div class="mt-2">
-							@Html.Raw(ViewData.ModelState["BookingAlreadyConfirmed"]!.Errors[0].ErrorMessage)
+				@if (ViewData.ModelState.TryGetValue(string.Empty, out var generalErrors) && generalErrors.Errors.Count > 0) {
+					<div class="alert alert-warning alert-dismissible fade show text-start" role="alert">
+						<div class="d-flex">
+							<i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+							<div>
+								<strong>We couldn't create your tour</strong>
+								<ul class="mb-0 mt-2 ps-3">
+									@foreach (var error in generalErrors.Errors.Where(error => !string.IsNullOrWhiteSpace(error.ErrorMessage))) {
+										<li>@Html.Raw(error.ErrorMessage)</li>
+									}
+								</ul>
+							</div>
 						</div>
 						<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 					</div>

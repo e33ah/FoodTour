@@ -60,6 +60,37 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
     }
 
     [Fact]
+    public async Task FoodTourCode_ReturnsCompletedState_WhenTourDateIsYesterday() {
+        var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+        var booking = TestHelper.CreateValidBooking([1]);
+        booking.TourDate = DateTime.Today.AddDays(-1);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        var sut = CreateConfiguredController(context);
+
+        var result = await sut.FoodTourCode(booking.QrToken);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourCodeVM>();
+        model.QrToken.ShouldBe(booking.QrToken);
+        model.AllVisitsClaimed.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task FoodTourCode_ReturnsViewResult_WhenTourDateIsToday() {
+        var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
+        var booking = TestHelper.CreateValidBooking([1]);
+        booking.TourDate = DateTime.Today.AddHours(11);
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        var sut = CreateConfiguredController(context);
+
+        var result = await sut.FoodTourCode(booking.QrToken);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        var model = viewResult.Model.ShouldBeOfType<FoodTourCodeVM>();
+        model.QrToken.ShouldBe(booking.QrToken);
+    }
+
+    [Fact]
     public async Task FoodTourCode_SetsAllVisitsClaimedFalse_WhenNoVisitsExist() {
         var supplier = TestHelper.CreateSupplier(1, "Tasty Treats", true);
         var booking = TestHelper.CreateValidBooking([1]);

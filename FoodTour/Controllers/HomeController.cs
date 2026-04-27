@@ -25,13 +25,13 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Index(int bookingId, List<int> selectedSuppliers) {
-        var booking = await TryGetValidBookingAsync(bookingId);
+        var booking = await TryGetBookingAsync(bookingId);
         if (booking == null) {
             return await CreateIndexViewWithErrorsAsync(selectedSuppliers);
         }
 
-        if (!ValidateBookingNotAlreadyConfirmed(booking)) {
-            return await CreateIndexViewWithErrorsAsync(selectedSuppliers, booking.TourDate);
+        if (booking.IsCancelled || booking.IsConfirmed) {
+            return await CreateExistingBookingResultAsync(booking);
         }
 
         if (!await ValidateSupplierSelectionsAsync(booking, selectedSuppliers)) {
@@ -180,7 +180,11 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         }
 
         var tourSuppliers = await GetSelectedSuppliersAsync(booking);
-        bool allVisitsClaimed = await AreAllVisitsClaimedAsync(booking.Id);
+        bool tourIsInPast = booking.TourDate.Date < DateTime.Today;
+        bool allVisitsClaimed = tourIsInPast || await AreAllVisitsClaimedAsync(booking.Id);
+        if (tourIsInPast) {
+            Log.Information("FoodTourCode: Booking {BookingId} tour date {TourDate:dd/MM/yyyy} is in the past, showing completed state on QR page.", booking.Id, booking.TourDate);
+        }
         var model = CreateFoodTourCodeViewModel(booking, tourSuppliers, allVisitsClaimed);
 
         return View(model);
@@ -353,7 +357,11 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
     private async Task<IActionResult> CreateIndexViewWithErrorsAsync(List<int> selectedSuppliers, DateTime? tourDate = null) {
         var model = await CreateFoodTourViewModel(tourDate);
         model.SelectedSuppliers = selectedSuppliers;
-        return View(model);
+        if (Request.HasFormContentType) {
+            model.CustomerEmail = Request.Form["customerEmail"].ToString();
+            model.PurchaseCode = Request.Form["purchaseCode"].ToString();
+        }
+        return View("Index", model);
     }
 
     private static string GetInsufficientSuppliersMessage(int supplierCount) {
@@ -417,7 +425,26 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         Log.Debug("Index: Populated form from booking {BookingId} using QR token.", booking.Id);
     }
 
-    private async Task<Booking?> TryGetValidBookingAsync(int bookingId) {
+    private async Task<IActionResult> CreateExistingBookingResultAsync(Booking booking) {
+        if (booking.IsCancelled) {
+            Log.Information("Index POST: Booking {BookingId} is cancelled, redirecting to cancelled page.", booking.Id);
+            return RedirectToAction("TourCancelled", new {
+                customerEmail = booking.CustomerEmail,
+                tourDate = booking.TourDate,
+                purchaseCode = booking.PurchaseCode
+            });
+        }
+
+        if (await AreAllVisitsClaimedAsync(booking.Id)) {
+            Log.Information("Index POST: Booking {BookingId} has completed all visits, redirecting to completed page.", booking.Id);
+            return RedirectToAction("TourCompleted");
+        }
+
+        Log.Information("Index POST: Booking {BookingId} is already confirmed, redirecting to tour details.", booking.Id);
+        return RedirectToAction("FoodTourCode", new { qrToken = booking.QrToken });
+    }
+
+    private async Task<Booking?> TryGetBookingAsync(int bookingId) {
         if (bookingId <= 0) {
             Log.Warning("Index POST called with invalid or missing booking ID: {BookingId}", bookingId);
             ModelState.AddModelError(string.Empty, "Your booking could not be validated. Please enter your email and booking reference.");
@@ -425,11 +452,11 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         }
 
         var booking = await context.Bookings
-            .FirstOrDefaultAsync(b => b.Id == bookingId && !b.IsCancelled);
+            .FirstOrDefaultAsync(b => b.Id == bookingId);
 
         if (booking == null) {
-            Log.Warning("Index POST could not find active booking with ID: {BookingId}", bookingId);
-            ModelState.AddModelError(string.Empty, "Your booking could not be found or has been cancelled. Please verify your details.");
+            Log.Warning("Index POST could not find booking with ID: {BookingId}", bookingId);
+            ModelState.AddModelError(string.Empty, "Your booking could not be found. Please verify your details.");
             return null;
         }
 
@@ -470,19 +497,6 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
         }
 
         return true;
-    }
-
-    private bool ValidateBookingNotAlreadyConfirmed(Booking booking) {
-        if (!booking.IsConfirmed) {
-            return true;
-        }
-
-        Log.Information("Index POST: Booking {BookingId} is already confirmed. User attempted to reselect suppliers.", booking.Id);
-        string foodTourCodeUrl = GenerateUrl("FoodTourCode", new { qrToken = booking.QrToken });
-        string supportUrl = GenerateUrl("UserSupport");
-        ModelState.AddModelError("BookingAlreadyConfirmed", 
-            $"Tasting experiences have already been selected for this tour. <a href='{foodTourCodeUrl}' class='alert-link'>View your tour details</a> or <a href='{supportUrl}' class='alert-link'>contact support</a> if you need assistance.");
-        return false;
     }
 
     private async Task<bool> ValidateSupplierExistenceAsync(int bookingId, List<int> selectedSuppliers) {
