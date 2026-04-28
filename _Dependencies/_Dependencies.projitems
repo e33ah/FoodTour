@@ -9,10 +9,8 @@
     <Import_RootNamespace>_Dependencies</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)Publish_Support\CHANGELOG.md" />
     <None Include="$(MSBuildThisFileDirectory)Sample_Data\Suppliers.sql" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)Publish_Support\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="$(MSBuildThisFileDirectory)Sample_Data\BookingData.json" />
