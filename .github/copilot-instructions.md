@@ -113,3 +113,8 @@ would fix the issues. If you do not find any issues then state that no issues we
 ### Configuration
 - **Environment-specific:** Use `appsettings.Development.json` for development-specific settings.
 - **Secrets:** Never commit connection strings with real credentials; use user secrets or environment variables.
+
+### Documentation and Release Notes
+- **Changelog Updates:** For requests to update the changelog or prepare release notes, use the `update-changelog` skill.
+- **Changelog File:** The repository changelog to update is `_Dependencies\Publish_Support\CHANGELOG.md`.
+- **Changelog Process:** Review all commits since the last tag first, provide that review to the user, ask before continuing if there are significant concerns, and otherwise assume the next version is a patch release.
