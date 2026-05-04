@@ -8,6 +8,7 @@ public sealed class BookingSelectionPage(IPage page) {
     private const string CREATE_TOUR_BUTTON = "Create My Tour";
     private const string CUSTOMER_EMAIL_LABEL = "Email Address";
     private const string FOOD_TOUR_PAGE_HEADING = "Weymouth Self-Guided Tasting Tour";
+    private const string PARTNER_CONFIRMATION_LINK = "Confirm email";
     private const string SELECT_SUPPLIER_LABEL_TEMPLATE = "Select {0}";
     private const string VIEW_YOUR_TOUR_DETAILS_LINK = "View Your Tour Details";
 
@@ -26,6 +27,10 @@ public sealed class BookingSelectionPage(IPage page) {
     public ILocator CustomerEmailInput => page.GetByLabel(CUSTOMER_EMAIL_LABEL);
 
     public ILocator PageHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = FOOD_TOUR_PAGE_HEADING });
+
+    public ILocator PartnerConfirmationLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions {
+        Name = PARTNER_CONFIRMATION_LINK
+    });
 
     public ILocator PurchaseCodeInput => page.GetByLabel(BOOKING_REFERENCE_LABEL);
 
