@@ -30,7 +30,7 @@ public class FoodTourApiControllerHelperMethodsTests {
             TotalGuests = updatedGuests
         };
 
-        var hasChanges = HasBookingChangesPublic(existingBooking, updatedBooking);
+        bool hasChanges = HasBookingChangesPublic(existingBooking, updatedBooking);
 
         hasChanges.ShouldBe(expectedHasChanges);
     }
@@ -51,7 +51,7 @@ public class FoodTourApiControllerHelperMethodsTests {
             TotalGuests = 4
         };
 
-        var hasChanges = HasBookingChangesPublic(existingBooking, updatedBooking);
+        bool hasChanges = HasBookingChangesPublic(existingBooking, updatedBooking);
 
         hasChanges.ShouldBeTrue();
     }
@@ -72,7 +72,7 @@ public class FoodTourApiControllerHelperMethodsTests {
             TotalGuests = 2
         };
 
-        var hasChanges = HasBookingChangesPublic(existingBooking, updatedBooking);
+        bool hasChanges = HasBookingChangesPublic(existingBooking, updatedBooking);
 
         hasChanges.ShouldBeFalse();
     }
@@ -106,7 +106,7 @@ public class FoodTourApiControllerHelperMethodsTests {
         var result = NavigateJsonPathPublic(rootElement, jsonPath);
 
         result.ShouldNotBeNull();
-        var actualValue = result.Value.ValueKind == JsonValueKind.String 
+        string? actualValue = result.Value.ValueKind == JsonValueKind.String 
             ? result.Value.GetString() 
             : result.Value.GetRawText();
         actualValue.ShouldBe(expectedValue);
@@ -185,7 +185,7 @@ public class FoodTourApiControllerHelperMethodsTests {
         var rootElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
         var element = rootElement.GetProperty("value");
 
-        var result = ExtractStringValuePublic(element);
+        string result = ExtractStringValuePublic(element);
 
         result.ShouldBe(expectedResult);
     }
@@ -201,7 +201,7 @@ public class FoodTourApiControllerHelperMethodsTests {
         var rootElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
         var element = rootElement.GetProperty("value");
 
-        var success = TryParseDateTimePublic(element, out var result);
+        bool success = TryParseDateTimePublic(element, out var result);
 
         success.ShouldBe(expectedSuccess);
         if (expectedSuccess) {
@@ -222,7 +222,7 @@ public class FoodTourApiControllerHelperMethodsTests {
         var rootElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
         var element = rootElement.GetProperty("value");
 
-        var success = TryParseIntPublic(element, out var result);
+        bool success = TryParseIntPublic(element, out int result);
 
         success.ShouldBe(expectedSuccess);
         result.ShouldBe(expectedValue);
@@ -239,7 +239,7 @@ public class FoodTourApiControllerHelperMethodsTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = ValidateJsonDataPublic(jsonElement);
+        object result = ValidateJsonDataPublic(jsonElement);
 
         result.GetType().GetProperty("IsValid")!.GetValue(result).ShouldBe(true);
     }
@@ -248,7 +248,7 @@ public class FoodTourApiControllerHelperMethodsTests {
     public void ValidateJsonData_ReturnsInvalid_WhenJsonIsNull() {
         var jsonElement = new JsonElement();
 
-        var result = ValidateJsonDataPublic(jsonElement);
+        object result = ValidateJsonDataPublic(jsonElement);
 
         result.GetType().GetProperty("IsValid")!.GetValue(result).ShouldBe(false);
     }
@@ -266,7 +266,7 @@ public class FoodTourApiControllerHelperMethodsTests {
             """;
         var bookingElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = IsWeymouthTourBookingPublic(bookingElement);
+        bool result = IsWeymouthTourBookingPublic(bookingElement);
 
         result.ShouldBeTrue();
     }
@@ -287,7 +287,7 @@ public class FoodTourApiControllerHelperMethodsTests {
             """;
         var bookingElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = IsWeymouthTourBookingPublic(bookingElement);
+        bool result = IsWeymouthTourBookingPublic(bookingElement);
 
         result.ShouldBeFalse();
     }
@@ -303,7 +303,7 @@ public class FoodTourApiControllerHelperMethodsTests {
             """;
         var bookingElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = IsWeymouthTourBookingPublic(bookingElement);
+        bool result = IsWeymouthTourBookingPublic(bookingElement);
 
         result.ShouldBeFalse();
     }
@@ -330,8 +330,8 @@ public class FoodTourApiControllerHelperMethodsTests {
     private static bool TryParseDateTimePublic(JsonElement element, out DateTime result) {
         var method = typeof(FoodTourApiController).GetMethod("TryParseDateTime",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var parameters = new object[] { element, null! };
-        var success = (bool)method!.Invoke(null, parameters)!;
+        object[] parameters = [element, null!];
+        bool success = (bool)method!.Invoke(null, parameters)!;
         result = (DateTime)parameters[1];
         return success;
     }
@@ -339,8 +339,8 @@ public class FoodTourApiControllerHelperMethodsTests {
     private static bool TryParseIntPublic(JsonElement element, out int result) {
         var method = typeof(FoodTourApiController).GetMethod("TryParseInt",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var parameters = new object[] { element, 0 };
-        var success = (bool)method!.Invoke(null, parameters)!;
+        object[] parameters = [element, 0];
+        bool success = (bool)method!.Invoke(null, parameters)!;
         result = (int)parameters[1];
         return success;
     }
