@@ -3,6 +3,7 @@ namespace FoodTour.ITest.UI.Tests;
 [Collection("FoodTour application")]
 public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) {
     private const string BOOKING_CONFIRMATION_URL_PATTERN = "**/Home/BookingConfirmation?*";
+    private const string BOOKING_NOT_FOUND_MESSAGE = "We couldn't find your booking.";
     private const string FOOD_TOUR_CODE_PATH_TEMPLATE = "/Home/FoodTourCode?qrToken={0}";
     private const string FOOD_TOUR_CODE_URL_PATTERN_TEMPLATE = "**/Home/FoodTourCode?qrToken={0}";
     private const string BOOKING_SUMMARY_PATH = "/Home/BookingSummary";
@@ -65,6 +66,18 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) {
         var foodTourQrCodePage = new FoodTourQRCodePage(page);
 
         await Expect(foodTourQrCodePage.TourSummaryHeading).ToBeVisibleAsync();
+    }
+
+    [Fact]
+    public async Task EnterBooking_ShowsWarning_WhenBookingCannotBeFound() {
+        await using var browserContext = await fixture.CreateBrowserContextAsync();
+        var page = await browserContext.NewPageAsync();
+        var sut = new BookingSelectionPage(page);
+
+        await sut.GotoAsync();
+        await sut.EnterBookingLookupDetailsAsync("missing.booking@example.com", "NOT-A-REAL-BOOKING");
+
+        await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_NOT_FOUND_MESSAGE);
     }
 
 }

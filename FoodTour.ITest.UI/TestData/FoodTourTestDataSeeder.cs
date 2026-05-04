@@ -9,7 +9,7 @@ public static class FoodTourTestDataSeeder {
     private static readonly DateTime confirmedBookingFutureTourDate = CreateUtcDateTime(2035, 06, 13, 12, 00, 00);
     private static readonly DateTime cancelledBookingFutureTourDate = CreateUtcDateTime(2035, 06, 14, 12, 00, 00);
     private static readonly DateTime completedPastTourDate = CreateUtcDateTime(2024, 02, 14, 19, 00, 00);
-    private static readonly DateTime supplierVisitFutureTourDate = CreateUtcDateTime(2035, 06, 16, 13, 00, 00);
+    private static readonly DateTime supplierVisitCurrentTourDate = CreateCurrentLocalTourDate(13, 00, 00);
     private static readonly DateTime partnerConfirmationFutureTourDate = CreateUtcDateTime(2035, 06, 11, 11, 15, 00);
     private static readonly Guid sunnyBakerQrToken = Guid.Parse("3FA85F64-5717-4562-B3FC-2C963F66AFA6");
     private static readonly Guid lunaRiversQrToken = Guid.Parse("8B5C1F29-A347-4D21-9E8A-7F3B2D4E6C8A");
@@ -75,8 +75,8 @@ public static class FoodTourTestDataSeeder {
         PurchaseCode: "123123132",
         VoucherNumber: null,
         QrToken: cloverGreeneQrToken,
-        TourDate: supplierVisitFutureTourDate,
-        CreatedAt: CreateBookingCreatedAt(supplierVisitFutureTourDate),
+        TourDate: supplierVisitCurrentTourDate,
+        CreatedAt: CreateBookingCreatedAt(supplierVisitCurrentTourDate),
         TotalGuests: 6,
         IsConfirmed: true,
         IsCancelled: false,
@@ -325,6 +325,15 @@ public static class FoodTourTestDataSeeder {
 
     private static DateTime CreateUtcDateTime(int year, int month, int day, int hour, int minute, int second) {
         return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
+    }
+
+    private static DateTime CreateCurrentLocalTourDate(int hour, int minute, int second) {
+        var currentLocalTourDate = DateTime.Today
+            .AddHours(hour)
+            .AddMinutes(minute)
+            .AddSeconds(second);
+
+        return DateTime.SpecifyKind(currentLocalTourDate, DateTimeKind.Utc);
     }
 
     private static DateTime CreateBookingCreatedAt(DateTime tourDate) {

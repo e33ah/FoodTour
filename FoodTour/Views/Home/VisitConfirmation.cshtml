@@ -16,7 +16,7 @@
 
 					<p>Thank you, your customer's Food Tour visit has been recorded!</p>
 
-					<div class="alert alert-success mb-3">
+					<div class="alert alert-success mb-3" role="alert" aria-live="polite" aria-atomic="true">
 						Please prepare <strong>@Model.TastingExperiencesClaimed</strong> tasting experience@(Model.TastingExperiencesClaimed != 1 ? "s" : "") for the customer
 						<!--Hidden as requested by Kabincraft - may be redisplayed if business rules change-->
 						<!--@if (Model.TastingExperiencesClaimed < Model.TotalGuests) {
