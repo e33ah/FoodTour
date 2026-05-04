@@ -28,17 +28,21 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) {
 
         await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
         page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
-        await Expect(sut.SummaryHeading).ToBeVisibleAsync();
+        var bookingSummaryPage = new BookingSummaryPage(page);
+
+        await Expect(bookingSummaryPage.SummaryHeading).ToBeVisibleAsync();
 
         foreach (var supplier in selectedSuppliers) {
-            await Expect(sut.SelectedSupplier(supplier.Name)).ToBeVisibleAsync();
+            await Expect(bookingSummaryPage.SelectedSupplier(supplier.Name)).ToBeVisibleAsync();
         }
 
-        await sut.ConfirmBookingButton.ClickAsync();
+        await bookingSummaryPage.ConfirmBookingButton.ClickAsync();
 
         await page.WaitForURLAsync(BOOKING_CONFIRMATION_URL_PATTERN);
-        await Expect(sut.BookingConfirmationHeading).ToBeVisibleAsync();
-        await Expect(sut.ViewTourDetailsButton).ToBeVisibleAsync();
+        var bookingConfirmationPage = new BookingConfirmationPage(page);
+
+        await Expect(bookingConfirmationPage.BookingConfirmationHeading).ToBeVisibleAsync();
+        await Expect(bookingConfirmationPage.ViewTourDetailsButton).ToBeVisibleAsync();
     }
 
     [Fact]
@@ -58,7 +62,9 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) {
         await sut.ViewYourTourDetailsButton.ClickAsync();
 
         await page.WaitForURLAsync(expectedFoodTourCodeUrlPattern);
-        await Expect(sut.TourSummaryHeading).ToBeVisibleAsync();
+        var foodTourQrCodePage = new FoodTourQRCodePage(page);
+
+        await Expect(foodTourQrCodePage.TourSummaryHeading).ToBeVisibleAsync();
     }
 
 }
