@@ -2,10 +2,8 @@ namespace FoodTour.ITest.UI.Fixtures;
 
 public sealed class UiTestDatabaseConfiguration {
     private const string DATABASE_NAME_PLACEHOLDER = "{0}";
-    private const string DATABASE_NAME_PREFIX_ENVIRONMENT_VARIABLE = "FoodTourITest__DatabaseNamePrefix";
     private const string DEFAULT_DATABASE_NAME_PREFIX = "FoodTourITests_";
     private const string DEFAULT_SQL_SERVER_CONNECTION_STRING_TEMPLATE = "Data Source=(LocalDb)\\MSSQLLocalDB;Initial Catalog={0};Integrated Security=SSPI;TrustServerCertificate=True;MultipleActiveResultSets=True";
-    private const string SQL_SERVER_CONNECTION_STRING_TEMPLATE_ENVIRONMENT_VARIABLE = "FoodTourITest__SqlServerConnectionStringTemplate";
 
     private UiTestDatabaseConfiguration(string databaseNamePrefix, string sqlServerConnectionStringTemplate) {
         DatabaseNamePrefix = databaseNamePrefix;
@@ -29,12 +27,6 @@ public sealed class UiTestDatabaseConfiguration {
         }
 
         return new UiTestDatabaseConfiguration(resolvedDatabaseNamePrefix, resolvedSqlServerConnectionStringTemplate);
-    }
-
-    public static UiTestDatabaseConfiguration CreateFromEnvironment() {
-        return Create(
-            Environment.GetEnvironmentVariable(DATABASE_NAME_PREFIX_ENVIRONMENT_VARIABLE),
-            Environment.GetEnvironmentVariable(SQL_SERVER_CONNECTION_STRING_TEMPLATE_ENVIRONMENT_VARIABLE));
     }
 
     public string CreateConnectionString(string databaseName) {
