@@ -1,7 +1,7 @@
 # Copilot Instructions for Code Suggestions
-These rules should be followed by github inline code editor and github copilot chat.
+These rules should be followed by github inline code editor, github copilot chat and github copilot cli.
 
-## General Guidelines for Code Suggestions
+## General Guidelines for Code Suggestions and Code Generation
 - **Frameworks:** Always use British English for spelling and grammar in code comments, documentation, commit messages, and any other text, including class, method and variable names.
 - **Naming:** Prefer descriptive, explicit variable names for readability.
 - **Coding Standards:**
@@ -45,6 +45,8 @@ public class ExampleClass{
 ### Making Edits
 - **Change Management:** Focus on one conceptual change at a time and show clear before/after snippets.
 - **Relevance:** Only change code that is directly relevant to the task at hand. Do not refactor unrelated code unless it is necessary for the change.
+- **Files:** Only modify files that are relevant to the task. Do not make changes to files that are not directly related to the task at hand.
+- **Formatting:** Ensure that all code suggestions are properly formatted and adhere to the project's coding standards. Do not suggest formatting changes that are not relevant to the task at hand.
 
 ###  Instructions for Code Generation.
 - Only generate a plan if you need it for the task at hand. If you do not need a plan then do not generate one.  
