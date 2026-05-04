@@ -4,11 +4,7 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
     private const string DEVELOPMENT_ENVIRONMENT = "Development";
     private const string EMAIL_FROM_ADDRESS_ENVIRONMENT_VARIABLE = "EmailSettings__FromEmail";
     private const string EMAIL_FROM_NAME_ENVIRONMENT_VARIABLE = "EmailSettings__FromName";
-    private const string EMAIL_FROM_ADDRESS = "itest@localhost";
-    private const string EMAIL_FROM_NAME = "FoodTour Integration Tests";
-    private const string EMAIL_HOST = "localhost";
     private const string EMAIL_HOST_ENVIRONMENT_VARIABLE = "EmailSettings__Host";
-    private const string EMAIL_PORT = "25";
     private const string EMAIL_PORT_ENVIRONMENT_VARIABLE = "EmailSettings__Port";
     private const string EMAIL_USE_SSL_ENVIRONMENT_VARIABLE = "EmailSettings__UseSsl";
     private const string LOCALHOST_DYNAMIC_PORT_URL = "http://127.0.0.1:0";
@@ -17,13 +13,15 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
     private readonly UiTestDatabaseConfiguration databaseConfiguration;
     private readonly string databaseName;
     private readonly Dictionary<string, string?> originalEnvironmentVariables = [];
+    private readonly UiTestHostConfiguration uiTestHostConfiguration;
     private bool isInitialised;
     private IBrowser? browser;
     private IHost? kestrelHost;
     private IPlaywright? playwright;
 
     public FoodTourApplicationFixture() {
-        databaseConfiguration = UiTestDatabaseConfiguration.CreateFromEnvironment();
+        uiTestHostConfiguration = UiTestHostConfiguration.Load();
+        databaseConfiguration = uiTestHostConfiguration.Database;
         databaseName = databaseConfiguration.CreateDatabaseName();
         connectionString = databaseConfiguration.CreateConnectionString(databaseName);
         TestEmailSender = new TestEmailSender();
@@ -153,24 +151,28 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
     }
 
     private Dictionary<string, string?> CreateTestSettings() {
+        var emailSettings = uiTestHostConfiguration.EmailSettings;
+
         return new Dictionary<string, string?> {
             ["ConnectionStrings:FoodTourContext"] = connectionString,
-            ["EmailSettings:Host"] = EMAIL_HOST,
-            ["EmailSettings:Port"] = EMAIL_PORT,
-            ["EmailSettings:UseSsl"] = "false",
-            ["EmailSettings:FromEmail"] = EMAIL_FROM_ADDRESS,
-            ["EmailSettings:FromName"] = EMAIL_FROM_NAME
+            ["EmailSettings:Host"] = emailSettings.Host,
+            ["EmailSettings:Port"] = emailSettings.Port.ToString(),
+            ["EmailSettings:UseSsl"] = emailSettings.UseSsl.ToString().ToLowerInvariant(),
+            ["EmailSettings:FromEmail"] = emailSettings.FromEmail,
+            ["EmailSettings:FromName"] = emailSettings.FromName
         };
     }
 
     private void ApplyEnvironmentVariables() {
+        var emailSettings = uiTestHostConfiguration.EmailSettings;
+
         var environmentVariables = new Dictionary<string, string?> {
             [FOOD_TOUR_CONNECTION_STRING_ENVIRONMENT_VARIABLE] = connectionString,
-            [EMAIL_HOST_ENVIRONMENT_VARIABLE] = EMAIL_HOST,
-            [EMAIL_PORT_ENVIRONMENT_VARIABLE] = EMAIL_PORT,
-            [EMAIL_USE_SSL_ENVIRONMENT_VARIABLE] = "false",
-            [EMAIL_FROM_ADDRESS_ENVIRONMENT_VARIABLE] = EMAIL_FROM_ADDRESS,
-            [EMAIL_FROM_NAME_ENVIRONMENT_VARIABLE] = EMAIL_FROM_NAME
+            [EMAIL_HOST_ENVIRONMENT_VARIABLE] = emailSettings.Host,
+            [EMAIL_PORT_ENVIRONMENT_VARIABLE] = emailSettings.Port.ToString(),
+            [EMAIL_USE_SSL_ENVIRONMENT_VARIABLE] = emailSettings.UseSsl.ToString().ToLowerInvariant(),
+            [EMAIL_FROM_ADDRESS_ENVIRONMENT_VARIABLE] = emailSettings.FromEmail,
+            [EMAIL_FROM_NAME_ENVIRONMENT_VARIABLE] = emailSettings.FromName
         };
 
         foreach ((string key, string? value) in environmentVariables) {
