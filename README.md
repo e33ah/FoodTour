@@ -108,6 +108,14 @@ dotnet run --project FoodTour.ITest.UI\FoodTour.ITest.UI.csproj
 
 The UI test database is created with a unique name for each run and deleted during fixture disposal, so local runs should not leave seeded test databases behind.
 
+By default the UI suite uses LocalDB. To point the fixture at another SQL Server instance without changing the tests, set the optional environment variables below before running the suite:
+```
+$env:FoodTourITest__DatabaseNamePrefix = "FoodTourITests_"
+$env:FoodTourITest__SqlServerConnectionStringTemplate = "Server=localhost,1433;Database={0};User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=True"
+```
+
+The SQL Server connection string template must include `{0}` so the fixture can inject a unique database name for each run.
+
 ## CI/CD
 
 The  project uses NUKE for build automation. The build CI pipeline is set to run as the default.

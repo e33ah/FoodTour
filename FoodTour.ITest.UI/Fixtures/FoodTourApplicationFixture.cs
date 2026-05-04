@@ -1,7 +1,6 @@
 namespace FoodTour.ITest.UI.Fixtures;
 
 public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::FoodTour.Program>, IAsyncLifetime {
-    private const string DATABASE_NAME_PREFIX = "FoodTourITests_";
     private const string DEVELOPMENT_ENVIRONMENT = "Development";
     private const string EMAIL_FROM_ADDRESS_ENVIRONMENT_VARIABLE = "EmailSettings__FromEmail";
     private const string EMAIL_FROM_NAME_ENVIRONMENT_VARIABLE = "EmailSettings__FromName";
@@ -14,8 +13,8 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
     private const string EMAIL_USE_SSL_ENVIRONMENT_VARIABLE = "EmailSettings__UseSsl";
     private const string LOCALHOST_DYNAMIC_PORT_URL = "http://127.0.0.1:0";
     private const string FOOD_TOUR_CONNECTION_STRING_ENVIRONMENT_VARIABLE = "ConnectionStrings__FoodTourContext";
-    private const string SQL_SERVER_CONNECTION_STRING_TEMPLATE = "Data Source=(LocalDb)\\MSSQLLocalDB;Initial Catalog={0};Integrated Security=SSPI;TrustServerCertificate=True;MultipleActiveResultSets=True";
     private readonly string connectionString;
+    private readonly UiTestDatabaseConfiguration databaseConfiguration;
     private readonly string databaseName;
     private readonly Dictionary<string, string?> originalEnvironmentVariables = [];
     private bool isInitialised;
@@ -24,8 +23,9 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
     private IPlaywright? playwright;
 
     public FoodTourApplicationFixture() {
-        databaseName = $"{DATABASE_NAME_PREFIX}{Guid.NewGuid():N}";
-        connectionString = CreateConnectionString(databaseName);
+        databaseConfiguration = UiTestDatabaseConfiguration.CreateFromEnvironment();
+        databaseName = databaseConfiguration.CreateDatabaseName();
+        connectionString = databaseConfiguration.CreateConnectionString(databaseName);
         TestEmailSender = new TestEmailSender();
     }
 
@@ -152,10 +152,6 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
         return await FoodTourTestDataSeeder.SeedAsync(context);
     }
 
-    private static string CreateConnectionString(string databaseName) {
-        return string.Format(SQL_SERVER_CONNECTION_STRING_TEMPLATE, databaseName);
-    }
-
     private Dictionary<string, string?> CreateTestSettings() {
         return new Dictionary<string, string?> {
             ["ConnectionStrings:FoodTourContext"] = connectionString,
@@ -199,9 +195,9 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
 
         using var serviceScope = kestrelHost.Services.CreateScope();
         var context = serviceScope.ServiceProvider.GetRequiredService<FoodTourContext>();
-        string resolvedConnectionString = context.Database.GetConnectionString() ?? string.Empty;
+        string resolvedDatabaseName = context.Database.GetDbConnection().Database;
 
-        if (!resolvedConnectionString.Contains(databaseName, StringComparison.Ordinal)) {
+        if (!string.Equals(resolvedDatabaseName, databaseName, StringComparison.Ordinal)) {
             throw new InvalidOperationException("The UI test host did not use the isolated test database.");
         }
     }
