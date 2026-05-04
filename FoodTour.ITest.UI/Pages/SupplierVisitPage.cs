@@ -2,6 +2,8 @@ namespace FoodTour.ITest.UI.Pages;
 
 public sealed class SupplierVisitPage(IPage page) {
     private const string CONFIRM_VISIT_BUTTON = "Confirm Visit";
+    private const string EARLY_HEADING = "Your customers are early!";
+    private const string ENDED_HEADING = "This tour has ended!";
     private const string FOOD_TOUR_VISIT_HEADING = "Food Tour Visit";
     private const string INVALID_BUSINESS_CODE_MESSAGE = "Invalid business code provided. Please try again or contact Support.";
     private const string SELECT_BUSINESS_LABEL = "Please select your business:";
@@ -10,6 +12,14 @@ public sealed class SupplierVisitPage(IPage page) {
 
     public ILocator ConfirmVisitButton => page.GetByRole(AriaRole.Button, new PageGetByRoleOptions {
         Name = CONFIRM_VISIT_BUTTON
+    });
+
+    public ILocator EarlyHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions {
+        Name = EARLY_HEADING
+    });
+
+    public ILocator EndedHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions {
+        Name = ENDED_HEADING
     });
 
     public ILocator PageHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions {

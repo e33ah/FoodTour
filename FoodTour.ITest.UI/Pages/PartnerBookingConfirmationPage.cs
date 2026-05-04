@@ -10,7 +10,7 @@ public sealed class PartnerBookingConfirmationPage(IPage page) {
 
     public ILocator CustomerEmailInput => page.GetByLabel(EMAIL_LABEL);
 
-    public ILocator EmailSentAlert => page.GetByRole(AriaRole.Alert);
+    public ILocator StatusAlert => page.GetByRole(AriaRole.Alert);
 
     public ILocator PageHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions {
         Name = CONFIRM_YOUR_EMAIL_HEADING
