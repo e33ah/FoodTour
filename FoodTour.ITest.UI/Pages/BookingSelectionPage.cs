@@ -5,17 +5,21 @@ public sealed class BookingSelectionPage(IPage page) {
     private const string BOOKING_CONFIRMATION_HEADING = "Booking Confirmed";
     private const string BOOKING_FOUND_MESSAGE = "We've found your booking!";
     private const string BOOKING_SUMMARY_HEADING = "Booking Summary";
-    private const string CUSTOMER_EMAIL_INPUT = "#customerEmail";
+    private const string BOOKING_REFERENCE_LABEL = "Booking Reference";
+    private const string BOOKING_STATUS_ALERT = "Booking status";
     private const string CREATE_TOUR_BUTTON = "Create My Tour";
+    private const string CUSTOMER_EMAIL_LABEL = "Email Address";
+    private const string CONFIRM_BOOKING_BUTTON = "Confirm Booking";
     private const string FOOD_TOUR_PAGE_HEADING = "Weymouth Self-Guided Tasting Tour";
-    private const string PURCHASE_CODE_INPUT = "#purchaseCode";
-    private const string SELECTED_SUPPLIER_LIST_ITEM_LOCATOR = "ul.list-group li ul li";
-    private const string SUPPLIER_CARD_LOCATOR = ".supplier-card";
+    private const string SELECT_SUPPLIER_LABEL_TEMPLATE = "Select {0}";
+    private const string SELECTED_TASTING_EXPERIENCES_LIST = "Selected tasting experiences";
     private const string TOUR_SUMMARY_HEADING = "Tour Summary";
     private const string VIEW_TOUR_DETAILS_LINK = "View Tour Details";
     private const string VIEW_YOUR_TOUR_DETAILS_LINK = "View Your Tour Details";
 
-    public ILocator BookingStatusMessage => page.Locator("#bookingStatusMessage");
+    public ILocator BookingStatusMessage => page.GetByRole(AriaRole.Alert, new PageGetByRoleOptions {
+        Name = BOOKING_STATUS_ALERT
+    });
 
     public ILocator ConfirmedBookingModalHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions {
         Name = BOOKING_CONFIRMED_MODAL_HEADING
@@ -25,17 +29,19 @@ public sealed class BookingSelectionPage(IPage page) {
         Name = BOOKING_CONFIRMATION_HEADING
     });
 
-    public ILocator ConfirmBookingButton => page.Locator("#btnConfirm");
+    public ILocator ConfirmBookingButton => page.GetByRole(AriaRole.Button, new PageGetByRoleOptions {
+        Name = CONFIRM_BOOKING_BUTTON
+    });
 
     public ILocator CreateTourButton => page.GetByRole(AriaRole.Button, new PageGetByRoleOptions {
         Name = CREATE_TOUR_BUTTON
     });
 
-    public ILocator CustomerEmailInput => page.Locator(CUSTOMER_EMAIL_INPUT);
+    public ILocator CustomerEmailInput => page.GetByLabel(CUSTOMER_EMAIL_LABEL);
 
     public ILocator PageHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = FOOD_TOUR_PAGE_HEADING });
 
-    public ILocator PurchaseCodeInput => page.Locator(PURCHASE_CODE_INPUT);
+    public ILocator PurchaseCodeInput => page.GetByLabel(BOOKING_REFERENCE_LABEL);
 
     public ILocator SummaryHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions {
         Name = BOOKING_SUMMARY_HEADING
@@ -72,19 +78,28 @@ public sealed class BookingSelectionPage(IPage page) {
         await Expect(ConfirmedBookingModalHeading).ToBeVisibleAsync();
     }
 
-    public async Task SelectSuppliersAsync(IEnumerable<int> supplierIds) {
-        foreach (int supplierId in supplierIds) {
-            string supplierCardLocator = $"{SUPPLIER_CARD_LOCATOR}[data-supplier-id=\"{supplierId}\"]";
-            var supplierCard = page.Locator(supplierCardLocator);
+    public async Task SelectSuppliersAsync(IEnumerable<string> supplierNames) {
+        foreach (string supplierName in supplierNames) {
+            string selectSupplierLabel = string.Format(SELECT_SUPPLIER_LABEL_TEMPLATE, supplierName);
+            var supplierCard = page.GetByRole(AriaRole.Checkbox, new PageGetByRoleOptions {
+                Name = selectSupplierLabel,
+                Exact = true
+            });
 
-            await supplierCard.ClickAsync();
+            await supplierCard.FocusAsync();
+            await page.Keyboard.PressAsync("Space");
+            await Expect(supplierCard).ToHaveAttributeAsync("aria-checked", "true");
         }
 
         await Expect(CreateTourButton).ToBeEnabledAsync();
     }
 
     public ILocator SelectedSupplier(string supplierName) {
-        return page.Locator(SELECTED_SUPPLIER_LIST_ITEM_LOCATOR).Filter(new LocatorFilterOptions {
+        var selectedTastingExperiencesList = page.GetByRole(AriaRole.List, new PageGetByRoleOptions {
+            Name = SELECTED_TASTING_EXPERIENCES_LIST
+        });
+
+        return selectedTastingExperiencesList.GetByRole(AriaRole.Listitem).Filter(new LocatorFilterOptions {
             HasText = supplierName
         });
     }

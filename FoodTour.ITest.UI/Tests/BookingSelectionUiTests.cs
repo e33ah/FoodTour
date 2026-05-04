@@ -17,13 +17,13 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) {
         var selectedSuppliers = fixture.SeedData.ActiveSuppliers
             .Take(fixture.SeedData.RequiredSupplierSelectionCount)
             .ToList();
-        var selectedSupplierIds = selectedSuppliers
-            .Select(supplier => supplier.Id)
+        var selectedSupplierNames = selectedSuppliers
+            .Select(supplier => supplier.Name)
             .ToList();
 
         await sut.GotoAsync();
         await sut.EnterBookingDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
-        await sut.SelectSuppliersAsync(selectedSupplierIds);
+        await sut.SelectSuppliersAsync(selectedSupplierNames);
         await sut.SubmitSelectionAsync();
 
         await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);

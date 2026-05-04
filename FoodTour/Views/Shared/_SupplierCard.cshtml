@@ -6,8 +6,30 @@
     var displayOpeningTimes = tourDate.HasValue
         ? Model.GetOpeningTimesForDay(tourDate.Value.DayOfWeek)
         : Model.OpeningTimes;
+    string supplierCheckboxId = $"supplier-{Model.Id}";
+    string supplierLabelId = $"supplier-label-{Model.Id}";
+    string supplierNameId = $"supplier-name-{Model.Id}";
+    string supplierAddressId = $"supplier-address-{Model.Id}";
+    string supplierOpeningTimesId = $"supplier-opening-times-{Model.Id}";
+    string supplierDescriptionId = $"supplier-description-{Model.Id}";
+    List<string> supplierDescriptionIds = [supplierAddressId];
+
+    if (!string.IsNullOrWhiteSpace(displayOpeningTimes)) {
+        supplierDescriptionIds.Add(supplierOpeningTimesId);
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.Description)) {
+        supplierDescriptionIds.Add(supplierDescriptionId);
+    }
+
+    string supplierDescribedBy = string.Join(" ", supplierDescriptionIds);
 }
 <div class="card mb-3 supplier-card"
+     role="checkbox"
+     tabindex="0"
+     aria-labelledby="@supplierLabelId @supplierNameId"
+     aria-describedby="@supplierDescribedBy"
+     aria-checked="false"
      data-supplier-id="@Model.Id"
      data-opening-times-initial="@displayOpeningTimes"
      data-opening-times-general="@Model.OpeningTimes"
@@ -20,11 +42,12 @@
      data-opening-times-sunday="@Model.OpeningTimesSunday">
     <div class="card-body">
         <div class="d-flex align-items-center">
-            <input type="checkbox" name="selectedSuppliers" value="@Model.Id" class="visually-hidden supplier-checkbox" id="supplier-@Model.Id" />
-            <label for="supplier-@Model.Id" class="visually-hidden">Select @Model.Name</label>
+            <input type="checkbox" name="selectedSuppliers" value="@Model.Id" class="visually-hidden supplier-checkbox" id="@supplierCheckboxId" aria-hidden="true" tabindex="-1" />
+            <span id="@supplierLabelId" class="visually-hidden">Select</span>
+            <label for="@supplierCheckboxId" class="visually-hidden">Select @Model.Name</label>
             <div class="flex-grow-1 text-start">
                 <h3 class="card-title mb-1">
-                    @Model.Name
+                    <span id="@supplierNameId">@Model.Name</span>
                     @foreach (var tag in tags)
                     {
                         if (!string.IsNullOrWhiteSpace(tag))
@@ -33,14 +56,14 @@
                         }
                     }
                 </h3>
-                <p class="card-text text-muted small mb-1">
+                <p id="@supplierAddressId" class="card-text text-muted small mb-1">
                     <i class="bi bi-geo-alt text-primary"></i> @Model.Address
                 </p>
                 @if (!string.IsNullOrWhiteSpace(displayOpeningTimes)) {
-                    <p class="card-text text-muted small mb-1" style="white-space: pre-wrap;" data-opening-times-display><i class="bi bi-clock text-primary"></i> <span data-opening-times-text>@displayOpeningTimes</span></p>
+                    <p id="@supplierOpeningTimesId" class="card-text text-muted small mb-1" style="white-space: pre-wrap;" data-opening-times-display><i class="bi bi-clock text-primary"></i> <span data-opening-times-text>@displayOpeningTimes</span></p>
                 }
                 @if (!string.IsNullOrWhiteSpace(Model.Description)) {
-                    <p class="card-text mb-0" style="white-space: pre-wrap;">@Model.Description.Trim()</p>
+                    <p id="@supplierDescriptionId" class="card-text mb-0" style="white-space: pre-wrap;">@Model.Description.Trim()</p>
                 }
             </div>
         </div>
