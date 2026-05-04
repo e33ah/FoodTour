@@ -16,7 +16,7 @@
 					<p class="mb-3">If you believe this is in error, please contact our support team for assistance.</p>
 
 					@if (!string.IsNullOrWhiteSpace(Model.CustomerEmail)) {
-						<div class="bg-light border-secondary text-start mb-4 p-3">
+						<div class="bg-light border-secondary text-start mb-4 p-3" role="region" aria-label="Booking Details">
 							<strong>Booking Details:</strong>
 							<ul class="mb-0 mt-2">
 								<li><strong>Email:</strong> @Model.CustomerEmail</li>
