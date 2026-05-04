@@ -104,6 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const showMaxSelectionMessage = (card) => {
         const messageElement = document.createElement('div');
         messageElement.className = 'alert alert-warning mt-2 mb-3';
+        messageElement.setAttribute('role', 'alert');
+        messageElement.setAttribute('aria-live', 'polite');
+        messageElement.setAttribute('aria-atomic', 'true');
         messageElement.innerHTML = `<strong>Maximum selections reached!</strong><br>You must select exactly ${MAX_SELECTIONS} tasting experiences for your tour.`;
         card.parentNode.insertBefore(messageElement, card.nextSibling);
         currentMessage = messageElement;

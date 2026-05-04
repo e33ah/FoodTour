@@ -3,6 +3,8 @@ namespace FoodTour.ITest.UI.Tests;
 [Collection("FoodTour application")]
 public partial class PartnerBookingConfirmationUiTests(FoodTourApplicationFixture fixture) {
     private const string COMPLETE_PARTNER_BOOKING_CONFIRMATION_PATH = "/Home/CompletePartnerBookingConfirmation";
+    private const string EXPIRED_LINK_MESSAGE = "This link has expired, please request a new one.";
+    private const string INVALID_LINK_MESSAGE = "This confirmation link is invalid. Please request a new one.";
     private const string PARTNER_BOOKING_CONFIRMATION_PATH = "/Home/PartnerBookingConfirmation";
     private const string PARTNER_BOOKING_CONFIRMATION_URL_PATTERN = "**/Home/PartnerBookingConfirmation?*";
     private const string PARTNER_CONFIRMATION_EMAIL = "partner.confirmation@example.com";
@@ -35,7 +37,7 @@ public partial class PartnerBookingConfirmationUiTests(FoodTourApplicationFixtur
 
             await partnerBookingConfirmationPage.SendConfirmationEmailButton.ClickAsync();
 
-            await Expect(partnerBookingConfirmationPage.EmailSentAlert).ToContainTextAsync(PARTNER_CONFIRMATION_EMAIL);
+            await Expect(partnerBookingConfirmationPage.StatusAlert).ToContainTextAsync(PARTNER_CONFIRMATION_EMAIL);
             fixture.TestEmailSender.SentEmails.Count.ShouldBe(1);
             fixture.TestEmailSender.SentEmails.Single().To.ShouldBe(PARTNER_CONFIRMATION_EMAIL);
 
@@ -57,6 +59,40 @@ public partial class PartnerBookingConfirmationUiTests(FoodTourApplicationFixtur
             partnerBooking.RequiresEmailConfirmation = true;
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
+    }
+
+    [Fact]
+    public async Task CompletePartnerBookingConfirmation_ShowsInvalidWarning_WhenValidationTokenIsInvalid() {
+        await using var browserContext = await fixture.CreateBrowserContextAsync();
+        var page = await browserContext.NewPageAsync();
+
+        await page.GotoAsync($"{COMPLETE_PARTNER_BOOKING_CONFIRMATION_PATH}?validation=invalid-token");
+        await page.WaitForURLAsync(PARTNER_BOOKING_CONFIRMATION_URL_PATTERN);
+        var sut = new PartnerBookingConfirmationPage(page);
+
+        await Expect(sut.PageHeading).ToBeVisibleAsync();
+        await Expect(sut.StatusAlert).ToContainTextAsync(INVALID_LINK_MESSAGE);
+    }
+
+    [Fact]
+    public async Task CompletePartnerBookingConfirmation_ShowsExpiredWarning_WhenValidationTokenHasExpired() {
+        await using var browserContext = await fixture.CreateBrowserContextAsync();
+        var page = await browserContext.NewPageAsync();
+        var booking = fixture.SeedData.PartnerConfirmationBooking;
+        using var serviceScope = fixture.Services.CreateScope();
+        var partnerBookingConfirmationService = serviceScope.ServiceProvider.GetRequiredService<PartnerBookingConfirmationService>();
+        string expiredValidation = partnerBookingConfirmationService.CreateValidationToken(
+            booking.Id,
+            PARTNER_CONFIRMATION_EMAIL,
+            booking.VoucherNumber!,
+            DateTime.UtcNow.AddMinutes(-1));
+
+        await page.GotoAsync($"{COMPLETE_PARTNER_BOOKING_CONFIRMATION_PATH}?validation={Uri.EscapeDataString(expiredValidation)}");
+        await page.WaitForURLAsync(PARTNER_BOOKING_CONFIRMATION_URL_PATTERN);
+        var sut = new PartnerBookingConfirmationPage(page);
+
+        await Expect(sut.PageHeading).ToBeVisibleAsync();
+        await Expect(sut.StatusAlert).ToContainTextAsync(EXPIRED_LINK_MESSAGE);
     }
 
     private static string ExtractValidationUrl(string emailHtmlBody) {
