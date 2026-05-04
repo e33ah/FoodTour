@@ -135,6 +135,7 @@ public static class FoodTourTestDataSeeder {
             Suppliers = seededSuppliers,
             ActiveSuppliers = [.. seededSuppliers.Where(supplier => supplier.IsActive)],
             Bookings = seededBookings,
+            RequiredSupplierSelectionCount = REQUIRED_SUPPLIER_SELECTION_COUNT,
             InactiveSupplier = seededSuppliers.Single(supplier => !supplier.IsActive),
             BookingSelectionBooking = seededBookings.Single(booking => booking.QrToken == sunnyBakerQrToken),
             ConfirmedBooking = seededBookings.Single(booking => booking.QrToken == lunaRiversQrToken),

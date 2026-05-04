@@ -27,7 +27,9 @@ public class FoodTourApplicationFixtureTests(FoodTourApplicationFixture fixture)
         int supplierCount = await context.Suppliers.CountAsync(TestContext.Current.CancellationToken);
         int activeSupplierCount = await context.Suppliers.CountAsync(supplier => supplier.IsActive, TestContext.Current.CancellationToken);
         int bookingCount = await context.Bookings.CountAsync(TestContext.Current.CancellationToken);
-        int visitCount = await context.Visits.CountAsync(TestContext.Current.CancellationToken);
+        int supplierVisitBookingVisitCount = await context.Visits.CountAsync(
+            visit => visit.BookingId == seedData.SupplierVisitBooking.Id,
+            TestContext.Current.CancellationToken);
         var partnerBooking = await context.Bookings.SingleAsync(
             booking => booking.PurchaseCode == seedData.PartnerConfirmationBooking.PurchaseCode,
             TestContext.Current.CancellationToken);
@@ -35,7 +37,7 @@ public class FoodTourApplicationFixtureTests(FoodTourApplicationFixture fixture)
         supplierCount.ShouldBe(seedData.SupplierCount);
         activeSupplierCount.ShouldBe(seedData.ActiveSupplierCount);
         bookingCount.ShouldBe(seedData.BookingCount);
-        visitCount.ShouldBe(seedData.VisitCount);
+        supplierVisitBookingVisitCount.ShouldBe(seedData.VisitCount);
         seedData.InactiveSupplier.IsActive.ShouldBeFalse();
         seedData.BookingSelectionBooking.IsConfirmed.ShouldBeFalse();
         seedData.ConfirmedBooking.IsConfirmed.ShouldBeTrue();
@@ -44,4 +46,5 @@ public class FoodTourApplicationFixtureTests(FoodTourApplicationFixture fixture)
         partnerBooking.RequiresEmailConfirmation.ShouldBe(seedData.PartnerConfirmationBooking.RequiresEmailConfirmation);
         partnerBooking.VoucherNumber.ShouldBe(seedData.PartnerConfirmationBooking.VoucherNumber);
     }
+
 }

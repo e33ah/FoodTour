@@ -1,6 +1,8 @@
 global using System.Net;
+global using System.Text.RegularExpressions;
 global using FoodTour;
 global using FoodTour.ITest.UI.Fixtures;
+global using FoodTour.ITest.UI.Pages;
 global using FoodTour.ITest.UI.TestData;
 global using FoodTour.ITest.UI.TestDoubles;
 global using FoodTour.Models;
@@ -14,5 +16,7 @@ global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.DependencyInjection.Extensions;
 global using Microsoft.Extensions.Hosting;
+global using Microsoft.Playwright;
 global using Shouldly;
 global using Xunit;
+global using static Microsoft.Playwright.Assertions;
