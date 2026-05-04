@@ -4,6 +4,7 @@ public sealed class FoodTourSeedData {
     public required IReadOnlyList<SeededSupplier> Suppliers { get; init; }
     public required IReadOnlyList<SeededSupplier> ActiveSuppliers { get; init; }
     public required IReadOnlyList<SeededBooking> Bookings { get; init; }
+    public required int RequiredSupplierSelectionCount { get; init; }
     public required SeededSupplier InactiveSupplier { get; init; }
     public required SeededBooking BookingSelectionBooking { get; init; }
     public required SeededBooking ConfirmedBooking { get; init; }
