@@ -23,6 +23,7 @@ FoodTour allows users to browse and select from a list of active food suppliers 
 - SQL Server (LocalDB or full installation)
 - Visual Studio 2026 or VS Code
 - Nuke global tool (optional)
+- Playwright browser binaries for the UI integration test project
 
 ### Database Setup
 
@@ -86,10 +87,26 @@ If email sending fails (or SMTP is not configured), the booking will still be sa
 
 ### Running Unit Tests
 
-Tests are located in the `FoodTour.Tests` project. To run the tests, use the following command:
+Unit tests are located in the `FoodTour.Test` project. To run them, use the following command:
 ```
-dotnet test
+dotnet run --project FoodTour.Test\FoodTour.Test.csproj
 ```
+
+### Running UI Integration Tests
+
+Browser-driven UI integration tests are located in the `FoodTour.ITest.UI` project. These tests host the MVC application on a real localhost port, create an isolated LocalDB database for each run, apply migrations automatically, seed deterministic test data, and replace the real email sender with a test double so no external emails are sent.
+
+Install the Playwright browser binaries the first time you run the suite:
+```
+pwsh .\FoodTour.ITest.UI\bin\Debug\net10.0\playwright.ps1 install chromium
+```
+
+Then run the UI integration tests with:
+```
+dotnet run --project FoodTour.ITest.UI\FoodTour.ITest.UI.csproj
+```
+
+The UI test database is created with a unique name for each run and deleted during fixture disposal, so local runs should not leave seeded test databases behind.
 
 ## CI/CD
 
