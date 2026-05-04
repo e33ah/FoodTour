@@ -38,16 +38,19 @@ public sealed class BookingSelectionPage(IPage page) {
         await Expect(PageHeading).ToBeVisibleAsync();
     }
 
-    public async Task EnterBookingDetailsAsync(string customerEmail, string purchaseCode) {
+    public async Task EnterBookingLookupDetailsAsync(string customerEmail, string purchaseCode) {
         await CustomerEmailInput.FillAsync(customerEmail);
         await PurchaseCodeInput.FillAsync(purchaseCode);
+    }
+
+    public async Task EnterBookingDetailsAsync(string customerEmail, string purchaseCode) {
+        await EnterBookingLookupDetailsAsync(customerEmail, purchaseCode);
 
         await Expect(BookingStatusMessage).ToContainTextAsync(BOOKING_FOUND_MESSAGE);
     }
 
     public async Task EnterConfirmedBookingDetailsAsync(string customerEmail, string purchaseCode) {
-        await CustomerEmailInput.FillAsync(customerEmail);
-        await PurchaseCodeInput.FillAsync(purchaseCode);
+        await EnterBookingLookupDetailsAsync(customerEmail, purchaseCode);
 
         await Expect(ConfirmedBookingModalHeading).ToBeVisibleAsync();
     }
