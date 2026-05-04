@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateCardVisualState = (card, checkbox) => {
         card.classList.toggle('selected', checkbox.checked);
+        card.setAttribute('aria-checked', checkbox.checked.toString());
     };
 
     const getOpeningTimesElements = (card) => ({
@@ -128,6 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonState();
     };
 
+    const toggleSupplierCheckbox = (card) => {
+        const checkbox = card.querySelector('.supplier-checkbox');
+        checkbox.checked = !checkbox.checked;
+        handleCheckboxChange(checkbox);
+    };
+
     // Event listeners for supplier selection
     const setupCheckboxes = () => {
         checkboxes.forEach(checkbox => {
@@ -139,9 +146,16 @@ document.addEventListener('DOMContentLoaded', () => {
         supplierCards.forEach(card => {
             card.addEventListener('click', event => {
                 if (event.target.closest('.supplier-checkbox')) return;
-                const checkbox = card.querySelector('.supplier-checkbox');
-                checkbox.checked = !checkbox.checked;
-                handleCheckboxChange(checkbox);
+                toggleSupplierCheckbox(card);
+            });
+
+            card.addEventListener('keydown', event => {
+                if (event.key !== ' ' && event.key !== 'Space' && event.key !== 'Spacebar' && event.key !== 'Enter') {
+                    return;
+                }
+
+                event.preventDefault();
+                toggleSupplierCheckbox(card);
             });
         });
     };
@@ -401,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     checkbox.checked = true;
                     const card = checkbox.closest('.supplier-card');
                     if (card) {
-                        card.classList.add('selected');
+                        updateCardVisualState(card, checkbox);
                     }
                 }
             });

@@ -69,7 +69,7 @@
 								</small>
 								<div class="form-group">
 									<label for="customerEmail" class="form-label visually-hidden">Email Address</label>
-									<input id="customerEmail" name="customerEmail" type="email" class="form-control" placeholder="your.email@example.com" value="@Model.CustomerEmail" />
+									<input id="customerEmail" name="customerEmail" type="email" class="form-control" placeholder="your.email@example.com" value="@Model.CustomerEmail" aria-label="Email Address" />
 								</div>
 							</div>
 						</div>
@@ -85,12 +85,12 @@
 									<label for="purchaseCode" class="form-label visually-hidden">Booking Reference</label>
 									<div class="d-flex justify-content-center">
 										<span class="input-group-text bg-transparent text-muted">#</span>
-										<input id="purchaseCode" name="purchaseCode" type="text" class="form-control w-auto" style="max-width: 220px;" placeholder="123456789" value="@Model.PurchaseCode" />
+										<input id="purchaseCode" name="purchaseCode" type="text" class="form-control w-auto" style="max-width: 220px;" placeholder="123456789" value="@Model.PurchaseCode" aria-label="Booking Reference" />
 									</div>
 								</div>
 							</div>
 						</div>
-						<div id="bookingStatusMessage" class="alert mb-4 d-none" role="alert">
+						<div id="bookingStatusMessage" class="alert mb-4 d-none" role="alert" aria-label="Booking status">
 							<i id="bookingStatusIcon" class="bi" aria-hidden="true"></i>
 							<span id="bookingStatusText"></span>
 						</div>
