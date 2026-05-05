@@ -13,7 +13,7 @@ public class SupplierVisitUiTests(FoodTourApplicationFixture fixture) : UiTestBa
         return ExecutePageTestAsync(async page => {
             var sut = new SupplierVisitPage(page);
             var booking = Fixture.SeedData.SupplierVisitBooking;
-            var firstVisit = Fixture.SeedData.SupplierVisitBookingVisits.First();
+            var firstVisit = Fixture.SeedData.SupplierVisitBookingVisits[0];
             var supplier = Fixture.SeedData.Suppliers.Single(seededSupplier => seededSupplier.Id == firstVisit.SupplierId);
 
             await sut.GotoAsync(booking.QrToken);
@@ -33,7 +33,7 @@ public class SupplierVisitUiTests(FoodTourApplicationFixture fixture) : UiTestBa
         return ExecutePageTestAsync(async page => {
             var sut = new SupplierVisitPage(page);
             var booking = Fixture.SeedData.SupplierVisitBooking;
-            var firstVisit = Fixture.SeedData.SupplierVisitBookingVisits.First();
+            var firstVisit = Fixture.SeedData.SupplierVisitBookingVisits[0];
             var supplier = Fixture.SeedData.Suppliers.Single(seededSupplier => seededSupplier.Id == firstVisit.SupplierId);
 
             await sut.GotoAsync(booking.QrToken);
