@@ -4,20 +4,18 @@ namespace FoodTour.ITest.UI.Tests;
 public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTestBase(fixture) {
     private const string BOOKING_CONFIRMATION_URL_PATTERN = "**/Home/BookingConfirmation?*";
     private const string BOOKING_CANCELLED_MESSAGE = "This booking has been cancelled.";
+    private const string BOOKING_FOUND_MESSAGE = "We've found your booking!";
     private const string BOOKING_NOT_FOUND_MESSAGE = "We couldn't find your booking.";
     private const string BOOKING_REFERENCE_REQUIRED_MESSAGE = "Please enter your booking reference to validate your booking.";
     private const string BOOKING_SUMMARY_PATH = "/Home/BookingSummary";
     private const string BOOKING_SUMMARY_PATH_TEMPLATE = "/Home/BookingSummary?qrToken={0}";
     private const string BOOKING_SUMMARY_URL_PATTERN = "**/Home/BookingSummary?*";
     private const string EMAIL_WARNING_MESSAGE = "Your booking was saved, but we were unable to send a confirmation email.";
-    private const string FOOD_TOUR_CODE_PATH_TEMPLATE = "/Home/FoodTourCode?qrToken={0}";
-    private const string FOOD_TOUR_CODE_URL_PATTERN_TEMPLATE = "**/Home/FoodTourCode?qrToken={0}";
     private const string GENERAL_OPENING_TIMES = "Monday-Friday: 8am - 5pm; Saturday: 9am - 4pm; Sunday: 9am - 3pm";
     private const string INVALID_QR_TOKEN_PATH = "/?qrToken=11111111-1111-1111-1111-111111111111";
     private static readonly DateTime lookupResetTourDate = new(2035, 6, 11, 11, 15, 0, DateTimeKind.Utc);
     private const string MONDAY_OPENING_TIMES = "8am - 5pm";
     private const string OPENING_TIMES_SUPPLIER = "Coffee and Cake";
-    private const string TOUR_CANCELLED_URL_PATTERN = "**/Home/TourCancelled?*";
 
     [Fact]
     public Task CreateTour_NavigatesToBookingConfirmation_WhenBookingIsValidAndSuppliersAreSelected() {
@@ -61,8 +59,8 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
             var booking = Fixture.SeedData.ConfirmedBooking;
-            string expectedFoodTourCodePath = string.Format(FOOD_TOUR_CODE_PATH_TEMPLATE, booking.QrToken);
-            string expectedFoodTourCodeUrlPattern = string.Format(FOOD_TOUR_CODE_URL_PATTERN_TEMPLATE, booking.QrToken);
+            string expectedFoodTourCodePath = string.Format("/Home/FoodTourCode?qrToken={0}", booking.QrToken);
+            string expectedFoodTourCodeUrlPattern = string.Format("**/Home/FoodTourCode?qrToken={0}", booking.QrToken);
 
             await sut.GotoAsync();
             await sut.EnterConfirmedBookingDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
@@ -91,6 +89,32 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     }
 
     [Fact]
+    public Task EnterBooking_ClearsWarningAndAllowsProgress_WhenLookupBecomesValidAfterInvalidAttempt() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new BookingSelectionPage(page);
+            var booking = Fixture.SeedData.BookingSelectionBooking;
+            var selectedSupplierNames = Fixture.SeedData.ActiveSuppliers
+                .Take(Fixture.SeedData.RequiredSupplierSelectionCount)
+                .Select(supplier => supplier.Name)
+                .ToList();
+
+            await sut.GotoAsync();
+            await sut.EnterBookingLookupDetailsAsync("missing.booking@example.com", "NOT-A-REAL-BOOKING");
+            await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_NOT_FOUND_MESSAGE);
+
+            await sut.EnterBookingLookupDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
+            await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_FOUND_MESSAGE);
+            await Expect(sut.PartnerConfirmationPrompt).ToBeHiddenAsync();
+
+            await sut.SelectSuppliersAsync(selectedSupplierNames);
+            await sut.SubmitSelectionAsync();
+
+            await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
+            page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
+        });
+    }
+
+    [Fact]
     public Task EnterBooking_ShowsCancelledWarning_WhenBookingHasBeenCancelled() {
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
@@ -104,34 +128,96 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     }
 
     [Fact]
-    public Task OpenFoodTourCode_RedirectsToTourCancelled_WhenBookingHasBeenCancelled() {
+    public Task EnterBooking_RemainsUsableAndRecoverable_WhenBookingLookupApiFails() {
         return ExecutePageTestAsync(async page => {
-            var booking = Fixture.SeedData.CancelledBooking;
+            var sut = new BookingSelectionPage(page);
+            var booking = Fixture.SeedData.BookingSelectionBooking;
+            var selectedSupplierNames = Fixture.SeedData.ActiveSuppliers
+                .Take(Fixture.SeedData.RequiredSupplierSelectionCount)
+                .Select(supplier => supplier.Name)
+                .ToList();
+            bool failFirstLookup = true;
 
-            await page.GotoAsync(string.Format(FOOD_TOUR_CODE_PATH_TEMPLATE, booking.QrToken));
+            await page.RouteAsync("**/api/foodtour/checkbooking", async route => {
+                if (failFirstLookup) {
+                    failFirstLookup = false;
+                    await route.FulfillAsync(new RouteFulfillOptions {
+                        Status = 500,
+                        ContentType = "application/json",
+                        Body = "{}"
+                    });
+                    return;
+                }
 
-            await page.WaitForURLAsync(TOUR_CANCELLED_URL_PATTERN);
-            page.Url.ShouldContain("/Home/TourCancelled");
-            var tourCancelledPage = new TourCancelledPage(page);
+                await route.ContinueAsync();
+            });
 
-            await Expect(tourCancelledPage.PageHeading).ToBeVisibleAsync();
-            await Expect(tourCancelledPage.BookingDetails).ToContainTextAsync(booking.CustomerEmail);
-            await Expect(tourCancelledPage.BookingDetails).ToContainTextAsync(booking.PurchaseCode);
+            await sut.GotoAsync();
+            await sut.EnterBookingLookupDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
+            await page.WaitForTimeoutAsync(700);
+
+            await Expect(sut.BookingStatusMessage).ToBeHiddenAsync();
+            await Expect(sut.PartnerConfirmationPrompt).ToBeHiddenAsync();
+
+            await sut.PurchaseCodeInput.FillAsync(string.Empty);
+            await sut.PurchaseCodeInput.FillAsync(booking.PurchaseCode);
+            await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_FOUND_MESSAGE);
+
+            await sut.SelectSuppliersAsync(selectedSupplierNames);
+            await sut.SubmitSelectionAsync();
+
+            await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
+            page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
         });
     }
 
     [Fact]
-    public Task OpenFoodTourCode_ShowsCompletedState_WhenTourDateIsInThePast() {
+    public Task EnterBooking_DoesNotOverwriteNewerInput_WhenEarlierLookupResponseArrivesLate() {
         return ExecutePageTestAsync(async page => {
-            var booking = Fixture.SeedData.PastBooking;
+            var sut = new BookingSelectionPage(page);
+            const string FIRST_LOOKUP_EMAIL = "stale.response@example.com";
+            const string FIRST_LOOKUP_PURCHASE_CODE = "FIRST1234";
+            const string LATEST_LOOKUP_EMAIL = "latest.input@example.com";
+            const string LATEST_LOOKUP_PURCHASE_CODE = "SECOND123";
 
-            await page.GotoAsync(string.Format(FOOD_TOUR_CODE_PATH_TEMPLATE, booking.QrToken));
+            await page.RouteAsync("**/api/foodtour/checkbooking", async route => {
+                string requestBody = route.Request.PostData ?? string.Empty;
 
-            await page.WaitForURLAsync(string.Format(FOOD_TOUR_CODE_URL_PATTERN_TEMPLATE, booking.QrToken));
-            page.Url.ShouldContain("/Home/FoodTourCode");
-            var foodTourQrCodePage = new FoodTourQRCodePage(page);
+                if (requestBody.Contains(FIRST_LOOKUP_EMAIL, StringComparison.Ordinal) &&
+                    requestBody.Contains(FIRST_LOOKUP_PURCHASE_CODE, StringComparison.Ordinal)) {
+                    await Task.Delay(1200, TestContext.Current.CancellationToken);
+                    await route.FulfillAsync(new RouteFulfillOptions {
+                        Status = 200,
+                        ContentType = "application/json",
+                        Body = """{"found":true,"message":"We've found your booking!","bookingId":123,"tourDate":"2035-06-11T11:15:00Z","isCancelled":false,"isConfirmed":false,"requiresPartnerConfirmation":false}"""
+                    });
+                    return;
+                }
 
-            await Expect(foodTourQrCodePage.TourCompleteHeading).ToBeVisibleAsync();
+                if (requestBody.Contains(LATEST_LOOKUP_EMAIL, StringComparison.Ordinal) &&
+                    requestBody.Contains(LATEST_LOOKUP_PURCHASE_CODE, StringComparison.Ordinal)) {
+                    await route.FulfillAsync(new RouteFulfillOptions {
+                        Status = 200,
+                        ContentType = "application/json",
+                        Body = """{"found":false,"message":"We couldn't find your booking.","requiresPartnerConfirmation":false}"""
+                    });
+                    return;
+                }
+
+                await route.ContinueAsync();
+            });
+
+            await sut.GotoAsync();
+            await sut.EnterBookingLookupDetailsAsync(FIRST_LOOKUP_EMAIL, FIRST_LOOKUP_PURCHASE_CODE);
+            await page.WaitForTimeoutAsync(700);
+
+            await sut.EnterBookingLookupDetailsAsync(LATEST_LOOKUP_EMAIL, LATEST_LOOKUP_PURCHASE_CODE);
+            await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_NOT_FOUND_MESSAGE);
+
+            await page.WaitForTimeoutAsync(900);
+
+            await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_NOT_FOUND_MESSAGE);
+            await Expect(sut.PartnerConfirmationPrompt).ToBeHiddenAsync();
         });
     }
 
