@@ -228,6 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Booking check functionality
+    let activeBookingLookupKey = null;
     let validatedBookingId = null;
     let partnerConfirmationUrl = null;
     const bookingIdInput = document.getElementById('BookingId');
@@ -252,6 +253,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const createBookingLookupKey = (email, purchaseCode) => `${email?.trim().toLowerCase() || ''}|${purchaseCode?.trim() || ''}`;
+
+    const getCurrentBookingLookupKey = () => createBookingLookupKey(emailInput?.value, purchaseCodeInput?.value);
+
     const showBookingMessage = (alertClass, iconClass, message) => {
         if (bookingStatusMessage && bookingStatusIcon && bookingStatusText) {
             bookingStatusMessage.className = `alert ${alertClass} mb-4`;
@@ -261,8 +266,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const showBookingSuccess = (message, bookingId) => {
-        clearBookingMessages(false);
+    const showBookingSuccess = (message, bookingId, email, purchaseCode) => {
+        clearBookingMessages(false, false);
+        activeBookingLookupKey = createBookingLookupKey(email, purchaseCode);
         validatedBookingId = bookingId;
         if (bookingIdInput) {
             bookingIdInput.value = bookingId;
@@ -270,13 +276,15 @@ document.addEventListener('DOMContentLoaded', () => {
         showBookingMessage('alert-success', 'bi-check-circle-fill', message);
     };
 
-    const showBookingWarning = (message) => {
-        clearBookingMessages();
+    const showBookingWarning = (message, email, purchaseCode) => {
+        clearBookingMessages(true, false);
+        activeBookingLookupKey = createBookingLookupKey(email, purchaseCode);
         showBookingMessage('alert-warning', 'bi-exclamation-triangle-fill', message);
     };
 
-    const showPartnerConfirmationPrompt = (message, confirmationUrl) => {
-        clearBookingMessages();
+    const showPartnerConfirmationPrompt = (message, confirmationUrl, email, purchaseCode) => {
+        clearBookingMessages(true, false);
+        activeBookingLookupKey = createBookingLookupKey(email, purchaseCode);
         partnerConfirmationUrl = confirmationUrl;
         if (partnerConfirmationPrompt && partnerConfirmationMessage && partnerConfirmationLink) {
             partnerConfirmationMessage.innerHTML = `<i class="bi bi-info-circle-fill"></i> ${message}`;
@@ -285,18 +293,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const clearBookingMessages = (resetOpeningTimes = true) => {
+    const clearBookingMessages = (resetOpeningTimes = true, resetLookupState = true) => {
         if (bookingStatusMessage) {
             bookingStatusMessage.classList.add('d-none');
         }
         if (partnerConfirmationPrompt) {
             partnerConfirmationPrompt.classList.add('d-none');
         }
-        // Clear validated booking ID
-        validatedBookingId = null;
-        partnerConfirmationUrl = null;
-        if (bookingIdInput) {
-            bookingIdInput.value = '';
+        if (resetLookupState) {
+            activeBookingLookupKey = null;
+            validatedBookingId = null;
+            partnerConfirmationUrl = null;
+            if (bookingIdInput) {
+                bookingIdInput.value = '';
+            }
         }
         if (resetOpeningTimes) {
             restoreInitialOpeningTimes();
@@ -327,6 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkBookingExists = async () => {
         const email = emailInput?.value.trim();
         const purchaseCode = purchaseCodeInput?.value.trim();
+        const bookingLookupKey = createBookingLookupKey(email, purchaseCode);
 
         // Clear any previous messages
         clearBookingMessages();
@@ -361,24 +372,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
+            if (bookingLookupKey !== getCurrentBookingLookupKey()) {
+                return;
+            }
 
             if (data.requiresPartnerConfirmation) {
                 const encodedReference = encodeURIComponent(purchaseCode);
                 const encodedEmail = encodeURIComponent(email);
                 const confirmationUrl = `/Home/PartnerBookingConfirmation?bookingReference=${encodedReference}&customerEmail=${encodedEmail}`;
-                showPartnerConfirmationPrompt(data.message, confirmationUrl);
+                showPartnerConfirmationPrompt(data.message, confirmationUrl, email, purchaseCode);
             } else if (data.found) {
                 if (data.isCancelled) {
-                    showBookingWarning(data.message);
+                    showBookingWarning(data.message, email, purchaseCode);
                 } else if (data.isConfirmed) {
                     applyTourDateOpeningTimes(data.tourDate);
                     showBookingConfirmedModal(email, purchaseCode, data.qrToken);
                 } else {
-                    showBookingSuccess(data.message, data.bookingId);
+                    showBookingSuccess(data.message, data.bookingId, email, purchaseCode);
                     applyTourDateOpeningTimes(data.tourDate);
                 }
             } else {
-                showBookingWarning(data.message);
+                showBookingWarning(data.message, email, purchaseCode);
             }
         } catch (error) {
             console.error('Error checking booking:', error);
@@ -390,6 +404,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const debouncedBookingCheck = () => {
         clearTimeout(bookingCheckTimeout);
         bookingCheckTimeout = setTimeout(checkBookingExists, 500);
+    };
+
+    const handleBookingFieldInput = (clearError) => {
+        clearError();
+        clearBookingMessages();
+        debouncedBookingCheck();
+    };
+
+    const handleBookingFieldChange = (clearError) => {
+        clearError();
+
+        if (getCurrentBookingLookupKey() === activeBookingLookupKey) {
+            return;
+        }
+
+        clearBookingMessages();
+        debouncedBookingCheck();
     };
 
     // Add form validation on submit
@@ -475,27 +506,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Clear purchase code and email error messages as soon as the user types or changes the value
     if (purchaseCodeInput) {
         purchaseCodeInput.addEventListener('input', () => {
-            clearPurchaseCodeError();
-            clearBookingMessages();
-            debouncedBookingCheck();
+            handleBookingFieldInput(clearPurchaseCodeError);
         });
         purchaseCodeInput.addEventListener('change', () => {
-            clearPurchaseCodeError();
-            clearBookingMessages();
-            debouncedBookingCheck();
+            handleBookingFieldChange(clearPurchaseCodeError);
         });
     }
 
     if (emailInput) {
         emailInput.addEventListener('input', () => {
-            clearEmailError();
-            clearBookingMessages();
-            debouncedBookingCheck();
+            handleBookingFieldInput(clearEmailError);
         });
         emailInput.addEventListener('change', () => {
-            clearEmailError();
-            clearBookingMessages();
-            debouncedBookingCheck();
+            handleBookingFieldChange(clearEmailError);
         });
     }
 });
