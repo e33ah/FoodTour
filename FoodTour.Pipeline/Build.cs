@@ -5,6 +5,8 @@ namespace FoodTour.Pipeline;
 [GitHubActions("foodtour-cd", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch },
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests), nameof(Publish), nameof(Release) },
     ImportSecrets = new[] { nameof(FtpHost), nameof(FtpUser), nameof(FtpPassword) }, AutoGenerate = false)]
+[GitHubActions("foodtour-ui", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch, GitHubActionsTrigger.PullRequest },
+    InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests), nameof(IntegrationTests) }, AutoGenerate = false)]
 public partial class Build : NukeBuild {
     public static int Main() {
         if (IsLocalBuild) {
@@ -24,6 +26,9 @@ public partial class Build : NukeBuild {
 
     public Target FoodTourCI => _ => _
         .DependsOn(ExecuteUnitTests);
+
+    public Target FoodTourUI => _ => _
+        .DependsOn(ExecuteUnitTests, IntegrationTests);
 
     static void SetEnvironmentVariableIfMissing(string name, string value) {
         if (!string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(name))) {
