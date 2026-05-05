@@ -1,4 +1,4 @@
-namespace FoodTour.ITest.UI.Tests;
+namespace FoodTour.ITest.UI.InfrastructureSmoke;
 
 public class UiTestHostConfigurationTests {
     [Fact]

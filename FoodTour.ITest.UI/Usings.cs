@@ -1,6 +1,7 @@
+global using System.Globalization;
 global using System.Net;
+global using System.Runtime.CompilerServices;
 global using System.Text.RegularExpressions;
-global using FoodTour;
 global using FoodTour.ITest.UI.Fixtures;
 global using FoodTour.ITest.UI.Pages;
 global using FoodTour.ITest.UI.TestData;
