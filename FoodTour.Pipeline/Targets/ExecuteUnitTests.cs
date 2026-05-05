@@ -8,7 +8,7 @@ public partial class Build : NukeBuild {
 
             if (testProjects.Any()) {
                 foreach (var project in testProjects) {
-                    DotNetTasks.DotNetTest(s => s
+                    DotNetTasks.DotNetRun(s => s
                         .SetProjectFile(project)
                         .SetConfiguration(Configuration)
                         .SetNoBuild(true)
