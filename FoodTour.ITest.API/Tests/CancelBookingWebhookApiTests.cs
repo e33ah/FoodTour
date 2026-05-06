@@ -4,20 +4,20 @@ namespace FoodTour.ITest.API.Tests;
 public class CancelBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTestBase(fixture) {
     [Fact]
     public async Task CancelBooking_ReturnsOk_WhenBookingDoesNotExist() {
-        using HttpClient sut = CreateApiClient();
+        using var sut = CreateApiClient();
         string purchaseCode = FoodTourApiRequestFactory.CreateUniquePurchaseCode("api-none");
         CancelBookingWebhookRequest request = new() {
             PurchaseCode = purchaseCode
         };
 
-        HttpResponseMessage response = await PostCancelBookingAsync(sut, request);
+        var response = await PostCancelBookingAsync(sut, request);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task CancelBooking_MarksBookingAsCancelled_WhenWebhookPayloadIsValid() {
-        using HttpClient sut = CreateApiClient();
+        using var sut = CreateApiClient();
         string purchaseCode = FoodTourApiRequestFactory.CreateUniquePurchaseCode("api-can");
 
         await CreateBookingAsync(new Booking {
@@ -33,11 +33,11 @@ public class CancelBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
             PurchaseCode = purchaseCode
         };
 
-        HttpResponseMessage response = await PostCancelBookingAsync(sut, request);
+        var response = await PostCancelBookingAsync(sut, request);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        Booking result = await GetBookingByPurchaseCodeAsync(purchaseCode);
+        var result = await GetBookingByPurchaseCodeAsync(purchaseCode);
         result.IsCancelled.ShouldBeTrue();
     }
 }

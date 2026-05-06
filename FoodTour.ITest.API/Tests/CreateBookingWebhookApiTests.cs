@@ -4,7 +4,7 @@ namespace FoodTour.ITest.API.Tests;
 public class CreateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTestBase(fixture) {
     [Fact]
     public async Task CreateNewBooking_ReturnsUnauthorised_WhenKeyIsInvalid() {
-        using HttpClient sut = CreateApiClient();
+        using var sut = CreateApiClient();
         string purchaseCode = FoodTourApiRequestFactory.CreateUniquePurchaseCode("api-new");
         BookingWebhookRequest request = new() {
             PurchaseCode = purchaseCode,
@@ -13,14 +13,14 @@ public class CreateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
             TourDate = DateTime.UtcNow.AddDays(30)
         };
 
-        HttpResponseMessage response = await PostNewBookingAsync(sut, request, "invalid");
+        var response = await PostNewBookingAsync(sut, request, "invalid");
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
     public async Task CreateNewBooking_DoesNotPersistBooking_WhenWebhookIsForDifferentTour() {
-        using HttpClient sut = CreateApiClient();
+        using var sut = CreateApiClient();
         string purchaseCode = FoodTourApiRequestFactory.CreateUniquePurchaseCode("api-other");
         BookingWebhookRequest request = new() {
             PurchaseCode = purchaseCode,
@@ -30,7 +30,7 @@ public class CreateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
             ItemName = "Different Tour"
         };
 
-        HttpResponseMessage response = await PostNewBookingAsync(sut, request);
+        var response = await PostNewBookingAsync(sut, request);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
@@ -40,7 +40,7 @@ public class CreateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
 
     [Fact]
     public async Task CreateNewBooking_PersistsBooking_WhenWebhookPayloadIsValid() {
-        using HttpClient sut = CreateApiClient();
+        using var sut = CreateApiClient();
         string purchaseCode = FoodTourApiRequestFactory.CreateUniquePurchaseCode("api-save");
         const string CUSTOMER_EMAIL = "api.create@example.com";
         BookingWebhookRequest request = new() {
@@ -52,11 +52,11 @@ public class CreateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
             VoucherNumber = "API-VOUCHER-001"
         };
 
-        HttpResponseMessage response = await PostNewBookingAsync(sut, request);
+        var response = await PostNewBookingAsync(sut, request);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        Booking booking = await GetBookingByPurchaseCodeAsync(purchaseCode);
+        var booking = await GetBookingByPurchaseCodeAsync(purchaseCode);
         booking.CustomerEmail.ShouldBe(CUSTOMER_EMAIL);
         booking.TotalGuests.ShouldBe(3);
         booking.VoucherNumber.ShouldBe("API-VOUCHER-001");

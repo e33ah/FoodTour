@@ -23,7 +23,7 @@ public sealed class FoodTourSeedData {
     public int VisitCount => SupplierVisitBookingVisits.Count;
 }
 
-public sealed record SeededSupplier(int Id, string Name, string ConfirmationCode, bool IsActive);
+public sealed record SeededSupplier(int Id, string Name, string ConfirmationCode, string ContactEmail, bool IsActive);
 
 public sealed record SeededBooking(
     int Id,
