@@ -1,4 +1,4 @@
-namespace FoodTour.ITest.UI.TestData;
+namespace FoodTour.ITest.Shared.TestData;
 
 public static class FoodTourTestDataSeeder {
     private const string DEFAULT_SUPPLIER_CONFIRMATION_CODE = "TOUR";

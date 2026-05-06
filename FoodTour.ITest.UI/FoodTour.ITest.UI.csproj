@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FoodTour\FoodTour.csproj" />
+    <ProjectReference Include="..\FoodTour.ITest.Shared\FoodTour.ITest.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
