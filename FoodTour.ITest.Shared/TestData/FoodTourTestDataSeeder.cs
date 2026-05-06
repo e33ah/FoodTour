@@ -125,7 +125,7 @@ public static class FoodTourTestDataSeeder {
         await context.SaveChangesAsync();
 
         var seededSuppliers = suppliers
-            .Select(supplier => new SeededSupplier(supplier.Id, supplier.Name, supplier.ConfirmationCode, supplier.IsActive))
+            .Select(supplier => new SeededSupplier(supplier.Id, supplier.Name, supplier.ConfirmationCode, supplier.ContactEmail, supplier.IsActive))
             .ToList();
         var seededBookings = bookings
             .Select(CreateSeededBooking)

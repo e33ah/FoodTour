@@ -120,6 +120,29 @@ $env:UiTests__EmailSettings__Port = "25"
 
 The SQL Server connection string template must include `{0}` so the fixture can inject a unique database name for each run.
 
+### Running API Integration Tests
+
+HTTP-driven API integration tests are located in the `FoodTour.ITest.API` project. These tests host the MVC application with ASP.NET Core test infrastructure, create an isolated LocalDB database for each run, apply migrations automatically, seed deterministic test data, replace the real email sender with a test double, and exercise the real HTTP endpoints for `FoodTourApiController` and `VisitsController`.
+
+Run the API integration tests with:
+```
+dotnet run --project FoodTour.ITest.API\FoodTour.ITest.API.csproj
+```
+
+The API test database is created with a unique name for each run and deleted during fixture disposal, so local runs should not leave seeded test databases behind.
+
+Default API test settings live in `FoodTour.ITest.API\appsettings.ApiTests.json`.
+
+By default the API suite uses LocalDB. To override the JSON defaults for another environment without changing the tests, set the optional environment variables below before running the suite:
+```
+$env:ApiTests__Database__DatabaseNamePrefix = "FoodTourApiITests_"
+$env:ApiTests__Database__SqlServerConnectionStringTemplate = "Server=localhost,1433;Database={0};User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=True"
+$env:ApiTests__EmailSettings__Host = "smtp4dev"
+$env:ApiTests__EmailSettings__Port = "25"
+```
+
+The SQL Server connection string template must include `{0}` so the fixture can inject a unique database name for each run.
+
 ## CI/CD
 
 The  project uses NUKE for build automation. The build CI pipeline is set to run as the default.

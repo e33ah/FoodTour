@@ -4,7 +4,7 @@ namespace FoodTour.ITest.API.Tests;
 public class UpdateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTestBase(fixture) {
     [Fact]
     public async Task UpdateBooking_ReturnsOk_WhenBookingDoesNotExist() {
-        using HttpClient sut = CreateApiClient();
+        using var sut = CreateApiClient();
         string purchaseCode = FoodTourApiRequestFactory.CreateUniquePurchaseCode("api-miss");
         BookingWebhookRequest request = new() {
             PurchaseCode = purchaseCode,
@@ -14,7 +14,7 @@ public class UpdateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
             CustomerCount = 4
         };
 
-        HttpResponseMessage response = await PostUpdateBookingAsync(sut, request);
+        var response = await PostUpdateBookingAsync(sut, request);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
@@ -24,9 +24,9 @@ public class UpdateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
 
     [Fact]
     public async Task UpdateBooking_LeavesBookingUnchanged_WhenWebhookMatchesExistingValues() {
-        using HttpClient sut = CreateApiClient();
+        using var sut = CreateApiClient();
         string purchaseCode = FoodTourApiRequestFactory.CreateUniquePurchaseCode("api-same");
-        DateTime tourDate = DateTime.UtcNow.AddDays(41);
+        var tourDate = DateTime.UtcNow.AddDays(41);
 
         await CreateBookingAsync(new Booking {
             PurchaseCode = purchaseCode,
@@ -47,11 +47,11 @@ public class UpdateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
             VoucherNumber = null
         };
 
-        HttpResponseMessage response = await PostUpdateBookingAsync(sut, request);
+        var response = await PostUpdateBookingAsync(sut, request);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        Booking result = await GetBookingByPurchaseCodeAsync(purchaseCode);
+        var result = await GetBookingByPurchaseCodeAsync(purchaseCode);
         result.CustomerEmail.ShouldBe("same.values@example.com");
         result.CustomerName.ShouldBe("Same Values");
         result.TotalGuests.ShouldBe(2);
@@ -60,7 +60,7 @@ public class UpdateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
 
     [Fact]
     public async Task UpdateBooking_PersistsChanges_WhenWebhookPayloadIsValid() {
-        using HttpClient sut = CreateApiClient();
+        using var sut = CreateApiClient();
         string purchaseCode = FoodTourApiRequestFactory.CreateUniquePurchaseCode("api-upd");
 
         await CreateBookingAsync(new Booking {
@@ -82,11 +82,11 @@ public class UpdateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
             VoucherNumber = "NEW-VOUCHER"
         };
 
-        HttpResponseMessage response = await PostUpdateBookingAsync(sut, request);
+        var response = await PostUpdateBookingAsync(sut, request);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        Booking result = await GetBookingByPurchaseCodeAsync(purchaseCode);
+        var result = await GetBookingByPurchaseCodeAsync(purchaseCode);
         result.CustomerEmail.ShouldBe("after.update@example.com");
         result.CustomerName.ShouldBe("After Update");
         result.TotalGuests.ShouldBe(5);

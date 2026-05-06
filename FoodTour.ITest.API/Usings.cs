@@ -1,10 +1,12 @@
 global using System.Net;
 global using System.Net.Http.Json;
+global using System.Linq;
 global using System.Text;
 global using System.Text.Json;
 global using FoodTour;
 global using FoodTour.ITest.API.Fixtures;
 global using FoodTour.ITest.API.Tests.Helpers;
+global using FoodTour.ITest.Shared.Http;
 global using FoodTour.ITest.Shared.Configuration;
 global using FoodTour.ITest.Shared.TestData;
 global using FoodTour.ITest.Shared.TestDoubles;
