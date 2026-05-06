@@ -1,4 +1,4 @@
-namespace FoodTour.ITest.UI.TestDoubles;
+namespace FoodTour.ITest.Shared.TestDoubles;
 
 public sealed class TestEmailSender : IEmailSender {
     private readonly List<SentEmail> sentEmails = [];

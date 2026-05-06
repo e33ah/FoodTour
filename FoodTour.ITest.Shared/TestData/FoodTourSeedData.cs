@@ -1,4 +1,4 @@
-namespace FoodTour.ITest.UI.TestData;
+namespace FoodTour.ITest.Shared.TestData;
 
 public sealed class FoodTourSeedData {
     public required IReadOnlyList<SeededSupplier> Suppliers { get; init; }
