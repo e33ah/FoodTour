@@ -21,7 +21,7 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     public Task CreateTour_NavigatesToBookingConfirmation_WhenBookingIsValidAndSuppliersAreSelected() {
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
-            var booking = Fixture.SeedData.BookingSelectionBooking;
+            var booking = await CreateTemporaryBookingAsync(DateTime.SpecifyKind(DateTime.Today.AddDays(14).AddHours(11), DateTimeKind.Utc));
             var selectedSuppliers = Fixture.SeedData.ActiveSuppliers
                 .Take(Fixture.SeedData.RequiredSupplierSelectionCount)
                 .ToList();
@@ -29,28 +29,32 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
                 .Select(supplier => supplier.Name)
                 .ToList();
 
-            await sut.GotoAsync();
-            await sut.EnterBookingDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
-            await sut.SelectSuppliersAsync(selectedSupplierNames);
-            await sut.SubmitSelectionAsync();
+            try {
+                await sut.GotoAsync();
+                await sut.EnterBookingDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
+                await sut.SelectSuppliersAsync(selectedSupplierNames);
+                await sut.SubmitSelectionAsync();
 
-            await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
-            page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
-            var bookingSummaryPage = new BookingSummaryPage(page);
+                await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
+                page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
+                var bookingSummaryPage = new BookingSummaryPage(page);
 
-            await Expect(bookingSummaryPage.SummaryHeading).ToBeVisibleAsync();
+                await Expect(bookingSummaryPage.SummaryHeading).ToBeVisibleAsync();
 
-            foreach (var supplier in selectedSuppliers) {
-                await Expect(bookingSummaryPage.SelectedSupplier(supplier.Name)).ToBeVisibleAsync();
+                foreach (var supplier in selectedSuppliers) {
+                    await Expect(bookingSummaryPage.SelectedSupplier(supplier.Name)).ToBeVisibleAsync();
+                }
+
+                await bookingSummaryPage.ConfirmBookingButton.ClickAsync();
+
+                await page.WaitForURLAsync(BOOKING_CONFIRMATION_URL_PATTERN);
+                var bookingConfirmationPage = new BookingConfirmationPage(page);
+
+                await Expect(bookingConfirmationPage.BookingConfirmationHeading).ToBeVisibleAsync();
+                await Expect(bookingConfirmationPage.ViewTourDetailsButton).ToBeVisibleAsync();
+            } finally {
+                await DeleteTemporaryBookingAsync(booking.Id);
             }
-
-            await bookingSummaryPage.ConfirmBookingButton.ClickAsync();
-
-            await page.WaitForURLAsync(BOOKING_CONFIRMATION_URL_PATTERN);
-            var bookingConfirmationPage = new BookingConfirmationPage(page);
-
-            await Expect(bookingConfirmationPage.BookingConfirmationHeading).ToBeVisibleAsync();
-            await Expect(bookingConfirmationPage.ViewTourDetailsButton).ToBeVisibleAsync();
         });
     }
 
@@ -92,25 +96,29 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     public Task EnterBooking_ClearsWarningAndAllowsProgress_WhenLookupBecomesValidAfterInvalidAttempt() {
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
-            var booking = Fixture.SeedData.BookingSelectionBooking;
+            var booking = await CreateTemporaryBookingAsync(lookupResetTourDate);
             var selectedSupplierNames = Fixture.SeedData.ActiveSuppliers
                 .Take(Fixture.SeedData.RequiredSupplierSelectionCount)
                 .Select(supplier => supplier.Name)
                 .ToList();
 
-            await sut.GotoAsync();
-            await sut.EnterBookingLookupDetailsAsync("missing.booking@example.com", "NOT-A-REAL-BOOKING");
-            await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_NOT_FOUND_MESSAGE);
+            try {
+                await sut.GotoAsync();
+                await sut.EnterBookingLookupDetailsAsync("missing.booking@example.com", "NOT-A-REAL-BOOKING");
+                await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_NOT_FOUND_MESSAGE);
 
-            await sut.EnterBookingLookupDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
-            await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_FOUND_MESSAGE);
-            await Expect(sut.PartnerConfirmationPrompt).ToBeHiddenAsync();
+                await sut.EnterBookingLookupDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
+                await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_FOUND_MESSAGE);
+                await Expect(sut.PartnerConfirmationPrompt).ToBeHiddenAsync();
 
-            await sut.SelectSuppliersAsync(selectedSupplierNames);
-            await sut.SubmitSelectionAsync();
+                await sut.SelectSuppliersAsync(selectedSupplierNames);
+                await sut.SubmitSelectionAsync();
 
-            await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
-            page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
+                await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
+                page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
+            } finally {
+                await DeleteTemporaryBookingAsync(booking.Id);
+            }
         });
     }
 
@@ -131,7 +139,7 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     public Task EnterBooking_RemainsUsableAndRecoverable_WhenBookingLookupApiFails() {
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
-            var booking = Fixture.SeedData.BookingSelectionBooking;
+            var booking = await CreateTemporaryBookingAsync(lookupResetTourDate);
             var selectedSupplierNames = Fixture.SeedData.ActiveSuppliers
                 .Take(Fixture.SeedData.RequiredSupplierSelectionCount)
                 .Select(supplier => supplier.Name)
@@ -152,22 +160,26 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
                 await route.ContinueAsync();
             });
 
-            await sut.GotoAsync();
-            await sut.EnterBookingLookupDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
-            await page.WaitForTimeoutAsync(700);
+            try {
+                await sut.GotoAsync();
+                await sut.EnterBookingLookupDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
+                await page.WaitForTimeoutAsync(700);
 
-            await Expect(sut.BookingStatusMessage).ToBeHiddenAsync();
-            await Expect(sut.PartnerConfirmationPrompt).ToBeHiddenAsync();
+                await Expect(sut.BookingStatusMessage).ToBeHiddenAsync();
+                await Expect(sut.PartnerConfirmationPrompt).ToBeHiddenAsync();
 
-            await sut.PurchaseCodeInput.FillAsync(string.Empty);
-            await sut.PurchaseCodeInput.FillAsync(booking.PurchaseCode);
-            await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_FOUND_MESSAGE);
+                await sut.PurchaseCodeInput.FillAsync(string.Empty);
+                await sut.PurchaseCodeInput.FillAsync(booking.PurchaseCode);
+                await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_FOUND_MESSAGE);
 
-            await sut.SelectSuppliersAsync(selectedSupplierNames);
-            await sut.SubmitSelectionAsync();
+                await sut.SelectSuppliersAsync(selectedSupplierNames);
+                await sut.SubmitSelectionAsync();
 
-            await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
-            page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
+                await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
+                page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
+            } finally {
+                await DeleteTemporaryBookingAsync(booking.Id);
+            }
         });
     }
 
