@@ -61,6 +61,31 @@ public static class TestHelper {
         });
     }
 
+    public static AdminController CreateAdminController(IAdminAccessService? adminAccessService = null, IConfiguration? configuration = null) {
+        adminAccessService ??= CreateAllowAllAdminAccessService();
+        configuration ??= CreateAdminConfiguration(googleConfigured: true);
+        return new AdminController(adminAccessService, configuration);
+    }
+
+    public static IConfiguration CreateAdminConfiguration(bool googleConfigured = true) {
+        var values = new Dictionary<string, string?>();
+        if (googleConfigured) {
+            values["Authentication:Google:ClientId"] = "test-client-id";
+            values["Authentication:Google:ClientSecret"] = "test-client-secret";
+        }
+        return new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+    }
+
+    public static IAdminAccessService CreateAllowAllAdminAccessService() {
+        return Mock.Of<IAdminAccessService>(s => s.IsAllowed(It.IsAny<string>()) == true);
+    }
+
+    public static IOptions<AdminSettings> CreateAdminSettingsOptions(params string[] allowedEmails) {
+        return Options.Create(new AdminSettings {
+            AllowedEmails = [.. allowedEmails]
+        });
+    }
+
     public static IOptions<AdminNotificationSettings> CreateAdminNotificationOptions() {
         return Options.Create(new AdminNotificationSettings {
             AdminEmail = ADMIN_EMAIL,

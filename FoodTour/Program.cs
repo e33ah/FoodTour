@@ -57,6 +57,45 @@ public class Program {
             builder.Services.AddScoped<IPurchaseCodeValidationService, PurchaseCodeValidationService>();
             builder.Services.AddScoped<IBookingUpdateService, BookingUpdateService>();
 
+            // Add Admin Settings and access service
+            builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
+            builder.Services.AddScoped<IAdminAccessService, AdminAccessService>();
+            builder.Services.AddScoped<IAuthorizationHandler, AdminOnlyAuthorizationHandler>();
+
+            // Add Google OAuth + cookie authentication
+            string? googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+            string? googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+            bool googleConfigured = !string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret);
+
+            if (!googleConfigured) {
+                Log.Warning("Google OAuth credentials are not configured. Admin login will be unavailable. " +
+                    "Use 'dotnet user-secrets set Authentication:Google:ClientId <value>' to configure.");
+            }
+
+            var authBuilder = builder.Services.AddAuthentication(options => {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                if (googleConfigured) {
+                    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+                }
+            })
+            .AddCookie(options => {
+                options.LoginPath = "/Admin/Login";
+                options.AccessDeniedPath = "/Admin/AccessDenied";
+                options.SlidingExpiration = true;
+                options.ExpireTimeSpan = TimeSpan.FromHours(8);
+            });
+
+            if (googleConfigured) {
+                authBuilder.AddGoogle(options => {
+                    options.ClientId = googleClientId!;
+                    options.ClientSecret = googleClientSecret!;
+                });
+            }
+
+            builder.Services.AddAuthorizationBuilder()
+                .AddPolicy("AdminOnly", policy =>
+                    policy.Requirements.Add(new AdminOnlyRequirement()));
+
             var app = builder.Build();
 
             Log.Information("Starting FoodTour application...");
@@ -84,7 +123,7 @@ public class Program {
                 app.UseExceptionHandler("/Home/Error");
             }
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapStaticAssets();

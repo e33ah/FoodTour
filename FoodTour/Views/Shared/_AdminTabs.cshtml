@@ -1,0 +1,34 @@
+@{
+	var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+
+<div class="d-flex justify-content-between align-items-center mt-3 mb-3 border-bottom">
+	<ul class="nav nav-tabs border-0">
+		<li class="nav-item">
+			<a class="nav-link @(currentAction == "Dashboard" ? "active" : "text-dark")" asp-controller="Admin" asp-action="Dashboard">
+				<i class="bi bi-speedometer2"></i> Dashboard
+			</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link @(currentAction == "Bookings" ? "active" : "text-dark")" asp-controller="Admin" asp-action="Bookings">
+				<i class="bi bi-calendar-check"></i> Bookings
+			</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link @(currentAction == "Visits" ? "active" : "text-dark")" asp-controller="Admin" asp-action="Visits">
+				<i class="bi bi-shop"></i> Visits
+			</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link @(currentAction == "Suppliers" ? "active" : "text-dark")" asp-controller="Admin" asp-action="Suppliers">
+				<i class="bi bi-building"></i> Suppliers
+			</a>
+		</li>
+	</ul>
+	<form asp-controller="Admin" asp-action="Logout" method="post" class="mb-1">
+		@Html.AntiForgeryToken()
+		<button type="submit" class="btn btn-outline-secondary btn-sm">
+			<i class="bi bi-box-arrow-right"></i> Sign out
+		</button>
+	</form>
+</div>
