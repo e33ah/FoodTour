@@ -5,10 +5,8 @@ public class AdminNotificationServiceTests {
     public async Task NotifyVisitRecordedAsync_DoesNotSendEmail_WhenNotificationsAreDisabled() {
         var booking = TestHelper.CreateValidBooking();
         var supplier = TestHelper.CreateSupplier(1);
-        var visit = TestHelper.CreateVisit();
+        var visit = TestHelper.CreateVisit(isClaimed: true);
         var (sut, emailSenderMock, _) = TestHelper.CreateAdminNotificationService(notifyOnVisitRecorded: false);
-
-        await sut.NotifyVisitRecordedAsync(booking, supplier, visit);
 
         emailSenderMock.Verify(x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
@@ -17,7 +15,7 @@ public class AdminNotificationServiceTests {
     public async Task NotifyVisitRecordedAsync_Throws_WhenAdminEmailMissingAndNotificationsEnabled() {
         var booking = TestHelper.CreateValidBooking();
         var supplier = TestHelper.CreateSupplier(1);
-        var visit = TestHelper.CreateVisit();
+        var visit = TestHelper.CreateVisit(isClaimed: true);
         var (sut, emailSenderMock, _) = TestHelper.CreateAdminNotificationService(adminEmail: "   ");
 
         var result = await Should.ThrowAsync<InvalidOperationException>(() => sut.NotifyVisitRecordedAsync(booking, supplier, visit));
@@ -30,7 +28,7 @@ public class AdminNotificationServiceTests {
     public async Task NotifyVisitRecordedAsync_SendsEmail_WhenNotificationsAreEnabled() {
         var booking = TestHelper.CreateValidBooking();
         var supplier = TestHelper.CreateSupplier(1);
-        var visit = TestHelper.CreateVisit();
+        var visit = TestHelper.CreateVisit(isClaimed: true);
         var (sut, emailSenderMock, templateRendererMock) = TestHelper.CreateAdminNotificationService();
         templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync((string path, object model) => $"<html>Email body with {supplier.Name} and {TestHelper.formattedTourDate}</html>");

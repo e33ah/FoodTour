@@ -2,10 +2,10 @@ namespace FoodTour.Test.Controllers;
 
 public class AdminControllerMiscTests : AdminControllerTestBase {
     [Fact]
-    public void Dashboard_ReturnsView() {
+    public async Task Dashboard_ReturnsView() {
         var sut = CreateController();
 
-        var result = sut.Dashboard();
+        var result = await sut.Dashboard();
 
         result.ShouldBeOfType<ViewResult>();
     }

@@ -6,7 +6,7 @@ public class SupplierNotificationServiceTests {
         var booking = TestHelper.CreateValidBooking();
         var supplier = TestHelper.CreateSupplier(1);
         supplier.EmailNotificationsEnabled = false;
-        var visit = TestHelper.CreateVisit();
+        var visit = TestHelper.CreateVisit(isClaimed: true);
         var (sut, emailSenderMock, _) = TestHelper.CreateSupplierNotificationService();
 
         await sut.NotifySupplierVisitRecordedAsync(booking, supplier, visit, TestHelper.SUPPORT_URL);
@@ -19,7 +19,7 @@ public class SupplierNotificationServiceTests {
         var booking = TestHelper.CreateValidBooking();
         var supplier = TestHelper.CreateSupplier(1);
         supplier.EmailNotificationsEnabled = true;
-        var visit = TestHelper.CreateVisit();
+        var visit = TestHelper.CreateVisit(isClaimed: true);
         var (sut, emailSenderMock, templateRendererMock) = TestHelper.CreateSupplierNotificationService();
         templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync((string path, object model) => $"<html>Email body for {supplier.Name}</html>");
@@ -39,7 +39,7 @@ public class SupplierNotificationServiceTests {
         var supplier = TestHelper.CreateSupplier(1);
         supplier.EmailNotificationsEnabled = true;
         supplier.ContactEmail = "first@test.com; second@test.com ;third@test.com";
-        var visit = TestHelper.CreateVisit();
+        var visit = TestHelper.CreateVisit(isClaimed: true);
         var (sut, emailSenderMock, templateRendererMock) = TestHelper.CreateSupplierNotificationService();
         templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync((string path, object model) => $"<html>Email body for {supplier.Name}</html>");

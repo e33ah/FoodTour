@@ -1,7 +1,63 @@
+@model FoodTour.ViewModels.AdminDashboardViewModel
 @{
 	ViewData["Title"] = "Dashboard";
 	Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<h1>Dashboard</h1>
-<p class="text-muted">Welcome to the admin area.</p>
+<h1 class="mt-3">Dashboard</h1>
+<div class="row g-3 mt-1">
+	<div class="col-sm-4">
+		<div class="card text-bg-primary h-100">
+			<div class="card-body d-flex flex-column">
+				<h6 class="card-title mb-3 text-white-50"><i class="bi bi-calendar-check me-1"></i>Bookings</h6>
+				<div class="d-flex flex-grow-1">
+					<div class="flex-fill text-center d-flex flex-column justify-content-center text-white-50">
+						<p class="fs-3 mb-0 fw-bold">@Model.PastBookings</p>
+						<div class="small">Past</div>
+					</div>
+					<div class="vr mx-3"></div>
+					<div class="flex-fill text-center d-flex flex-column justify-content-center">
+						<p class="display-6 mb-0 fw-bold">@Model.TodayBookings</p>
+						<div class="small fw-semibold">Today</div>
+					</div>
+					<div class="vr mx-3"></div>
+					<div class="flex-fill text-center d-flex flex-column justify-content-center">
+						<p class="fs-3 mb-0 fw-bold">@Model.UpcomingBookings</p>
+						<div class="small text-white-50">Upcoming</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-sm-4">
+		<div class="card text-bg-success h-100">
+			<div class="card-body d-flex flex-column">
+				<h6 class="card-title mb-3 text-white-50"><i class="bi bi-shop me-1"></i>Visits</h6>
+				@{
+					bool hasUnclaimed = Model.UnclaimedVisits > 0;
+				}
+				<div class="d-flex flex-grow-1">
+					<div class="flex-fill text-center d-flex flex-column justify-content-center">
+						<p class="display-6 mb-0 fw-bold">@Model.ClaimedVisits</p>
+						<div class="small text-white-50">Claimed</div>
+					</div>
+					<div class="vr mx-3"></div>
+					<div class="flex-fill text-center d-flex flex-column justify-content-center @(hasUnclaimed ? "text-warning" : "")">
+						<p class="display-6 mb-0 fw-bold">@Model.UnclaimedVisits</p>
+						<div class="small @(hasUnclaimed ? "" : "text-white-50")">Unclaimed</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-sm-4">
+		<div class="card text-bg-info h-100">
+			<div class="card-body d-flex flex-column">
+				<h6 class="card-title mb-3 text-white-50"><i class="bi bi-building me-1"></i>Active Suppliers</h6>
+				<div class="d-flex flex-grow-1 justify-content-center align-items-center">
+					<p class="display-4 mb-0 fw-bold">@Model.ActiveSuppliers</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

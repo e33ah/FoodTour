@@ -42,8 +42,9 @@
 	</div>
 
 	<footer class="border-top footer text-muted">
-		<div class="container">
-			&copy; 2026 Kabincraft Adventures - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+		<div class="container d-flex justify-content-between align-items-center">
+			<span>&copy; 2026 Kabincraft Adventures - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a></span>
+			<a asp-controller="Admin" asp-action="Login" class="text-muted small" title="Admin"><i class="bi bi-lock"></i></a>
 		</div>
 	</footer>
 	<partial name="_CookieConsent" />

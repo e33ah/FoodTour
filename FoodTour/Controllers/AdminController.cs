@@ -1,7 +1,7 @@
 namespace FoodTour.Controllers;
 
 [Authorize(Policy = "AdminOnly")]
-public class AdminController(IAdminAccessService adminAccessService, IConfiguration configuration) : Controller {
+public class AdminController(IAdminAccessService adminAccessService, IConfiguration configuration, FoodTourContext context) : Controller {
 
     private bool GoogleConfigured =>
         !string.IsNullOrEmpty(configuration["Authentication:Google:ClientId"]) &&
@@ -63,7 +63,17 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         return RedirectToAction(nameof(Login));
     }
 
-    public IActionResult Dashboard() {
-        return View();
+    public async Task<IActionResult> Dashboard() {
+        var today = DateTime.UtcNow.Date;
+        var tomorrow = today.AddDays(1);
+        var viewModel = new AdminDashboardViewModel {
+            PastBookings = await context.Bookings.CountAsync(b => !b.IsCancelled && b.TourDate < today),
+            TodayBookings = await context.Bookings.CountAsync(b => !b.IsCancelled && b.TourDate >= today && b.TourDate < tomorrow),
+            UpcomingBookings = await context.Bookings.CountAsync(b => !b.IsCancelled && b.TourDate >= tomorrow),
+            ClaimedVisits = await context.Visits.CountAsync(v => v.IsClaimed),
+            UnclaimedVisits = await context.Visits.CountAsync(v => !v.IsClaimed),
+            ActiveSuppliers = await context.Suppliers.CountAsync(s => s.IsActive)
+        };
+        return View(viewModel);
     }
 }

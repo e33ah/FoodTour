@@ -5,10 +5,12 @@ public abstract class AdminControllerTestBase : TestBase {
 
     protected static AdminController CreateController(
         IAdminAccessService? adminAccessService = null,
-        bool googleConfigured = true) {
+        bool googleConfigured = true,
+        FoodTourContext? context = null) {
         var controller = TestHelper.CreateAdminController(
             adminAccessService,
-            TestHelper.CreateAdminConfiguration(googleConfigured));
+            TestHelper.CreateAdminConfiguration(googleConfigured),
+            context);
         controller.ControllerContext = new ControllerContext {
             HttpContext = CreateHttpContext()
         };

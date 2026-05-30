@@ -61,10 +61,11 @@ public static class TestHelper {
         });
     }
 
-    public static AdminController CreateAdminController(IAdminAccessService? adminAccessService = null, IConfiguration? configuration = null) {
+    public static AdminController CreateAdminController(IAdminAccessService? adminAccessService = null, IConfiguration? configuration = null, FoodTourContext? context = null) {
         adminAccessService ??= CreateAllowAllAdminAccessService();
         configuration ??= CreateAdminConfiguration(googleConfigured: true);
-        return new AdminController(adminAccessService, configuration);
+        context ??= CreateInMemoryContext();
+        return new AdminController(adminAccessService, configuration, context);
     }
 
     public static IConfiguration CreateAdminConfiguration(bool googleConfigured = true) {
@@ -205,11 +206,12 @@ public static class TestHelper {
         };
     }
 
-    public static Visit CreateVisit(int bookingId = 1, int supplierId = 1) {
+    public static Visit CreateVisit(int bookingId = 1, int supplierId = 1, bool isClaimed = false) {
         return new Visit {
             BookingId = bookingId,
             SupplierId = supplierId,
-            ClaimedAt = validTourDate
+            IsClaimed = isClaimed,
+            ClaimedAt = isClaimed ? validTourDate : null
         };
     }
 
