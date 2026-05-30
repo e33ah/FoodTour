@@ -48,13 +48,12 @@ public class ExampleClass{
 - **Files:** Only modify files that are relevant to the task. Do not make changes to files that are not directly related to the task at hand.
 - **Formatting:** Ensure that all code suggestions are properly formatted and adhere to the project's coding standards. Do not suggest formatting changes that are not relevant to the task at hand.
 
-###  Instructions for Code Generation.
+### Instructions for Code Generation
 - Only generate a plan if you need it for the task at hand. If you do not need a plan then do not generate one.  
-- Focus on solving the task at hand. Once you have finished the task, review all the code in any modified files and identify security issues or code quality issues. If you find any issues then suggest a prompt that
-would fix the issues. If you do not find any issues then state that no issues were found.
+- Focus on solving the task at hand. Once you have finished the task, review all the code in any modified files and identify security issues or code quality issues. If you find any issues then suggest a prompt that would fix the issues. If you do not find any issues then state that no issues were found.
 - Only generate a summary document for changes made if you are asked for one.
 
-## Dot Net Project Requirements
+## DotNet Project Requirements
 - **Language:** Use C# as the programming language.
 - **Framework:** Use .NET 10 or later for all new projects.
 - **Web:** Use ASP.NET Core for web applications.
@@ -120,3 +119,22 @@ would fix the issues. If you do not find any issues then state that no issues we
 - **Changelog Updates:** For requests to update the changelog or prepare release notes, use the `update-changelog` skill.
 - **Changelog File:** The repository changelog to update is `_Dependencies\Publish_Support\CHANGELOG.md`.
 - **Changelog Process:** Review all commits since the last tag first, provide that review to the user, ask before continuing if there are significant concerns, and otherwise assume the next version is a patch release.
+
+## Code Commit Messages
+- The first line should start with a single word describing the change. That word must either be `feat`, `chore`, `fix`, `build`, `refactor`, `docs`, `style` or `test`.
+- Use `feat` if the change was primarily new code.
+- Use `chore` if the change was primarily maintenance work.
+- Use `fix` when a commit represents a bug fix for the application.
+- Use `build` if the changes affect the build system or external dependencies.
+- Use `refactor` if the code change neither fixes a bug nor adds a feature.
+- Use `docs` if the change is documentation only.
+- Use `style` for changes that do not affect the meaning of the code, such as whitespace, formatting or missing semicolons.
+- Use `test` if the change was only in test projects.
+- After that word there should be a colon with no space before it.
+- After the colon there should be a single space followed by a short description of the change limited to 50 characters.
+- Leave a blank line before adding a second paragraph.
+- The second paragraph should be no more than 400 characters in total.
+- In the second paragraph, use bullet points.
+- Keep each bullet point brief and avoid padding it out with generic statements.
+- Summarise the changes at a higher level without mentioning specific file names or class names.
+- If any changes are made to projects ending in `*.Test`, summarise those changes last.
