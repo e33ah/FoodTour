@@ -1,7 +1,7 @@
 namespace FoodTour.Test.Controllers;
 
 public class HomeControllerIndexPostTests : HomeControllerTestBase {
-    
+
     [Fact]
     public async Task Index_ReturnsBadRequest_WhenBookingIdIsZero() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
@@ -171,9 +171,9 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         var bookingSuppliers = await context.BookingSuppliers
             .Where(bs => bs.BookingId == booking.Id)
             .ToListAsync(CancellationToken);
-        
+
         bookingSuppliers.Count.ShouldBe(5);
-        
+
         foreach (int supplierId in selectedSuppliers) {
             bookingSuppliers.Any(bs => bs.SupplierId == supplierId).ShouldBeTrue();
         }
@@ -191,9 +191,9 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         var visits = await context.Visits
             .Where(v => v.BookingId == booking.Id)
             .ToListAsync(CancellationToken);
-        
+
         visits.Count.ShouldBe(5);
-        
+
         foreach (int supplierId in selectedSuppliers) {
             var visit = visits.FirstOrDefault(v => v.SupplierId == supplierId);
             visit.ShouldNotBeNull();
@@ -206,7 +206,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
     public async Task Index_RemovesOldSuppliers_WhenBookingUpdatedAgain() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(7);
         var booking = await TestHelper.CreateBookingInDatabase(context, selectedSupplierIds: [1, 2, 3, 4, 5]);
-        
+
         var oldBookingSuppliers = new List<BookingSupplier> {
             new() { BookingId = booking.Id, SupplierId = 1 },
             new() { BookingId = booking.Id, SupplierId = 2 },
@@ -225,7 +225,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         var bookingSuppliers = await context.BookingSuppliers
             .Where(bs => bs.BookingId == booking.Id)
             .ToListAsync(CancellationToken);
-        
+
         bookingSuppliers.Count.ShouldBe(5);
         bookingSuppliers.Any(bs => bs.SupplierId == 1).ShouldBeFalse();
         bookingSuppliers.Any(bs => bs.SupplierId == 5).ShouldBeFalse();
@@ -237,7 +237,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
     public async Task Index_RemovesOldVisits_WhenBookingUpdatedAgain() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(7);
         var booking = await TestHelper.CreateBookingInDatabase(context, selectedSupplierIds: [1, 2, 3, 4, 5]);
-        
+
         var oldVisits = new List<Visit> {
             new() { BookingId = booking.Id, SupplierId = 1 },
             new() { BookingId = booking.Id, SupplierId = 2 },
@@ -256,7 +256,7 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
         var visits = await context.Visits
             .Where(v => v.BookingId == booking.Id)
             .ToListAsync(CancellationToken);
-        
+
         visits.Count.ShouldBe(5);
         visits.Any(v => v.SupplierId == 1).ShouldBeFalse();
         visits.Any(v => v.SupplierId == 5).ShouldBeFalse();

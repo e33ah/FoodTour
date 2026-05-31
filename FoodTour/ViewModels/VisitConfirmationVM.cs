@@ -1,4 +1,4 @@
-namespace FoodTour.ViewModels;
+namespace FoodTour.Models;
 
 public class VisitConfirmationVM {
     public int TastingExperiencesClaimed { get; set; }

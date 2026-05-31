@@ -1,4 +1,4 @@
-namespace FoodTour.ViewModels;
+namespace FoodTour.Models;
 
 public class AdminDashboardVM {
     public int PastBookings { get; set; }

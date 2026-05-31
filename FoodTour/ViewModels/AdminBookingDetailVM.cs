@@ -1,4 +1,4 @@
-namespace FoodTour.ViewModels;
+namespace FoodTour.Models;
 
 public class AdminBookingDetailVM {
     public Booking Booking { get; set; } = null!;

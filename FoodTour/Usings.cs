@@ -6,7 +6,6 @@ global using System.Text.Json;
 global using FoodTour.Authorization;
 global using FoodTour.Models;
 global using FoodTour.Services;
-global using FoodTour.ViewModels;
 global using MailKit.Net.Smtp;
 global using Microsoft.AspNetCore.Authentication;
 global using Microsoft.AspNetCore.Authentication.Cookies;
