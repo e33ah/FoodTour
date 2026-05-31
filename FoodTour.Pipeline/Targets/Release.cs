@@ -90,7 +90,7 @@ public partial class Build : NukeBuild {
                     Log.Information("{aoFile} removed.", AO_FILENAME);
                 }
 
-                } catch (Exception ex) {
+            } catch (Exception ex) {
                 Log.Error(ex, "FTP deploy failed");
                 throw;
 

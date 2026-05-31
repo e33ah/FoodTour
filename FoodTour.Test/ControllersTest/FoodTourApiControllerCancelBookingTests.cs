@@ -169,7 +169,7 @@ public class FoodTourApiControllerCancelBookingTests : TestBase {
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
     }
-  
+
     [Fact]
     public async Task CancelBooking_SkipsProcessing_WhenNotWeymouthTour() {
         var controller = TestHelper.CreateFoodTourApiController();

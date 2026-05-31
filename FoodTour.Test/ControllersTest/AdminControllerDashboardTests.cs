@@ -35,7 +35,7 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
             new Booking { PurchaseCode = "TODAY2", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddHours(14) },
             new Booking { PurchaseCode = "CANCEL", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddHours(11), IsCancelled = true },
             new Booking { PurchaseCode = "FUTURE", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(1) },
-            new Booking { PurchaseCode = "PAST1",  CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-1) });
+            new Booking { PurchaseCode = "PAST1", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-1) });
         await context.SaveChangesAsync(CancellationToken);
         var sut = CreateController(context: context);
 
@@ -50,11 +50,11 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
         var context = TestHelper.CreateInMemoryContext();
         var today = DateTime.UtcNow.Date;
         context.Bookings.AddRange(
-            new Booking { PurchaseCode = "FUT1",   CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(1) },
-            new Booking { PurchaseCode = "FUT2",   CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(7) },
+            new Booking { PurchaseCode = "FUT1", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(1) },
+            new Booking { PurchaseCode = "FUT2", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(7) },
             new Booking { PurchaseCode = "CANCEL", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(2), IsCancelled = true },
             new Booking { PurchaseCode = "TODAY1", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddHours(10) },
-            new Booking { PurchaseCode = "PAST1",  CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-1) });
+            new Booking { PurchaseCode = "PAST1", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-1) });
         await context.SaveChangesAsync(CancellationToken);
         var sut = CreateController(context: context);
 
@@ -69,8 +69,8 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
         var context = TestHelper.CreateInMemoryContext();
         var today = DateTime.UtcNow.Date;
         context.Bookings.AddRange(
-            new Booking { PurchaseCode = "PAST1",  CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-1) },
-            new Booking { PurchaseCode = "PAST2",  CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-7) },
+            new Booking { PurchaseCode = "PAST1", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-1) },
+            new Booking { PurchaseCode = "PAST2", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-7) },
             new Booking { PurchaseCode = "CANCEL", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-2), IsCancelled = true },
             new Booking { PurchaseCode = "TODAY1", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddHours(10) },
             new Booking { PurchaseCode = "FUTURE", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(1) });
