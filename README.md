@@ -143,9 +143,56 @@ $env:ApiTests__EmailSettings__Port = "25"
 
 The SQL Server connection string template must include `{0}` so the fixture can inject a unique database name for each run.
 
+## Admin Section
+
+The application includes a protected admin area at `/Admin`, accessible only to users whose Google account email is on the whitelist.
+
+### Allowed Emails
+
+The whitelist is configured in `appsettings.json` under `AdminSettings:AllowedEmails`:
+
+```json
+{
+  "AdminSettings": {
+    "AllowedEmails": [ "you@example.com" ]
+  }
+}
+```
+
+These are not secrets and can be committed to source control.
+
+### Google OAuth Credentials
+
+#### Local Development
+
+Store Google OAuth credentials (Client ID and Secret) using .NET user secrets (the `UserSecretsId` is already configured in `FoodTour.csproj`):
+
+```
+dotnet user-secrets set "Authentication:Google:ClientId" "YOUR_CLIENT_ID" --project FoodTour/FoodTour.csproj
+dotnet user-secrets set "Authentication:Google:ClientSecret" "YOUR_CLIENT_SECRET" --project FoodTour/FoodTour.csproj
+```
+
+Register `https://localhost:PORT/signin-google` as an authorised redirect URI in your Google Cloud Console OAuth app.
+
+#### Hosted / Production
+
+Set credentials as environment variables via `web.config` on the server:
+
+```xml
+<aspNetCore processPath="dotnet" arguments=".\FoodTour.dll" stdoutLogEnabled="false">
+  <environmentVariables>
+    <environmentVariable name="Authentication__Google__ClientId" value="YOUR_CLIENT_ID" />
+    <environmentVariable name="Authentication__Google__ClientSecret" value="YOUR_CLIENT_SECRET" />
+  </environmentVariables>
+</aspNetCore>
+```
+
+Add your hosted URL (e.g. `https://yourdomain.com/signin-google`) as an additional authorised redirect URI in the same Google OAuth app.
+Use a separate Google OAuth app for production to keep audit logs clean.
+
 ## CI/CD
 
-The  project uses NUKE for build automation. The build CI pipeline is set to run as the default.
+The project uses NUKE for build automation. The build CI pipeline is set to run as the default.
 
 To run the CI pipeline locally using NUKE, use the following commands based on your operating system:
 
