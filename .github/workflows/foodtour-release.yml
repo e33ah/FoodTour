@@ -26,6 +26,8 @@ jobs:
       FtpHost: ${{ secrets.FTP_HOST_PROD }}
       FtpUser: ${{ secrets.FTP_USER_PROD }}
       FtpPassword: ${{ secrets.FTP_PASSWORD_PROD }}
+      GoogleClientId: ${{ secrets.GOOGLE_CLIENT_ID_PROD }}
+      GoogleClientSecret: ${{ secrets.GOOGLE_CLIENT_SECRET_PROD }}
     steps:
       - uses: actions/checkout@v6
 
@@ -51,5 +53,8 @@ jobs:
       - name: 'Run: Publish'
         run: ./build.cmd Publish --skip BuildSolution ExecuteUnitTests
 
+      - name: 'Run: PatchWebConfig'
+        run: ./build.cmd PatchWebConfig --skip BuildSolution ExecuteUnitTests Publish
+
       - name: 'Run Release'
-        run: ./build.cmd Release --skip BuildSolution ExecuteUnitTests Publish
+        run: ./build.cmd Release --skip BuildSolution ExecuteUnitTests Publish PatchWebConfig

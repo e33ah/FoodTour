@@ -24,4 +24,12 @@ public partial class Build : NukeBuild {
 
     [Parameter("FTP target directory")]
     readonly string FtpRemotePath = "/";
+
+    [Parameter("Google OAuth Client ID")]
+    [Secret]
+    readonly string GoogleClientId;
+
+    [Parameter("Google OAuth Client Secret")]
+    [Secret]
+    readonly string GoogleClientSecret;
 }

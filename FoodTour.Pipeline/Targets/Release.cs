@@ -4,7 +4,7 @@ public partial class Build : NukeBuild {
 
     public Target Release => _ => _
         .OnlyWhenDynamic(() => (IsLocalDeployEnabled || IsServerBuild))
-        .DependsOn(Publish)
+        .DependsOn(PatchWebConfig)
         .Requires(() => FtpHost)
         .Requires(() => FtpUser)
         .Requires(() => FtpPassword)

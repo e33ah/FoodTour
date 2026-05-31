@@ -4,7 +4,7 @@ namespace FoodTour.Pipeline;
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests) }, AutoGenerate = false)]
 [GitHubActions("foodtour-cd", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch },
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests), nameof(Publish), nameof(Release) },
-    ImportSecrets = new[] { nameof(FtpHost), nameof(FtpUser), nameof(FtpPassword) }, AutoGenerate = false)]
+    ImportSecrets = new[] { nameof(FtpHost), nameof(FtpUser), nameof(FtpPassword), nameof(GoogleClientId), nameof(GoogleClientSecret) }, AutoGenerate = false)]
 [GitHubActions("foodtour-ui", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch, GitHubActionsTrigger.PullRequest },
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests), nameof(IntegrationTests) }, AutoGenerate = false)]
 public partial class Build : NukeBuild {
@@ -16,6 +16,8 @@ public partial class Build : NukeBuild {
             SetEnvironmentVariableIfMissing(nameof(FtpHost), config[nameof(FtpHost)]);
             SetEnvironmentVariableIfMissing(nameof(FtpUser), config[nameof(FtpUser)]);
             SetEnvironmentVariableIfMissing(nameof(FtpPassword), config[nameof(FtpPassword)]);
+            SetEnvironmentVariableIfMissing(nameof(GoogleClientId), config[nameof(GoogleClientId)]);
+            SetEnvironmentVariableIfMissing(nameof(GoogleClientSecret), config[nameof(GoogleClientSecret)]);
         }
         return Execute<Build>(x => x.FoodTourCI);
     }

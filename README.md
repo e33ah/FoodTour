@@ -145,7 +145,8 @@ The SQL Server connection string template must include `{0}` so the fixture can 
 
 ## Admin Section
 
-The application includes a protected admin area at `/Admin`, accessible only to users whose Google account email is on the whitelist.
+The application includes a protected admin area at `/Admin`, accessible only to users whose Google account email is on the whitelist. 
+The admin area allows authorised users to view a dashboard with booking and visit summaries, manage bookings, mark supplier reimbursements, and manage suppliers.
 
 ### Allowed Emails
 
@@ -174,20 +175,17 @@ dotnet user-secrets set "Authentication:Google:ClientSecret" "YOUR_CLIENT_SECRET
 
 Register `https://localhost:PORT/signin-google` as an authorised redirect URI in your Google Cloud Console OAuth app.
 
-#### Hosted / Production
+#### Hosted Environments
 
-Set credentials as environment variables via `web.config` on the server:
+Credentials are injected into `web.config` automatically by the `PatchWebConfig` pipeline step during deployment — you do not need to edit `web.config` manually.
 
-```xml
-<aspNetCore processPath="dotnet" arguments=".\FoodTour.dll" stdoutLogEnabled="false">
-  <environmentVariables>
-    <environmentVariable name="Authentication__Google__ClientId" value="YOUR_CLIENT_ID" />
-    <environmentVariable name="Authentication__Google__ClientSecret" value="YOUR_CLIENT_SECRET" />
-  </environmentVariables>
-</aspNetCore>
-```
+For GitHub Actions deployments, add the credentials as repository secrets (**Settings → Secrets and variables → Actions**):
+- Development: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- Production: `GOOGLE_CLIENT_ID_PROD`, `GOOGLE_CLIENT_SECRET_PROD`
 
-Add your hosted URL (e.g. `https://yourdomain.com/signin-google`) as an additional authorised redirect URI in the same Google OAuth app.
+For local deployments, add them to the pipeline user secrets (see the CI/CD section below).
+
+Add your hosted URL (e.g. `https://yourdomain.com/signin-google`) as an additional authorised redirect URI in your Google Cloud Console OAuth app.
 Use a separate Google OAuth app for production to keep audit logs clean.
 
 ## CI/CD
@@ -207,11 +205,22 @@ To run the CI pipeline locally using NUKE, use the following commands based on y
 nuke
 ```
 
-To run the CD pipeline locally with the Nuke global tool, add `FtpHost`, `FtpUser`, and `FtpPassword` to user secrets.
-Run:
+To run the CD pipeline locally with the Nuke global tool, add `FtpHost`, `FtpUser`, `FtpPassword`, `GoogleClientId`, and `GoogleClientSecret` to the pipeline user secrets:
+```
+dotnet user-secrets set "FtpHost" "YOUR_FTP_HOST" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
+dotnet user-secrets set "FtpUser" "YOUR_FTP_USER" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
+dotnet user-secrets set "FtpPassword" "YOUR_FTP_PASSWORD" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
+dotnet user-secrets set "GoogleClientId" "YOUR_CLIENT_ID" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
+dotnet user-secrets set "GoogleClientSecret" "YOUR_CLIENT_SECRET" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
+```
+
+Local deployment is disabled by default (`IsLocalDeployEnabled = false` in `Parameters.cs`) to prevent accidental deploys. To enable it temporarily, set it to `true` before running:
 ```
 nuke Release
 ```
+
+> **Remember to revert `IsLocalDeployEnabled` to `false` after a local deploy.**
+
+The project uses GitHub Actions for continuous integration and continuous deployment.
 The CD pipeline is configured to deploy to the development environment.
 The release pipeline is configured to deploy to the production environment.
-The project uses GitHub Actions for continuous integration and continuous deployment.

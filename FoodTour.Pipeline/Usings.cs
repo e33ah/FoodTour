@@ -2,6 +2,7 @@ global using System;
 global using System.ComponentModel;
 global using System.IO;
 global using System.Linq;
+global using System.Xml.Linq;
 global using FluentFTP;
 global using FluentFTP.Helpers;
 global using Microsoft.Extensions.Configuration;
