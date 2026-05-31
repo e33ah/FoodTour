@@ -64,7 +64,7 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         return RedirectToAction(nameof(Login));
     }
 
-    public async Task<IActionResult> Bookings(string? filter = null, int page = 1) {
+    public async Task<IActionResult> Bookings(string? filter = null, int page = 1, string? sort = null, string? dir = null) {
         var today = DateTime.UtcNow.Date;
         var query = context.Bookings.AsQueryable();
 
@@ -80,8 +80,18 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         int totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / PAGE_SIZE) : 1;
         page = Math.Clamp(page, 1, totalPages);
 
-        var bookings = await query
-            .OrderByDescending(b => b.TourDate)
+        string sortColumn = sort ?? AdminBookingsVM.SORT_DATE;
+        // Default direction: descending for date (newest first), ascending for all other columns
+        bool descending = dir != null ? dir == "desc" : sortColumn == AdminBookingsVM.SORT_DATE;
+
+        var orderedQuery = sortColumn switch {
+            AdminBookingsVM.SORT_CUSTOMER => descending ? query.OrderByDescending(b => b.CustomerName ?? "") : query.OrderBy(b => b.CustomerName ?? ""),
+            AdminBookingsVM.SORT_REF => descending ? query.OrderByDescending(b => b.PurchaseCode) : query.OrderBy(b => b.PurchaseCode),
+            AdminBookingsVM.SORT_GUESTS => descending ? query.OrderByDescending(b => b.TotalGuests) : query.OrderBy(b => b.TotalGuests),
+            _ => descending ? query.OrderByDescending(b => b.TourDate) : query.OrderBy(b => b.TourDate)
+        };
+
+        var bookings = await orderedQuery
             .Skip((page - 1) * PAGE_SIZE)
             .Take(PAGE_SIZE)
             .ToListAsync();
@@ -91,7 +101,9 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
             ActiveFilter = filter,
             TotalCount = totalCount,
             CurrentPage = page,
-            PageSize = PAGE_SIZE
+            PageSize = PAGE_SIZE,
+            SortColumn = sortColumn,
+            SortDescending = descending
         });
     }
 

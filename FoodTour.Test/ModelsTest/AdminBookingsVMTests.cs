@@ -54,6 +54,57 @@ public class AdminBookingsVMTests {
     }
 }
 
+public class AdminBookingsVMSortTests {
+    [Fact]
+    public void NextDirFor_ReturnsDesc_WhenRefColumnClickedWhileNotActive() {
+        var sut = new AdminBookingsVM { SortColumn = AdminBookingsVM.SORT_DATE, SortDescending = true };
+
+        sut.NextDirFor(AdminBookingsVM.SORT_REF).ShouldBe("desc");
+    }
+
+    [Fact]
+    public void NextDirFor_ReturnsDesc_WhenDateColumnClickedWhileNotActive() {
+        var sut = new AdminBookingsVM { SortColumn = AdminBookingsVM.SORT_GUESTS, SortDescending = false };
+
+        sut.NextDirFor(AdminBookingsVM.SORT_DATE).ShouldBe("desc");
+    }
+
+    [Fact]
+    public void NextDirFor_ReturnsAsc_WhenNonDateColumnClickedWhileNotActive() {
+        var sut = new AdminBookingsVM { SortColumn = AdminBookingsVM.SORT_DATE, SortDescending = true };
+
+        sut.NextDirFor(AdminBookingsVM.SORT_CUSTOMER).ShouldBe("asc");
+    }
+
+    [Fact]
+    public void NextDirFor_ReturnsAsc_WhenActiveDateColumnIsDescending() {
+        var sut = new AdminBookingsVM { SortColumn = AdminBookingsVM.SORT_DATE, SortDescending = true };
+
+        sut.NextDirFor(AdminBookingsVM.SORT_DATE).ShouldBe("asc");
+    }
+
+    [Fact]
+    public void NextDirFor_ReturnsDesc_WhenActiveDateColumnIsAscending() {
+        var sut = new AdminBookingsVM { SortColumn = AdminBookingsVM.SORT_DATE, SortDescending = false };
+
+        sut.NextDirFor(AdminBookingsVM.SORT_DATE).ShouldBe("desc");
+    }
+
+    [Fact]
+    public void NextDirFor_IsConsistentWithIsSortedBy_WhenColIsMixedCase() {
+        var sut = new AdminBookingsVM { SortColumn = AdminBookingsVM.SORT_DATE, SortDescending = true };
+
+        sut.NextDirFor("DATE").ShouldBe("asc");
+    }
+
+    [Fact]
+    public void NextDirFor_DefaultsToDesc_WhenRefColumnMixedCaseAndNotActive() {
+        var sut = new AdminBookingsVM { SortColumn = AdminBookingsVM.SORT_DATE, SortDescending = true };
+
+        sut.NextDirFor("REF").ShouldBe("desc");
+    }
+}
+
 public class PageEntryTests {
     [Fact]
     public void For_SetsPageNumber() {

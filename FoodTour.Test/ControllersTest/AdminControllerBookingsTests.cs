@@ -52,6 +52,69 @@ public class AdminControllerBookingsTests : AdminControllerTestBase {
         vm.ActiveFilter.ShouldBe(filter);
     }
 
+    [Theory]
+    [InlineData(AdminBookingsVM.SORT_DATE, "asc", new[] { "OLD", "MID", "NEW" })]
+    [InlineData(AdminBookingsVM.SORT_DATE, "desc", new[] { "NEW", "MID", "OLD" })]
+    [InlineData(AdminBookingsVM.SORT_REF, "asc", new[] { "MID", "NEW", "OLD" })]
+    [InlineData(AdminBookingsVM.SORT_REF, "desc", new[] { "OLD", "NEW", "MID" })]
+    [InlineData(AdminBookingsVM.SORT_GUESTS, "asc", new[] { "OLD", "MID", "NEW" })]
+    [InlineData(AdminBookingsVM.SORT_GUESTS, "desc", new[] { "NEW", "MID", "OLD" })]
+    [InlineData(AdminBookingsVM.SORT_CUSTOMER, "asc", new[] { "MID", "NEW", "OLD" })]
+    [InlineData(AdminBookingsVM.SORT_CUSTOMER, "desc", new[] { "OLD", "NEW", "MID" })]
+    public async Task Bookings_ReturnsCorrectOrder_WhenSortApplied(string sort, string dir, string[] expectedOrder) {
+        var context = TestHelper.CreateInMemoryContext();
+        var today = DateTime.UtcNow.Date;
+        context.Bookings.AddRange(
+            new Booking { PurchaseCode = "OLD", CustomerEmail = TestHelper.VALID_EMAIL, CustomerName = "Charlie", TourDate = today.AddDays(-7), TotalGuests = 1 },
+            new Booking { PurchaseCode = "NEW", CustomerEmail = TestHelper.VALID_EMAIL, CustomerName = "Bob", TourDate = today.AddDays(7), TotalGuests = 3 },
+            new Booking { PurchaseCode = "MID", CustomerEmail = TestHelper.VALID_EMAIL, CustomerName = "Alice", TourDate = today, TotalGuests = 2 });
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Bookings(sort: sort, dir: dir);
+
+        var vm = result.Model.ShouldBeOfType<AdminBookingsVM>();
+        vm.Bookings.Select(b => b.PurchaseCode).ShouldBe(expectedOrder);
+        vm.SortColumn.ShouldBe(sort);
+        vm.SortDescending.ShouldBe(dir == "desc");
+    }
+
+    [Fact]
+    public async Task Bookings_DefaultsToDateDescending_WhenNoSortSpecified() {
+        var context = TestHelper.CreateInMemoryContext();
+        var today = DateTime.UtcNow.Date;
+        context.Bookings.AddRange(
+            new Booking { PurchaseCode = "OLD", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-7) },
+            new Booking { PurchaseCode = "NEW", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(7) });
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Bookings();
+
+        var vm = result.Model.ShouldBeOfType<AdminBookingsVM>();
+        vm.Bookings[0].PurchaseCode.ShouldBe("NEW");
+        vm.SortColumn.ShouldBe(AdminBookingsVM.SORT_DATE);
+        vm.SortDescending.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Bookings_FallsBackToDateDescending_WhenSortValueIsUnrecognised() {
+        var context = TestHelper.CreateInMemoryContext();
+        var today = DateTime.UtcNow.Date;
+        context.Bookings.AddRange(
+            new Booking { PurchaseCode = "OLD", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-7) },
+            new Booking { PurchaseCode = "NEW", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(7) });
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Bookings(sort: "invalid", dir: "asc");
+
+        var vm = result.Model.ShouldBeOfType<AdminBookingsVM>();
+        vm.Bookings[0].PurchaseCode.ShouldBe("OLD");
+        vm.SortColumn.ShouldBe("invalid");
+        vm.SortDescending.ShouldBeFalse();
+    }
+
     [Fact]
     public async Task Bookings_ReturnsBookingsOrderedByDateDescending() {
         var context = TestHelper.CreateInMemoryContext();
