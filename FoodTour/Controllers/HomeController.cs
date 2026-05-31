@@ -172,8 +172,8 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
 
         if (booking.IsCancelled) {
             Log.Information("FoodTourCode: Booking {BookingId} is cancelled, redirecting to TourCancelled page.", booking.Id);
-            return RedirectToAction("TourCancelled", new { 
-                customerEmail = booking.CustomerEmail, 
+            return RedirectToAction("TourCancelled", new {
+                customerEmail = booking.CustomerEmail,
                 tourDate = booking.TourDate,
                 purchaseCode = booking.PurchaseCode
             });
@@ -551,7 +551,7 @@ public class HomeController(FoodTourContext context, IEmailSender emailSender, B
             .Select(bs => bs.Supplier)
             .ToList();
 
-        Log.Debug("Booking {BookingId}: Found {ClaimedCount} claimed suppliers and {UnclaimedCount} unclaimed suppliers.", 
+        Log.Debug("Booking {BookingId}: Found {ClaimedCount} claimed suppliers and {UnclaimedCount} unclaimed suppliers.",
             booking.Id, claimedSupplierIds.Count, unclaimedSuppliers.Count);
 
         return unclaimedSuppliers;

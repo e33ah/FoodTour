@@ -54,8 +54,8 @@ public class BookingEmailServiceTests {
 
     [Fact]
     public async Task GeneratePartnerBookingConfirmationEmailAsync_IncludesValidationAndPrivacyLinks() {
-        const string validationUrl = "https://example.test/Home/CompletePartnerBookingConfirmation?validation=abc";
-        const string privacyPolicyUrl = "https://example.test/Home/Privacy";
+        const string PARTNER_VALIDATION_URL = "https://example.test/Home/CompletePartnerBookingConfirmation?validation=abc";
+        const string PRIVACY_POLICY_URL = "https://example.test/Home/Privacy";
         var templateRendererMock = new Mock<IRazorTemplateRenderer>();
         templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync((string path, object model) => {
@@ -64,11 +64,11 @@ public class BookingEmailServiceTests {
             });
         var sut = new BookingEmailService(templateRendererMock.Object);
 
-        var (subject, body) = await sut.GeneratePartnerBookingConfirmationEmailAsync(TestHelper.VALID_EMAIL, TestHelper.VALID_VOUCHER, validationUrl, privacyPolicyUrl);
+        var (subject, body) = await sut.GeneratePartnerBookingConfirmationEmailAsync(TestHelper.VALID_EMAIL, TestHelper.VALID_VOUCHER, PARTNER_VALIDATION_URL, PRIVACY_POLICY_URL);
 
         subject.ShouldContain("Confirm your Weymouth Self-Guided Tasting Tour booking");
-        body.ShouldContain(validationUrl);
-        body.ShouldContain(privacyPolicyUrl);
+        body.ShouldContain(PARTNER_VALIDATION_URL);
+        body.ShouldContain(PRIVACY_POLICY_URL);
         body.ShouldContain(TestHelper.VALID_VOUCHER);
     }
 }

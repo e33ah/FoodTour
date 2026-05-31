@@ -35,11 +35,11 @@ public sealed class ApiTestHostConfiguration {
     public static ApiTestHostConfiguration Create(IConfiguration configuration) {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        IntegrationTestDatabaseConfiguration database = IntegrationTestDatabaseConfiguration.Create(
+        var database = IntegrationTestDatabaseConfiguration.Create(
             defaultDatabaseNamePrefix: DEFAULT_DATABASE_NAME_PREFIX,
             databaseNamePrefix: configuration[API_TEST_DATABASE_NAME_PREFIX_CONFIGURATION_KEY],
             sqlServerConnectionStringTemplate: configuration[API_TEST_SQL_SERVER_CONNECTION_STRING_TEMPLATE_CONFIGURATION_KEY]);
-        IntegrationTestEmailConfiguration emailSettings = IntegrationTestEmailConfiguration.Create(
+        var emailSettings = IntegrationTestEmailConfiguration.Create(
             defaultFromName: DEFAULT_FROM_NAME,
             host: configuration[API_TEST_EMAIL_HOST_CONFIGURATION_KEY],
             port: configuration[API_TEST_EMAIL_PORT_CONFIGURATION_KEY],

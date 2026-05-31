@@ -106,8 +106,8 @@ public class FoodTourApiControllerHelperMethodsTests {
         var result = NavigateJsonPathPublic(rootElement, jsonPath);
 
         result.ShouldNotBeNull();
-        string? actualValue = result.Value.ValueKind == JsonValueKind.String 
-            ? result.Value.GetString() 
+        string? actualValue = result.Value.ValueKind == JsonValueKind.String
+            ? result.Value.GetString()
             : result.Value.GetRawText();
         actualValue.ShouldBe(expectedValue);
     }

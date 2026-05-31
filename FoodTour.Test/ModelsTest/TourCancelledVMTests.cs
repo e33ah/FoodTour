@@ -6,7 +6,7 @@ public class TourCancelledVMTests {
         var sut = new TourCancelledVM();
 
         sut.CustomerEmail.ShouldBe(string.Empty);
-        sut.TourDate.ShouldBe(default(DateTime));
+        sut.TourDate.ShouldBe(default);
         sut.PurchaseCode.ShouldBe(string.Empty);
     }
 
@@ -32,7 +32,7 @@ public class TourCancelledVMTests {
     [InlineData("", "2025-01-01", "")]
     [InlineData("another@test.com", "2025-12-31", "XYZ789")]
     public void TourCancelledVM_HandlesVariousValues_Correctly(string email, string dateString, string code) {
-        DateTime date = DateTime.Parse(dateString);
+        var date = DateTime.Parse(dateString);
 
         var sut = new TourCancelledVM {
             CustomerEmail = email,

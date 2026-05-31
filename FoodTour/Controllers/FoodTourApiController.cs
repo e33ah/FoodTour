@@ -253,7 +253,7 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
                 break;
 
             case "Contact Name":
-               booking.CustomerName = ExtractStringValue(element.Value);
+                booking.CustomerName = ExtractStringValue(element.Value);
                 LogValue(displayName, booking.CustomerName);
                 break;
 

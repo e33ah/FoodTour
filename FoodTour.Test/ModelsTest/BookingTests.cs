@@ -20,8 +20,7 @@ public class BookingTests {
     }
 
     [Fact]
-    public void Booking_CreatedAt_IsSetToUtcNow()
-    {
+    public void Booking_CreatedAt_IsSetToUtcNow() {
         var before = DateTime.UtcNow;
 
         var sut = new Booking();

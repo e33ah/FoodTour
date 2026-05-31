@@ -2,7 +2,7 @@ namespace FoodTour.Services;
 
 public class BookingValidationService(FoodTourContext context) : IBookingValidationService {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
-    
+
     private static readonly EmailAddressAttribute emailValidator = new();
 
     public async Task<BookingValidationResult> ValidateAsync(BookingValidationRequest request) {
@@ -101,9 +101,9 @@ public class BookingValidationService(FoodTourContext context) : IBookingValidat
             if (existingSupplierIds.Count != selectedSupplierIds.Count) {
                 var missingIds = selectedSupplierIds.Except(existingSupplierIds).ToList();
                 result.AddError($"One or more selected suppliers do not exist or are inactive. Missing supplier IDs: [{string.Join(", ", missingIds)}]");
-                Log.Warning("One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}", 
+                Log.Warning("One or more selected supplier IDs do not exist in the database. Provided: {ProvidedIds}, Existing: {ExistingIds}",
                     selectedSupplierIds, existingSupplierIds);
-                return false; 
+                return false;
             }
 
             return true;

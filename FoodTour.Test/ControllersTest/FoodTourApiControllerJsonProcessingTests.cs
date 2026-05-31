@@ -55,7 +55,7 @@ public class FoodTourApiControllerJsonProcessingTests {
             """;
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-        var result = await controller.CreateNewBooking(jsonElement, KEY );
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
 
         var okResult = result.ShouldBeOfType<OkObjectResult>();
         okResult.StatusCode.ShouldBe(200);
@@ -196,7 +196,7 @@ public class FoodTourApiControllerJsonProcessingTests {
         okResult.StatusCode.ShouldBe(200);
     }
 
-    [Fact] 
+    [Fact]
     public async Task CreateNewBooking_ReturnsInternalServerError_WhenExceptionThrown() {
         var controller = TestHelper.CreateFoodTourApiController();
 
