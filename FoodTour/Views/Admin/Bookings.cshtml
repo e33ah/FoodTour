@@ -20,7 +20,7 @@
 		<table class="table table-hover align-middle">
 			<thead class="table-light">
 				<tr>
-					<th>Date</th>
+					<th>Tour Date</th>
 					<th>Customer</th>
 					<th>Booking Ref</th>
 					<th class="text-center">Guests</th>
@@ -69,5 +69,40 @@
 			</tbody>
 		</table>
 	</div>
-	<p class="text-muted small">@Model.Bookings.Count booking@(Model.Bookings.Count == 1 ? "" : "s")</p>
+	<p class="text-muted small">
+		@if (Model.TotalPages > 1) {
+			<text>Showing @((Model.CurrentPage - 1) * Model.PageSize + 1)–@((Model.CurrentPage - 1) * Model.PageSize + Model.Bookings.Count) of @Model.TotalCount booking@(Model.TotalCount == 1 ? "" : "s")</text>
+		} else {
+			<text>@Model.TotalCount booking@(Model.TotalCount == 1 ? "" : "s")</text>
+		}
+	</p>
+	@if (Model.TotalPages > 1) {
+		<nav aria-label="Bookings pagination">
+			<ul class="pagination pagination-sm">
+				<li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+						@if (Model.HasPreviousPage) {
+							<a class="page-link" asp-action="Bookings" asp-route-filter="@Model.ActiveFilter" asp-route-page="@(Model.CurrentPage - 1)">Previous</a>
+						} else {
+							<span class="page-link">Previous</span>
+						}
+					</li>
+				@foreach (var entry in Model.PageNumbers) {
+					if (entry.IsEllipsis) {
+						<li class="page-item disabled"><span class="page-link" aria-hidden="true">…</span><span class="visually-hidden">More pages</span></li>
+					} else {
+						<li class="page-item @(entry.PageNumber == Model.CurrentPage ? "active" : "")">
+								<a class="page-link" asp-action="Bookings" asp-route-filter="@Model.ActiveFilter" asp-route-page="@entry.PageNumber" aria-current="@(entry.PageNumber == Model.CurrentPage ? "page" : null)">@entry.PageNumber</a>
+						</li>
+					}
+				}
+				<li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+						@if (Model.HasNextPage) {
+							<a class="page-link" asp-action="Bookings" asp-route-filter="@Model.ActiveFilter" asp-route-page="@(Model.CurrentPage + 1)">Next</a>
+						} else {
+							<span class="page-link">Next</span>
+						}
+					</li>
+			</ul>
+		</nav>
+	}
 }

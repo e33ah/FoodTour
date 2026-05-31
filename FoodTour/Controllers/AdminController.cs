@@ -2,6 +2,7 @@ namespace FoodTour.Controllers;
 
 [Authorize(Policy = "AdminOnly")]
 public class AdminController(IAdminAccessService adminAccessService, IConfiguration configuration, FoodTourContext context) : Controller {
+    private const int PAGE_SIZE = 25;
 
     private bool GoogleConfigured =>
         !string.IsNullOrEmpty(configuration["Authentication:Google:ClientId"]) &&
@@ -63,7 +64,7 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         return RedirectToAction(nameof(Login));
     }
 
-    public async Task<IActionResult> Bookings(string? filter = null) {
+    public async Task<IActionResult> Bookings(string? filter = null, int page = 1) {
         var today = DateTime.UtcNow.Date;
         var query = context.Bookings.AsQueryable();
 
@@ -75,8 +76,23 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
             _ => query
         };
 
-        var bookings = await query.OrderByDescending(b => b.TourDate).ToListAsync();
-        return View(new AdminBookingsVM { Bookings = bookings, ActiveFilter = filter });
+        int totalCount = await query.CountAsync();
+        int totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / PAGE_SIZE) : 1;
+        page = Math.Clamp(page, 1, totalPages);
+
+        var bookings = await query
+            .OrderByDescending(b => b.TourDate)
+            .Skip((page - 1) * PAGE_SIZE)
+            .Take(PAGE_SIZE)
+            .ToListAsync();
+
+        return View(new AdminBookingsVM {
+            Bookings = bookings,
+            ActiveFilter = filter,
+            TotalCount = totalCount,
+            CurrentPage = page,
+            PageSize = PAGE_SIZE
+        });
     }
 
     public async Task<IActionResult> BookingDetail(int id) {
@@ -85,14 +101,10 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
             return NotFound();
         }
 
-        var supplierIds = await context.BookingSuppliers
-            .Where(bs => bs.BookingId == id)
-            .Select(bs => bs.SupplierId)
+        var selectedSuppliers = await context.Suppliers
+            .Where(s => context.BookingSuppliers.Any(bs => bs.BookingId == id && bs.SupplierId == s.Id))
+            .OrderBy(s => s.Name)
             .ToListAsync();
-
-        var selectedSuppliers = supplierIds.Count > 0
-            ? await context.Suppliers.Where(s => supplierIds.Contains(s.Id)).OrderBy(s => s.Name).ToListAsync()
-            : [];
 
         var visits = await context.Visits
             .Include(v => v.Supplier)

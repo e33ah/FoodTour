@@ -72,6 +72,99 @@ public class AdminControllerBookingsTests : AdminControllerTestBase {
     }
 
     [Fact]
+    public async Task Bookings_ReturnsTotalCount_ReflectingAllMatchingBookings() {
+        var context = TestHelper.CreateInMemoryContext();
+        var today = DateTime.UtcNow.Date;
+        context.Bookings.AddRange(Enumerable.Range(1, 30).Select(i =>
+            new Booking { PurchaseCode = $"CODE{i:D2}", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(i) }));
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Bookings();
+
+        var vm = result.Model.ShouldBeOfType<AdminBookingsVM>();
+        vm.TotalCount.ShouldBe(30);
+        vm.Bookings.Count.ShouldBe(25);
+        vm.TotalPages.ShouldBe(2);
+        vm.HasNextPage.ShouldBeTrue();
+        vm.HasPreviousPage.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Bookings_ReturnsCorrectItems_WhenOnSecondPage() {
+        var context = TestHelper.CreateInMemoryContext();
+        var today = DateTime.UtcNow.Date;
+        context.Bookings.AddRange(Enumerable.Range(1, 30).Select(i =>
+            new Booking { PurchaseCode = $"CODE{i:D2}", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(i) }));
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Bookings(page: 2);
+
+        var vm = result.Model.ShouldBeOfType<AdminBookingsVM>();
+        vm.Bookings.Count.ShouldBe(5);
+        vm.CurrentPage.ShouldBe(2);
+        vm.HasPreviousPage.ShouldBeTrue();
+        vm.HasNextPage.ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(-100)]
+    public async Task Bookings_ClampsToPageOne_WhenPageIsZeroOrNegative(int invalidPage) {
+        var context = TestHelper.CreateInMemoryContext();
+        var today = DateTime.UtcNow.Date;
+        context.Bookings.Add(new Booking { PurchaseCode = "TEST", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today });
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Bookings(page: invalidPage);
+
+        var vm = result.Model.ShouldBeOfType<AdminBookingsVM>();
+        vm.CurrentPage.ShouldBe(1);
+        vm.Bookings.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Bookings_ClampsToLastPage_WhenPageExceedsTotalPages() {
+        var context = TestHelper.CreateInMemoryContext();
+        var today = DateTime.UtcNow.Date;
+        context.Bookings.AddRange(Enumerable.Range(1, 30).Select(i =>
+            new Booking { PurchaseCode = $"CODE{i:D2}", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(i) }));
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Bookings(page: 9999);
+
+        var vm = result.Model.ShouldBeOfType<AdminBookingsVM>();
+        vm.CurrentPage.ShouldBe(2);
+        vm.Bookings.Count.ShouldBe(5);
+    }
+
+    [Theory]
+    [InlineData("upcoming", 3)]
+    [InlineData("past", 1)]
+    [InlineData("cancelled", 1)]
+    public async Task Bookings_TotalCountReflectsFilteredTotal_WhenFilterApplied(string filter, int expectedCount) {
+        var context = TestHelper.CreateInMemoryContext();
+        var today = DateTime.UtcNow.Date;
+        context.Bookings.AddRange(
+            new Booking { PurchaseCode = "PAST", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(-1) },
+            new Booking { PurchaseCode = "TODAY", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today },
+            new Booking { PurchaseCode = "FUTR1", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(1) },
+            new Booking { PurchaseCode = "FUTR2", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today.AddDays(7) },
+            new Booking { PurchaseCode = "CANCL", CustomerEmail = TestHelper.VALID_EMAIL, TourDate = today, IsCancelled = true });
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Bookings(filter);
+
+        var vm = result.Model.ShouldBeOfType<AdminBookingsVM>();
+        vm.TotalCount.ShouldBe(expectedCount);
+    }
+
+    [Fact]
     public async Task BookingDetail_ReturnsNotFound_WhenBookingDoesNotExist() {
         var context = TestHelper.CreateInMemoryContext();
         var sut = CreateController(context: context);
