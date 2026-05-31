@@ -1,0 +1,109 @@
+@model FoodTour.ViewModels.AdminBookingDetailVM
+@{
+	ViewData["Title"] = $"Booking – {Model.Booking.PurchaseCode}";
+	Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex align-items-center gap-2 mt-3 mb-3">
+	<a asp-action="Bookings" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+	<h1 class="mb-0 fs-4">Booking @Model.Booking.PurchaseCode</h1>
+	@if (Model.Booking.IsCancelled) {
+		<span class="badge text-bg-danger">Cancelled</span>
+	}
+</div>
+
+<div class="row g-3">
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-header fw-semibold"><i class="bi bi-calendar-event me-1"></i>Booking Details</div>
+			<div class="card-body">
+				<dl class="row mb-0">
+					<dt class="col-sm-5">Tour Date</dt>
+					<dd class="col-sm-7">@Model.Booking.TourDate.ToString("dddd dd MMMM yyyy HH:mm")</dd>
+
+					<dt class="col-sm-5">Customer Name</dt>
+					<dd class="col-sm-7">@(Model.Booking.CustomerName ?? "—")</dd>
+
+					<dt class="col-sm-5">Customer Email</dt>
+					<dd class="col-sm-7">@Model.Booking.CustomerEmail</dd>
+
+					<dt class="col-sm-5">Booking Ref</dt>
+					<dd class="col-sm-7">@Model.Booking.PurchaseCode</dd>
+
+					@if (!string.IsNullOrEmpty(Model.Booking.VoucherNumber)) {
+						<dt class="col-sm-5">Partner Ref</dt>
+						<dd class="col-sm-7">@Model.Booking.VoucherNumber</dd>
+					}
+
+					<dt class="col-sm-5">Guests</dt>
+					<dd class="col-sm-7">@Model.Booking.TotalGuests</dd>
+
+					@if (Model.Booking.IsCancelled) {
+						<dt class="col-sm-5">Cancelled At</dt>
+						<dd class="col-sm-7">@(Model.Booking.CancelledAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+					}
+
+					<dt class="col-sm-5">Created At</dt>
+					<dd class="col-sm-7">@Model.Booking.CreatedAt.ToString("dd MMM yyyy HH:mm")</dd>
+				</dl>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-header fw-semibold"><i class="bi bi-building me-1"></i>Tasting Experiences (@Model.SelectedSuppliers.Count)</div>
+			<div class="card-body p-0">
+				@if (Model.SelectedSuppliers.Count == 0) {
+					<p class="text-muted m-3">No tasting experiences selected.</p>
+				} else {
+					<ul class="list-group list-group-flush">
+						@foreach (var supplier in Model.SelectedSuppliers) {
+							<li class="list-group-item">@supplier.Name</li>
+						}
+					</ul>
+				}
+			</div>
+		</div>
+	</div>
+
+	<div class="col-12">
+		<div class="card">
+			<div class="card-header fw-semibold"><i class="bi bi-shop me-1"></i>Visits (@Model.Visits.Count)</div>
+			@if (Model.Visits.Count == 0) {
+				<div class="card-body">
+					<p class="text-muted mb-0">No visits recorded for this booking.</p>
+				</div>
+			} else {
+				<div class="table-responsive">
+					<table class="table table-sm align-middle mb-0">
+						<thead class="table-light">
+							<tr>
+								<th>Supplier</th>
+								<th class="text-center">Claimed</th>
+								<th>Claimed At</th>
+								<th class="text-center">Experiences</th>
+							</tr>
+						</thead>
+						<tbody>
+							@foreach (var visit in Model.Visits) {
+								<tr>
+									<td>@visit.Supplier.Name</td>
+									<td class="text-center">
+										@if (visit.IsClaimed) {
+											<i class="bi bi-check-circle-fill text-success" title="Claimed"></i>
+										} else {
+											<i class="bi bi-dash-circle text-secondary" title="Not claimed"></i>
+										}
+									</td>
+									<td>@(visit.ClaimedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+									<td class="text-center">@visit.TastingExperiencesClaimed</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</div>
+	</div>
+</div>

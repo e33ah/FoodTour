@@ -1,6 +1,6 @@
 namespace FoodTour.ViewModels;
 
-public class AdminDashboardViewModel {
+public class AdminDashboardVM {
     public int PastBookings { get; set; }
     public int TodayBookings { get; set; }
     public int UpcomingBookings { get; set; }

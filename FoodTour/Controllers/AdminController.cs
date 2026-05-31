@@ -63,10 +63,53 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         return RedirectToAction(nameof(Login));
     }
 
+    public async Task<IActionResult> Bookings(string? filter = null) {
+        var today = DateTime.UtcNow.Date;
+        var query = context.Bookings.AsQueryable();
+
+        query = filter switch {
+            // "upcoming" includes today, unlike the Dashboard tile which only counts tomorrow onwards
+            "upcoming" => query.Where(b => !b.IsCancelled && b.TourDate >= today),
+            "past" => query.Where(b => !b.IsCancelled && b.TourDate < today),
+            "cancelled" => query.Where(b => b.IsCancelled),
+            _ => query
+        };
+
+        var bookings = await query.OrderByDescending(b => b.TourDate).ToListAsync();
+        return View(new AdminBookingsVM { Bookings = bookings, ActiveFilter = filter });
+    }
+
+    public async Task<IActionResult> BookingDetail(int id) {
+        var booking = await context.Bookings.FindAsync(id);
+        if (booking == null) {
+            return NotFound();
+        }
+
+        var supplierIds = await context.BookingSuppliers
+            .Where(bs => bs.BookingId == id)
+            .Select(bs => bs.SupplierId)
+            .ToListAsync();
+
+        var selectedSuppliers = supplierIds.Count > 0
+            ? await context.Suppliers.Where(s => supplierIds.Contains(s.Id)).OrderBy(s => s.Name).ToListAsync()
+            : [];
+
+        var visits = await context.Visits
+            .Include(v => v.Supplier)
+            .Where(v => v.BookingId == id)
+            .ToListAsync();
+
+        return View(new AdminBookingDetailVM {
+            Booking = booking,
+            Visits = visits,
+            SelectedSuppliers = selectedSuppliers
+        });
+    }
+
     public async Task<IActionResult> Dashboard() {
         var today = DateTime.UtcNow.Date;
         var tomorrow = today.AddDays(1);
-        var viewModel = new AdminDashboardViewModel {
+        var result = new AdminDashboardVM {
             PastBookings = await context.Bookings.CountAsync(b => !b.IsCancelled && b.TourDate < today),
             TodayBookings = await context.Bookings.CountAsync(b => !b.IsCancelled && b.TourDate >= today && b.TourDate < tomorrow),
             UpcomingBookings = await context.Bookings.CountAsync(b => !b.IsCancelled && b.TourDate >= tomorrow),
@@ -74,6 +117,6 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
             UnclaimedVisits = await context.Visits.CountAsync(v => !v.IsClaimed),
             ActiveSuppliers = await context.Suppliers.CountAsync(s => s.IsActive)
         };
-        return View(viewModel);
+        return View(result);
     }
 }

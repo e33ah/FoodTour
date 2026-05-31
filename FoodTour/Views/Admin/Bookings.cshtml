@@ -1,0 +1,73 @@
+@model FoodTour.ViewModels.AdminBookingsVM
+@{
+	ViewData["Title"] = "Bookings";
+	Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h1 class="mt-3">Bookings</h1>
+
+<div class="btn-group mb-3" role="group" aria-label="Booking filter">
+	<a asp-action="Bookings" class="btn btn-sm @(Model.ActiveFilter == null ? "btn-primary" : "btn-outline-primary")">All</a>
+	<a asp-action="Bookings" asp-route-filter="upcoming" class="btn btn-sm @(Model.ActiveFilter == "upcoming" ? "btn-primary" : "btn-outline-primary")">Upcoming</a>
+	<a asp-action="Bookings" asp-route-filter="past" class="btn btn-sm @(Model.ActiveFilter == "past" ? "btn-primary" : "btn-outline-primary")">Past</a>
+	<a asp-action="Bookings" asp-route-filter="cancelled" class="btn btn-sm @(Model.ActiveFilter == "cancelled" ? "btn-secondary" : "btn-outline-secondary")">Cancelled</a>
+</div>
+
+@if (!Model.Bookings.Any()) {
+	<p class="text-muted">No bookings found.</p>
+} else {
+	<div class="table-responsive">
+		<table class="table table-hover align-middle">
+			<thead class="table-light">
+				<tr>
+					<th>Date</th>
+					<th>Customer</th>
+					<th>Booking Ref</th>
+					<th class="text-center">Guests</th>
+					<th class="text-center">Tasting Experiences</th>
+					<th>Status</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var booking in Model.Bookings) {
+					<tr>
+						<td class="text-nowrap">@booking.TourDate.ToString("ddd dd MMM yyyy")</td>
+						<td>
+							@if (!string.IsNullOrEmpty(booking.CustomerName)) {
+								<div class="fw-semibold">@booking.CustomerName</div>
+							}
+							<div class="small text-muted">@booking.CustomerEmail</div>
+						</td>
+						<td>@booking.PurchaseCode</td>
+						<td class="text-center">@booking.TotalGuests</td>
+						<td class="text-center">
+							@if (booking.SelectedSupplierIds.Count > 0) {
+								<span class="badge text-bg-success">@booking.SelectedSupplierIds.Count selected</span>
+							} else {
+								<span class="badge text-bg-warning">None</span>
+							}
+						</td>
+						<td>
+							@if (booking.IsCancelled) {
+								<span class="badge text-bg-danger">Cancelled</span>
+							} else if (booking.TourDate.Date < DateTime.UtcNow.Date) {
+								<span class="badge text-bg-secondary">Past</span>
+							} else if (booking.TourDate.Date == DateTime.UtcNow.Date) {
+								<span class="badge text-bg-primary">Today</span>
+							} else {
+								<span class="badge text-bg-success">Upcoming</span>
+							}
+						</td>
+						<td>
+							<a asp-action="BookingDetail" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-secondary">
+								<i class="bi bi-eye"></i> View
+							</a>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+	<p class="text-muted small">@Model.Bookings.Count booking@(Model.Bookings.Count == 1 ? "" : "s")</p>
+}

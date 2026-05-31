@@ -17,7 +17,7 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
 
         var result = (ViewResult)await sut.Dashboard();
 
-        var viewModel = result.Model.ShouldBeOfType<AdminDashboardViewModel>();
+        var viewModel = result.Model.ShouldBeOfType<AdminDashboardVM>();
         viewModel.PastBookings.ShouldBe(0);
         viewModel.TodayBookings.ShouldBe(0);
         viewModel.UpcomingBookings.ShouldBe(0);
@@ -41,7 +41,7 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
 
         var result = (ViewResult)await sut.Dashboard();
 
-        var viewModel = result.Model.ShouldBeOfType<AdminDashboardViewModel>();
+        var viewModel = result.Model.ShouldBeOfType<AdminDashboardVM>();
         viewModel.TodayBookings.ShouldBe(2);
     }
 
@@ -60,7 +60,7 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
 
         var result = (ViewResult)await sut.Dashboard();
 
-        var viewModel = result.Model.ShouldBeOfType<AdminDashboardViewModel>();
+        var viewModel = result.Model.ShouldBeOfType<AdminDashboardVM>();
         viewModel.UpcomingBookings.ShouldBe(2);
     }
 
@@ -79,7 +79,7 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
 
         var result = (ViewResult)await sut.Dashboard();
 
-        var viewModel = result.Model.ShouldBeOfType<AdminDashboardViewModel>();
+        var viewModel = result.Model.ShouldBeOfType<AdminDashboardVM>();
         viewModel.PastBookings.ShouldBe(2);
     }
 
@@ -100,7 +100,7 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
 
         var result = (ViewResult)await sut.Dashboard();
 
-        var viewModel = result.Model.ShouldBeOfType<AdminDashboardViewModel>();
+        var viewModel = result.Model.ShouldBeOfType<AdminDashboardVM>();
         viewModel.ClaimedVisits.ShouldBe(2);
     }
 
@@ -120,7 +120,7 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
 
         var result = (ViewResult)await sut.Dashboard();
 
-        var viewModel = result.Model.ShouldBeOfType<AdminDashboardViewModel>();
+        var viewModel = result.Model.ShouldBeOfType<AdminDashboardVM>();
         viewModel.UnclaimedVisits.ShouldBe(1);
     }
 
@@ -136,7 +136,7 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
 
         var result = (ViewResult)await sut.Dashboard();
 
-        var viewModel = result.Model.ShouldBeOfType<AdminDashboardViewModel>();
+        var viewModel = result.Model.ShouldBeOfType<AdminDashboardVM>();
         viewModel.ActiveSuppliers.ShouldBe(2);
     }
 }
