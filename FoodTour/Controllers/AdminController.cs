@@ -151,13 +151,7 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         string sortColumn = sort ?? AdminVisitsVM.SORT_DATE;
         bool descending = dir != null ? dir == "desc" : sortColumn == AdminVisitsVM.SORT_DATE;
 
-        var orderedQuery = sortColumn switch {
-            AdminVisitsVM.SORT_CUSTOMER => descending ? query.OrderByDescending(v => v.Booking.CustomerName ?? "") : query.OrderBy(v => v.Booking.CustomerName ?? ""),
-            AdminVisitsVM.SORT_REF => descending ? query.OrderByDescending(v => v.Booking.PurchaseCode) : query.OrderBy(v => v.Booking.PurchaseCode),
-            AdminVisitsVM.SORT_SUPPLIER => descending ? query.OrderByDescending(v => v.Supplier.Name) : query.OrderBy(v => v.Supplier.Name),
-            AdminVisitsVM.SORT_GUESTS => descending ? query.OrderByDescending(v => v.Booking.TotalGuests) : query.OrderBy(v => v.Booking.TotalGuests),
-            _ => descending ? query.OrderByDescending(v => v.Booking.TourDate) : query.OrderBy(v => v.Booking.TourDate)
-        };
+        var orderedQuery = ApplyVisitsSorting(query, sortColumn, descending);
 
         var visits = await orderedQuery
             .Skip((page - 1) * PAGE_SIZE)
@@ -212,6 +206,26 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
 
             return RedirectToAction(nameof(Visits), new { filter, page, sort, dir });
         }
+    }
+
+    private static IOrderedQueryable<Visit> ApplyVisitsSorting(IQueryable<Visit> query, string sortColumn, bool descending) {
+        return sortColumn switch {
+            AdminVisitsVM.SORT_CUSTOMER => descending 
+                ? query.OrderByDescending(v => v.Booking.CustomerName ?? "") 
+                : query.OrderBy(v => v.Booking.CustomerName ?? ""),
+            AdminVisitsVM.SORT_REF => descending 
+                ? query.OrderByDescending(v => v.Booking.PurchaseCode) 
+                : query.OrderBy(v => v.Booking.PurchaseCode),
+            AdminVisitsVM.SORT_SUPPLIER => descending 
+                ? query.OrderByDescending(v => v.Supplier.Name) 
+                : query.OrderBy(v => v.Supplier.Name),
+            AdminVisitsVM.SORT_GUESTS => descending 
+                ? query.OrderByDescending(v => v.Booking.TotalGuests) 
+                : query.OrderBy(v => v.Booking.TotalGuests),
+            _ => descending 
+                ? query.OrderByDescending(v => v.Booking.TourDate) 
+                : query.OrderBy(v => v.Booking.TourDate)
+        };
     }
 
     public async Task<IActionResult> Dashboard() {

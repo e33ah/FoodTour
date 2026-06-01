@@ -61,8 +61,12 @@
 								}
 								// update reimbursed cell
 								var reimbursedCell = row.querySelector('.visit-reimbursed');
-								reimbursedCell.innerHTML = json.isReimbursed ? '<span class="badge bg-success-subtle text-success-emphasis">Reimbursed</span><div class="small text-muted text-nowrap">' + (json.reimbursedAt ? new Date(json.reimbursedAt).toLocaleDateString() : '') + '</div>' : (row.querySelector('.visit-reimbursed').innerHTML = '<span class="badge bg-danger-subtle text-danger-emphasis">Pending</span>');
-							// update button text
+								if (json.isReimbursed) {
+									reimbursedCell.innerHTML = '<span class="badge bg-success-subtle text-success-emphasis">Reimbursed</span><div class="small text-muted text-nowrap">' + (json.reimbursedAt ? new Date(json.reimbursedAt).toLocaleDateString() : '') + '</div>';
+								} else {
+									reimbursedCell.innerHTML = '<span class="badge bg-danger-subtle text-danger-emphasis">Pending</span>';
+								}
+								// update button text
 							var btn = form.querySelector('button');
 							btn.className = json.isReimbursed ? 'btn btn-sm btn-outline-secondary' : 'btn btn-sm btn-outline-success';
 							btn.textContent = json.isReimbursed ? 'Undo' : 'Mark Reimbursed';
@@ -166,7 +170,12 @@
 									<input type="hidden" name="page" value="@Model.CurrentPage" />
 									<input type="hidden" name="sort" value="@Model.SortColumn" />
 									<input type="hidden" name="dir" value="@(Model.SortDescending ? "desc" : "asc")" />
-									<button type="submit" class="btn btn-sm @(visit.IsSupplierReimbursed ? "btn-outline-secondary" : "btn-outline-success")">
+									@{
+									    var formattedDate = visit.Booking.TourDate.ToString("dd MMM yyyy");
+									}
+									<button type="submit" 
+									        class="btn btn-sm @(visit.IsSupplierReimbursed ? "btn-outline-secondary" : "btn-outline-success")"
+									        aria-label="@(visit.IsSupplierReimbursed ? "Undo" : "Mark") reimbursement for @visit.Supplier.Name on @formattedDate">
 										@(visit.IsSupplierReimbursed ? "Undo" : "Mark Reimbursed")
 									</button>
 								</form>

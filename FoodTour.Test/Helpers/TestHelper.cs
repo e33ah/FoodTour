@@ -225,14 +225,14 @@ public static class TestHelper {
         context.Suppliers.Add(supplier);
         context.Bookings.Add(booking);
         await context.SaveChangesAsync(cancellationToken);
-        
+
         foreach (var visit in visits) {
             visit.BookingId = booking.Id;
             visit.SupplierId = supplier.Id;
             context.Visits.Add(visit);
         }
         await context.SaveChangesAsync(cancellationToken);
-        
+
         return (context, supplier, booking);
     }
 
@@ -246,14 +246,14 @@ public static class TestHelper {
             context.Bookings.Add(booking);
         }
         await context.SaveChangesAsync(cancellationToken);
-        
+
         foreach (var (supplier, booking, visit) in data) {
             visit.BookingId = booking.Id;
             visit.SupplierId = supplier.Id;
             context.Visits.Add(visit);
         }
         await context.SaveChangesAsync(cancellationToken);
-        
+
         return context;
     }
 
