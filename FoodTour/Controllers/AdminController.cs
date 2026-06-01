@@ -130,6 +130,90 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         });
     }
 
+    public async Task<IActionResult> Visits(string? filter = null, int page = 1, string? sort = null, string? dir = null) {
+        var query = context.Visits
+            .Include(v => v.Booking)
+            .Include(v => v.Supplier)
+            .AsQueryable();
+
+        query = filter switch {
+            "claimed" => query.Where(v => v.IsClaimed),
+            "unclaimed" => query.Where(v => !v.IsClaimed),
+            "reimbursed" => query.Where(v => v.IsSupplierReimbursed),
+            "unreimbursed" => query.Where(v => v.IsClaimed && !v.IsSupplierReimbursed),
+            _ => query
+        };
+
+        int totalCount = await query.CountAsync();
+        int totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / PAGE_SIZE) : 1;
+        page = Math.Clamp(page, 1, totalPages);
+
+        string sortColumn = sort ?? AdminVisitsVM.SORT_DATE;
+        bool descending = dir != null ? dir == "desc" : sortColumn == AdminVisitsVM.SORT_DATE;
+
+        var orderedQuery = sortColumn switch {
+            AdminVisitsVM.SORT_CUSTOMER => descending ? query.OrderByDescending(v => v.Booking.CustomerName ?? "") : query.OrderBy(v => v.Booking.CustomerName ?? ""),
+            AdminVisitsVM.SORT_REF => descending ? query.OrderByDescending(v => v.Booking.PurchaseCode) : query.OrderBy(v => v.Booking.PurchaseCode),
+            AdminVisitsVM.SORT_SUPPLIER => descending ? query.OrderByDescending(v => v.Supplier.Name) : query.OrderBy(v => v.Supplier.Name),
+            AdminVisitsVM.SORT_GUESTS => descending ? query.OrderByDescending(v => v.Booking.TotalGuests) : query.OrderBy(v => v.Booking.TotalGuests),
+            _ => descending ? query.OrderByDescending(v => v.Booking.TourDate) : query.OrderBy(v => v.Booking.TourDate)
+        };
+
+        var visits = await orderedQuery
+            .Skip((page - 1) * PAGE_SIZE)
+            .Take(PAGE_SIZE)
+            .ToListAsync();
+
+        return View(new AdminVisitsVM {
+            Visits = visits,
+            ActiveFilter = filter,
+            TotalCount = totalCount,
+            CurrentPage = page,
+            PageSize = PAGE_SIZE,
+            SortColumn = sortColumn,
+            SortDescending = descending
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkReimbursed(int id, string? filter = null, int? page = null, string? sort = null, string? dir = null) {
+        var visit = await context.Visits.FindAsync(id);
+        if (visit == null) {
+            return NotFound();
+        }
+
+        visit.IsSupplierReimbursed = !visit.IsSupplierReimbursed;
+        visit.ReimbursedAt = visit.IsSupplierReimbursed ? DateTime.UtcNow : null;
+
+        bool isAjax = string.Equals(Request.Headers.XRequestedWith, "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+        try {
+            await context.SaveChangesAsync();
+            Log.Information("Visit {VisitId} reimbursement toggled to {IsReimbursed}", id, visit.IsSupplierReimbursed);
+
+            if (isAjax) {
+                return Json(new {
+                    success = true,
+                    isReimbursed = visit.IsSupplierReimbursed,
+                    reimbursedAt = visit.ReimbursedAt?.ToString("o"),
+                    message = visit.IsSupplierReimbursed ? "Marked as reimbursed." : "Reimbursement undone."
+                });
+            }
+
+            return RedirectToAction(nameof(Visits), new { filter, page, sort, dir });
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed to update reimbursement status for visit {VisitId}", id);
+
+            if (isAjax) {
+                Response.StatusCode = 500;
+                return Json(new { success = false, message = "Failed to update reimbursement status. Please try again." });
+            }
+
+            return RedirectToAction(nameof(Visits), new { filter, page, sort, dir });
+        }
+    }
+
     public async Task<IActionResult> Dashboard() {
         var today = DateTime.UtcNow.Date;
         var tomorrow = today.AddDays(1);

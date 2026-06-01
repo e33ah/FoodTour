@@ -17,7 +17,7 @@ namespace FoodTour.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.6")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -212,6 +212,12 @@ namespace FoodTour.Migrations
 
                     b.Property<bool>("IsClaimed")
                         .HasColumnType("bit");
+
+                    b.Property<bool>("IsSupplierReimbursed")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ReimbursedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("SupplierId")
                         .HasColumnType("int");

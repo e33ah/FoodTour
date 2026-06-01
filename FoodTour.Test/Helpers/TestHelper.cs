@@ -206,13 +206,55 @@ public static class TestHelper {
         };
     }
 
-    public static Visit CreateVisit(int bookingId = 1, int supplierId = 1, bool isClaimed = false) {
+    public static Visit CreateVisit(int bookingId = 1, int supplierId = 1, bool isClaimed = false, bool isReimbursed = false) {
         return new Visit {
             BookingId = bookingId,
             SupplierId = supplierId,
             IsClaimed = isClaimed,
-            ClaimedAt = isClaimed ? validTourDate : null
+            ClaimedAt = isClaimed ? validTourDate : null,
+            IsSupplierReimbursed = isReimbursed,
+            ReimbursedAt = isReimbursed ? validTourDate : null
         };
+    }
+
+    /// <summary>Creates a context with a single supplier and booking, with the specified visits.</summary>
+    public static async Task<(FoodTourContext context, Supplier supplier, Booking booking)> CreateContextWithVisitsAsync(Visit[] visits, CancellationToken cancellationToken = default) {
+        var context = CreateInMemoryContext();
+        var supplier = CreateSupplier(1);
+        var booking = CreateValidBooking([supplier.Id]);
+        context.Suppliers.Add(supplier);
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync(cancellationToken);
+        
+        foreach (var visit in visits) {
+            visit.BookingId = booking.Id;
+            visit.SupplierId = supplier.Id;
+            context.Visits.Add(visit);
+        }
+        await context.SaveChangesAsync(cancellationToken);
+        
+        return (context, supplier, booking);
+    }
+
+    /// <summary>Creates a context with multiple suppliers and bookings for sorting/pagination tests.</summary>
+    public static async Task<FoodTourContext> CreateContextWithMultipleVisitsAsync(
+        (Supplier supplier, Booking booking, Visit visit)[] data,
+        CancellationToken cancellationToken) {
+        var context = CreateInMemoryContext();
+        foreach (var (supplier, booking, _) in data) {
+            context.Suppliers.Add(supplier);
+            context.Bookings.Add(booking);
+        }
+        await context.SaveChangesAsync(cancellationToken);
+        
+        foreach (var (supplier, booking, visit) in data) {
+            visit.BookingId = booking.Id;
+            visit.SupplierId = supplier.Id;
+            context.Visits.Add(visit);
+        }
+        await context.SaveChangesAsync(cancellationToken);
+        
+        return context;
     }
 
     public static VisitsController CreateVisitsController(FoodTourContext context) {

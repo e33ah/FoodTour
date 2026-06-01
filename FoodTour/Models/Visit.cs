@@ -12,4 +12,7 @@ public class Visit {
     public bool IsClaimed { get; set; } = false;
     public DateTime? ClaimedAt { get; set; }
     public int TastingExperiencesClaimed { get; set; }
+
+    public bool IsSupplierReimbursed { get; set; } = false;
+    public DateTime? ReimbursedAt { get; set; }
 }
