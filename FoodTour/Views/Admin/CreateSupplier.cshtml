@@ -1,0 +1,177 @@
+@model FoodTour.Models.AdminSupplierFormVM
+@{
+	ViewData["Title"] = "Create Supplier";
+	Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+	<h1 class="mb-0">Create Supplier</h1>
+	<a asp-action="Suppliers" class="btn btn-sm btn-outline-secondary">
+		<i class="bi bi-arrow-left" aria-hidden="true"></i> Back
+	</a>
+</div>
+
+<form asp-action="CreateSupplier" method="post" class="mt-3">
+	@Html.AntiForgeryToken()
+	<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+	<div class="row">
+		<div class="col-12 col-lg-8">
+			<div class="card mb-3">
+				<div class="card-body">
+					<h2 class="h5">Details</h2>
+
+					<div class="mb-3">
+						<label asp-for="Name" class="form-label"></label>
+						<input asp-for="Name" class="form-control" />
+						<span asp-validation-for="Name" class="text-danger"></span>
+					</div>
+
+					<div class="mb-3">
+						<label asp-for="Address" class="form-label"></label>
+						<input asp-for="Address" class="form-control" autocomplete="street-address" />
+						<span asp-validation-for="Address" class="text-danger"></span>
+					</div>
+
+					<div class="mb-3">
+						<label asp-for="Description" class="form-label"></label>
+						<textarea asp-for="Description" class="form-control" rows="3"></textarea>
+						<span asp-validation-for="Description" class="text-danger"></span>
+					</div>
+
+					<div class="row">
+						<div class="col-12 col-md-6 mb-3">
+							<label asp-for="ContactName" class="form-label"></label>
+							<input asp-for="ContactName" class="form-control" autocomplete="name" />
+							<span asp-validation-for="ContactName" class="text-danger"></span>
+						</div>
+						<div class="col-12 col-md-6 mb-3">
+							<label asp-for="ContactEmail" class="form-label"></label>
+							<input asp-for="ContactEmail" class="form-control" autocomplete="email" placeholder="name@example.com; another@example.com" />
+							<span asp-validation-for="ContactEmail" class="text-danger"></span>
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-12 col-md-6 mb-3">
+							<label asp-for="ConfirmationCode" class="form-label"></label>
+							<input asp-for="ConfirmationCode" class="form-control" aria-describedby="confirmation-code-help" />
+							<span asp-validation-for="ConfirmationCode" class="text-danger"></span>
+							<div id="confirmation-code-help" class="form-text">This is the code businesses enter to record a visit.</div>
+						</div>
+						<div class="col-12 col-md-6 mb-3">
+							<fieldset class="border rounded p-3">
+								<legend class="h6 mb-2">Status</legend>
+								<div class="form-check">
+									<input asp-for="IsActive" class="form-check-input" aria-describedby="is-active-help" />
+									<label asp-for="IsActive" class="form-check-label"></label>
+									<div id="is-active-help" class="form-text">Inactive suppliers do not appear in tour selection.</div>
+								</div>
+								<div class="form-check mt-2">
+									<input asp-for="EmailNotificationsEnabled" class="form-check-input" aria-describedby="email-notifications-help" />
+									<label asp-for="EmailNotificationsEnabled" class="form-check-label"></label>
+									<div id="email-notifications-help" class="form-text">Sends visit-recorded emails to the supplier contact.</div>
+								</div>
+							</fieldset>
+						</div>
+					</div>
+
+					<h2 class="h5 mt-4">Tags</h2>
+					<div class="row">
+						<div class="col-12 col-md-3 mb-3">
+							<label asp-for="Tag1" class="form-label"></label>
+							<input asp-for="Tag1" class="form-control" />
+							<span asp-validation-for="Tag1" class="text-danger"></span>
+						</div>
+						<div class="col-12 col-md-3 mb-3">
+							<label asp-for="Tag2" class="form-label"></label>
+							<input asp-for="Tag2" class="form-control" />
+							<span asp-validation-for="Tag2" class="text-danger"></span>
+						</div>
+						<div class="col-12 col-md-3 mb-3">
+							<label asp-for="Tag3" class="form-label"></label>
+							<input asp-for="Tag3" class="form-control" />
+							<span asp-validation-for="Tag3" class="text-danger"></span>
+						</div>
+						<div class="col-12 col-md-3 mb-3">
+							<label asp-for="Tag4" class="form-label"></label>
+							<input asp-for="Tag4" class="form-control" />
+							<span asp-validation-for="Tag4" class="text-danger"></span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="card mb-3">
+				<div class="card-body">
+					<h2 class="h5">Opening times</h2>
+					<p class="text-muted small mb-3">Day-specific values override the general opening times.</p>
+
+					<div class="mb-3">
+						<label asp-for="OpeningTimes" class="form-label"></label>
+						<textarea asp-for="OpeningTimes" class="form-control" rows="2"></textarea>
+						<span asp-validation-for="OpeningTimes" class="text-danger"></span>
+					</div>
+
+					<div class="row">
+						<div class="col-12 col-md-6 mb-3">
+							<label asp-for="OpeningTimesMonday" class="form-label"></label>
+							<input asp-for="OpeningTimesMonday" class="form-control" />
+							<span asp-validation-for="OpeningTimesMonday" class="text-danger"></span>
+						</div>
+						<div class="col-12 col-md-6 mb-3">
+							<label asp-for="OpeningTimesTuesday" class="form-label"></label>
+							<input asp-for="OpeningTimesTuesday" class="form-control" />
+							<span asp-validation-for="OpeningTimesTuesday" class="text-danger"></span>
+						</div>
+						<div class="col-12 col-md-6 mb-3">
+							<label asp-for="OpeningTimesWednesday" class="form-label"></label>
+							<input asp-for="OpeningTimesWednesday" class="form-control" />
+							<span asp-validation-for="OpeningTimesWednesday" class="text-danger"></span>
+						</div>
+						<div class="col-12 col-md-6 mb-3">
+							<label asp-for="OpeningTimesThursday" class="form-label"></label>
+							<input asp-for="OpeningTimesThursday" class="form-control" />
+							<span asp-validation-for="OpeningTimesThursday" class="text-danger"></span>
+						</div>
+						<div class="col-12 col-md-6 mb-3">
+							<label asp-for="OpeningTimesFriday" class="form-label"></label>
+							<input asp-for="OpeningTimesFriday" class="form-control" />
+							<span asp-validation-for="OpeningTimesFriday" class="text-danger"></span>
+						</div>
+						<div class="col-12 col-md-6 mb-3">
+							<label asp-for="OpeningTimesSaturday" class="form-label"></label>
+							<input asp-for="OpeningTimesSaturday" class="form-control" />
+							<span asp-validation-for="OpeningTimesSaturday" class="text-danger"></span>
+						</div>
+						<div class="col-12 col-md-6 mb-3">
+							<label asp-for="OpeningTimesSunday" class="form-label"></label>
+							<input asp-for="OpeningTimesSunday" class="form-control" />
+							<span asp-validation-for="OpeningTimesSunday" class="text-danger"></span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-12 col-lg-4">
+			<div class="card">
+				<div class="card-body">
+					<h2 class="h5">Actions</h2>
+					<div class="d-grid gap-2">
+						<button type="submit" class="btn btn-primary">
+							<i class="bi bi-check2" aria-hidden="true"></i> Create
+						</button>
+						<a asp-action="Suppliers" class="btn btn-outline-secondary">
+							Cancel
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</form>
+
+@section Scripts {
+	<partial name="_ValidationScriptsPartial" />
+}

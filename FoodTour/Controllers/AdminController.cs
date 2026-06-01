@@ -210,22 +210,116 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
 
     private static IOrderedQueryable<Visit> ApplyVisitsSorting(IQueryable<Visit> query, string sortColumn, bool descending) {
         return sortColumn switch {
-            AdminVisitsVM.SORT_CUSTOMER => descending 
-                ? query.OrderByDescending(v => v.Booking.CustomerName ?? "") 
+            AdminVisitsVM.SORT_CUSTOMER => descending
+                ? query.OrderByDescending(v => v.Booking.CustomerName ?? "")
                 : query.OrderBy(v => v.Booking.CustomerName ?? ""),
-            AdminVisitsVM.SORT_REF => descending 
-                ? query.OrderByDescending(v => v.Booking.PurchaseCode) 
+            AdminVisitsVM.SORT_REF => descending
+                ? query.OrderByDescending(v => v.Booking.PurchaseCode)
                 : query.OrderBy(v => v.Booking.PurchaseCode),
-            AdminVisitsVM.SORT_SUPPLIER => descending 
-                ? query.OrderByDescending(v => v.Supplier.Name) 
+            AdminVisitsVM.SORT_SUPPLIER => descending
+                ? query.OrderByDescending(v => v.Supplier.Name)
                 : query.OrderBy(v => v.Supplier.Name),
-            AdminVisitsVM.SORT_GUESTS => descending 
-                ? query.OrderByDescending(v => v.Booking.TotalGuests) 
+            AdminVisitsVM.SORT_GUESTS => descending
+                ? query.OrderByDescending(v => v.Booking.TotalGuests)
                 : query.OrderBy(v => v.Booking.TotalGuests),
-            _ => descending 
-                ? query.OrderByDescending(v => v.Booking.TourDate) 
+            _ => descending
+                ? query.OrderByDescending(v => v.Booking.TourDate)
                 : query.OrderBy(v => v.Booking.TourDate)
         };
+    }
+
+    public async Task<IActionResult> Suppliers() {
+        var suppliers = await context.Suppliers
+            .OrderBy(s => s.Name)
+            .ToListAsync();
+
+        return View(new AdminSuppliersVM {
+            Suppliers = suppliers
+        });
+    }
+
+    public IActionResult CreateSupplier() {
+        return View(new AdminSupplierFormVM());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateSupplier(AdminSupplierFormVM model) {
+        if (!ModelState.IsValid) {
+            return View(model);
+        }
+
+        var supplier = model.ToSupplier();
+
+        try {
+            context.Suppliers.Add(supplier);
+            await context.SaveChangesAsync();
+            Log.Information("Supplier {SupplierId} created", supplier.Id);
+            return RedirectToAction(nameof(Suppliers));
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed to create supplier");
+            ModelState.AddModelError(string.Empty, "Failed to create supplier. Please try again.");
+            return View(model);
+        }
+    }
+
+    public async Task<IActionResult> EditSupplier(int id) {
+        var supplier = await context.Suppliers.FindAsync(id);
+        if (supplier == null) {
+            return NotFound();
+        }
+
+        var result = AdminSupplierFormVM.FromSupplier(supplier);
+        return View(result);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditSupplier(int id, AdminSupplierFormVM model) {
+        if (id != model.Id) {
+            return BadRequest();
+        }
+
+        var supplier = await context.Suppliers.FindAsync(id);
+        if (supplier == null) {
+            return NotFound();
+        }
+
+        if (!ModelState.IsValid) {
+            return View(model);
+        }
+
+        model.ApplyTo(supplier);
+
+        try {
+            await context.SaveChangesAsync();
+            Log.Information("Supplier {SupplierId} updated", supplier.Id);
+            return RedirectToAction(nameof(Suppliers));
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed to update supplier {SupplierId}", supplier.Id);
+            ModelState.AddModelError(string.Empty, "Failed to update supplier. Please try again.");
+            return View(model);
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DisableSupplier(int id) {
+        var supplier = await context.Suppliers.FindAsync(id);
+        if (supplier == null) {
+            return NotFound();
+        }
+
+        supplier.IsActive = false;
+
+        try {
+            await context.SaveChangesAsync();
+            Log.Information("Supplier {SupplierId} deactivated", supplier.Id);
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed to deactivate supplier {SupplierId}", supplier.Id);
+        }
+
+        return RedirectToAction(nameof(Suppliers));
     }
 
     public async Task<IActionResult> Dashboard() {

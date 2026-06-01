@@ -1,0 +1,69 @@
+@model FoodTour.Models.AdminSuppliersVM
+@{
+	ViewData["Title"] = "Suppliers";
+	Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+	<h1 class="mb-0">Suppliers</h1>
+	<a asp-action="CreateSupplier" class="btn btn-sm btn-primary">
+		<i class="bi bi-plus-lg" aria-hidden="true"></i> Add Supplier
+	</a>
+</div>
+
+<p class="text-muted small mt-2 mb-0">
+	To deactivate a supplier, edit it and untick <strong>Active</strong>.
+</p>
+
+@if (!Model.Suppliers.Any()) {
+	<p class="text-muted mt-3">No suppliers found.</p>
+} else {
+	<div class="table-responsive mt-3">
+		<table class="table table-hover align-middle">
+			<thead class="table-light">
+				<tr>
+					<th scope="col">Name</th>
+					<th scope="col">Contact</th>
+					<th scope="col" class="text-center">Active</th>
+					<th scope="col" class="text-center">Emails</th>
+					<th scope="col">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var supplier in Model.Suppliers) {
+					<tr>
+						<td>
+							<div class="fw-semibold">@supplier.Name</div>
+							@if (!string.IsNullOrWhiteSpace(supplier.Address)) {
+								<div class="small text-muted">@supplier.Address</div>
+							}
+						</td>
+						<td>
+							<div class="fw-semibold">@supplier.ContactName</div>
+							<div class="small text-muted" style="white-space: pre-wrap;">@supplier.ContactEmail</div>
+						</td>
+						<td class="text-center">
+							@if (supplier.IsActive) {
+								<span class="badge bg-success-subtle text-success-emphasis">Active</span>
+							} else {
+								<span class="badge bg-secondary-subtle text-secondary-emphasis">Inactive</span>
+							}
+						</td>
+						<td class="text-center">
+							@if (supplier.EmailNotificationsEnabled) {
+								<span class="badge bg-success-subtle text-success-emphasis">Enabled</span>
+							} else {
+								<span class="badge bg-secondary-subtle text-secondary-emphasis">Disabled</span>
+							}
+						</td>
+						<td class="text-nowrap text-end">
+							<a asp-action="EditSupplier" asp-route-id="@supplier.Id" class="btn btn-sm btn-outline-secondary" aria-label="Edit @supplier.Name">
+								<i class="bi bi-pencil" aria-hidden="true"></i> Edit
+							</a>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
