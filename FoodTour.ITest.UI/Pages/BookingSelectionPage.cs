@@ -90,6 +90,27 @@ public sealed class BookingSelectionPage(IPage page) {
         return await page.Locator(".supplier-checkbox:checked").CountAsync();
     }
 
+    public async Task<IReadOnlyList<string>> GetAvailableSupplierNamesAsync(int count) {
+        var nameElements = page.Locator("[id^='supplier-name-']");
+        var names = await nameElements.AllInnerTextsAsync();
+        List<string> result = [];
+        HashSet<string> seen = new(StringComparer.Ordinal);
+
+        foreach (string name in names) {
+            string trimmedName = name.Trim();
+            if (string.IsNullOrWhiteSpace(trimmedName) || !seen.Add(trimmedName)) {
+                continue;
+            }
+
+            result.Add(trimmedName);
+            if (result.Count >= count) {
+                break;
+            }
+        }
+
+        return result;
+    }
+
     public ILocator GetSupplierOpeningTimes(string supplierName) {
         return GetSupplierCard(supplierName).Locator("[data-opening-times-text]");
     }
@@ -97,8 +118,8 @@ public sealed class BookingSelectionPage(IPage page) {
     public async Task ToggleSupplierAsync(string supplierName) {
         var supplierCard = GetSupplierCard(supplierName);
 
-        await supplierCard.FocusAsync();
-        await page.Keyboard.PressAsync("Space");
+        await Expect(supplierCard).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await supplierCard.ClickAsync();
     }
 
     public async Task SubmitSelectionAsync() {

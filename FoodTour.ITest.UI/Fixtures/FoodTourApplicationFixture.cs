@@ -1,3 +1,6 @@
+using System.Data;
+using Microsoft.Data.SqlClient;
+
 namespace FoodTour.ITest.UI.Fixtures;
 
 public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::FoodTour.Program>, IAsyncLifetime {
@@ -9,6 +12,8 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
     private const string EMAIL_USE_SSL_ENVIRONMENT_VARIABLE = "EmailSettings__UseSsl";
     private const string LOCALHOST_DYNAMIC_PORT_URL = "http://127.0.0.1:0";
     private const string FOOD_TOUR_CONNECTION_STRING_ENVIRONMENT_VARIABLE = "ConnectionStrings__FoodTourContext";
+    private const string CLEANUP_DATABASES_ENVIRONMENT_VARIABLE = "FoodTourUITestCleanupDatabases";
+    private const string EXPECTED_DATABASE_PREFIX = "FoodTourITests_";
     private readonly string connectionString;
     private readonly UiTestDatabaseConfiguration databaseConfiguration;
     private readonly string databaseName;
@@ -42,19 +47,45 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
             throw new InvalidOperationException("The Playwright browser has not been initialised.");
         }
 
-        return await browser.NewContextAsync(new BrowserNewContextOptions {
+        var context = await browser.NewContextAsync(new BrowserNewContextOptions {
             BaseURL = RootUri.ToString()
         });
+
+        await context.AddCookiesAsync([
+            new Microsoft.Playwright.Cookie {
+                Name = "X-Test-Auth",
+                Value = "true",
+                Domain = RootUri.Host,
+                Path = "/"
+            }
+        ]);
+
+        return context;
+    }
+
+    public FoodTourContext CreateDbContext() {
+        DbContextOptionsBuilder<FoodTourContext> optionsBuilder = new();
+        optionsBuilder.UseSqlServer(connectionString);
+
+        FoodTourContext result = new(optionsBuilder.Options);
+        return result;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder) {
         builder.UseEnvironment(DEVELOPMENT_ENVIRONMENT);
+        builder.ConfigureAppConfiguration((context, configBuilder) => {
+            configBuilder.AddInMemoryCollection(new Dictionary<string, string?> {
+                ["AdminSettings:AllowedEmails:0"] = TestAuthenticationHandler.TEST_ADMIN_EMAIL
+            });
+        });
         ConfigureTestServices(builder);
     }
 
     protected override IHost CreateHost(IHostBuilder builder) {
         builder.ConfigureAppConfiguration((_, configBuilder) => {
-            configBuilder.AddInMemoryCollection(CreateTestSettings());
+            var testSettings = CreateTestSettings();
+            testSettings["AdminSettings:AllowedEmails:0"] = TestAuthenticationHandler.TEST_ADMIN_EMAIL;
+            configBuilder.AddInMemoryCollection(testSettings);
         });
 
         var testHost = builder.Build();
@@ -88,11 +119,21 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
             services.RemoveAll<IEmailSender>();
             services.AddSingleton(TestEmailSender);
             services.AddSingleton<IEmailSender>(serviceProvider => serviceProvider.GetRequiredService<TestEmailSender>());
+
+            services.AddAuthentication(options => {
+                options.DefaultAuthenticateScheme = TestAuthenticationHandler.AUTHENTICATION_SCHEME;
+                options.DefaultChallengeScheme = TestAuthenticationHandler.AUTHENTICATION_SCHEME;
+                options.DefaultScheme = TestAuthenticationHandler.AUTHENTICATION_SCHEME;
+            })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(
+                    TestAuthenticationHandler.AUTHENTICATION_SCHEME,
+                    options => { });
         });
     }
 
     public async ValueTask InitializeAsync() {
         if (!isInitialised) {
+            await CleanupStaleDatabasesAsync(CancellationToken.None);
             await PrepareDatabaseAsync();
             ApplyEnvironmentVariables();
             using var httpClient = CreateClient();
@@ -106,23 +147,27 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
     }
 
     public override async ValueTask DisposeAsync() {
-        if (browser is not null) {
-            await browser.CloseAsync();
-            browser = null;
+        try {
+            if (browser is not null) {
+                await browser.CloseAsync();
+                browser = null;
+            }
+
+            playwright?.Dispose();
+            playwright = null;
+
+            if (kestrelHost is not null) {
+                await kestrelHost.StopAsync();
+                kestrelHost.Dispose();
+                kestrelHost = null;
+            }
+
+            await base.DisposeAsync();
+            await DeleteDatabaseAsync();
+            await CleanupStaleDatabasesAsync(CancellationToken.None);
+        } finally {
+            RestoreEnvironmentVariables();
         }
-
-        playwright?.Dispose();
-        playwright = null;
-
-        if (kestrelHost is not null) {
-            await kestrelHost.StopAsync();
-            kestrelHost.Dispose();
-            kestrelHost = null;
-        }
-
-        await base.DisposeAsync();
-        await DeleteDatabaseAsync();
-        RestoreEnvironmentVariables();
     }
 
     private async Task DeleteDatabaseAsync() {
@@ -131,6 +176,50 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
 
         await using var context = new FoodTourContext(optionsBuilder.Options);
         await context.Database.EnsureDeletedAsync();
+    }
+
+    private async Task CleanupStaleDatabasesAsync(CancellationToken cancellationToken) {
+        if (!IsCleanupEnabled() || !IsPrefixSafe(databaseConfiguration.DatabaseNamePrefix)) {
+            return;
+        }
+
+        var connectionBuilder = new SqlConnectionStringBuilder(connectionString) {
+            InitialCatalog = "master"
+        };
+        await using var connection = new SqlConnection(connectionBuilder.ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        string query = """
+            SELECT name
+            FROM sys.databases
+            WHERE name LIKE @prefix
+              AND name <> @currentName;
+            """;
+        await using var command = new SqlCommand(query, connection);
+        command.Parameters.Add(new SqlParameter("@prefix", SqlDbType.NVarChar, 128) {
+            Value = $"{databaseConfiguration.DatabaseNamePrefix}%"
+        });
+        command.Parameters.Add(new SqlParameter("@currentName", SqlDbType.NVarChar, 128) {
+            Value = databaseName
+        });
+
+        var databaseNames = new List<string>();
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken)) {
+            while (await reader.ReadAsync(cancellationToken)) {
+                string name = reader.GetString(0);
+                databaseNames.Add(name);
+            }
+        }
+
+        foreach (string name in databaseNames) {
+            string escapedName = EscapeDatabaseName(name);
+            string dropSql = $"""
+                ALTER DATABASE [{escapedName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                DROP DATABASE [{escapedName}];
+                """;
+            await using var dropCommand = new SqlCommand(dropSql, connection);
+            await dropCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     private async Task PrepareDatabaseAsync() {
@@ -168,6 +257,7 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
 
         var environmentVariables = new Dictionary<string, string?> {
             [FOOD_TOUR_CONNECTION_STRING_ENVIRONMENT_VARIABLE] = connectionString,
+            [CLEANUP_DATABASES_ENVIRONMENT_VARIABLE] = "true",
             [EMAIL_HOST_ENVIRONMENT_VARIABLE] = emailSettings.Host,
             [EMAIL_PORT_ENVIRONMENT_VARIABLE] = emailSettings.Port.ToString(),
             [EMAIL_USE_SSL_ENVIRONMENT_VARIABLE] = emailSettings.UseSsl.ToString().ToLowerInvariant(),
@@ -188,6 +278,23 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
         foreach ((string key, string? value) in originalEnvironmentVariables) {
             Environment.SetEnvironmentVariable(key, value);
         }
+    }
+
+    private static bool IsCleanupEnabled() {
+        return string.Equals(Environment.GetEnvironmentVariable(CLEANUP_DATABASES_ENVIRONMENT_VARIABLE), "true", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPrefixSafe(string prefix) {
+        if (string.IsNullOrWhiteSpace(prefix)) {
+            return false;
+        }
+
+        return prefix.StartsWith(EXPECTED_DATABASE_PREFIX, StringComparison.Ordinal)
+            && prefix.Length >= EXPECTED_DATABASE_PREFIX.Length;
+    }
+
+    private static string EscapeDatabaseName(string databaseName) {
+        return databaseName.Replace("]", "]]", StringComparison.Ordinal);
     }
 
     private void ValidateKestrelHostUsesTestDatabase() {

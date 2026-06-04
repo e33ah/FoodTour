@@ -31,10 +31,24 @@ public sealed class ApiApplicationFixture : WebApplicationFactory<global::FoodTo
 
     protected override void ConfigureWebHost(IWebHostBuilder builder) {
         builder.UseEnvironment(DEVELOPMENT_ENVIRONMENT);
+        builder.ConfigureAppConfiguration((context, configBuilder) => {
+            configBuilder.AddInMemoryCollection(new Dictionary<string, string?> {
+                ["AdminSettings:AllowedEmails:0"] = TestAuthenticationHandler.TEST_ADMIN_EMAIL
+            });
+        });
         builder.ConfigureServices(services => {
             services.RemoveAll<IEmailSender>();
             services.AddSingleton(TestEmailSender);
             services.AddSingleton<IEmailSender>(serviceProvider => serviceProvider.GetRequiredService<TestEmailSender>());
+
+            services.AddAuthentication(options => {
+                options.DefaultAuthenticateScheme = TestAuthenticationHandler.AUTHENTICATION_SCHEME;
+                options.DefaultChallengeScheme = TestAuthenticationHandler.AUTHENTICATION_SCHEME;
+                options.DefaultScheme = TestAuthenticationHandler.AUTHENTICATION_SCHEME;
+            })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(
+                    TestAuthenticationHandler.AUTHENTICATION_SCHEME,
+                    options => { });
         });
     }
 

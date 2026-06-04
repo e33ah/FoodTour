@@ -22,15 +22,12 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
             var booking = await CreateTemporaryBookingAsync(DateTime.SpecifyKind(DateTime.Today.AddDays(14).AddHours(11), DateTimeKind.Utc));
-            var selectedSuppliers = Fixture.SeedData.ActiveSuppliers
-                .Take(Fixture.SeedData.RequiredSupplierSelectionCount)
-                .ToList();
-            var selectedSupplierNames = selectedSuppliers
-                .Select(supplier => supplier.Name)
-                .ToList();
 
             try {
                 await sut.GotoAsync();
+                var selectedSupplierNames = await sut.GetAvailableSupplierNamesAsync(Fixture.SeedData.RequiredSupplierSelectionCount);
+                selectedSupplierNames.Count.ShouldBe(Fixture.SeedData.RequiredSupplierSelectionCount);
+
                 await sut.EnterBookingDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
                 await sut.SelectSuppliersAsync(selectedSupplierNames);
                 await sut.SubmitSelectionAsync();
@@ -41,8 +38,8 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
 
                 await Expect(bookingSummaryPage.SummaryHeading).ToBeVisibleAsync();
 
-                foreach (var supplier in selectedSuppliers) {
-                    await Expect(bookingSummaryPage.SelectedSupplier(supplier.Name)).ToBeVisibleAsync();
+                foreach (string supplierName in selectedSupplierNames) {
+                    await Expect(bookingSummaryPage.SelectedSupplier(supplierName)).ToBeVisibleAsync();
                 }
 
                 await bookingSummaryPage.ConfirmBookingButton.ClickAsync();
@@ -97,13 +94,12 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
             var booking = await CreateTemporaryBookingAsync(lookupResetTourDate);
-            var selectedSupplierNames = Fixture.SeedData.ActiveSuppliers
-                .Take(Fixture.SeedData.RequiredSupplierSelectionCount)
-                .Select(supplier => supplier.Name)
-                .ToList();
 
             try {
                 await sut.GotoAsync();
+                var selectedSupplierNames = await sut.GetAvailableSupplierNamesAsync(Fixture.SeedData.RequiredSupplierSelectionCount);
+                selectedSupplierNames.Count.ShouldBe(Fixture.SeedData.RequiredSupplierSelectionCount);
+
                 await sut.EnterBookingLookupDetailsAsync("missing.booking@example.com", "NOT-A-REAL-BOOKING");
                 await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_NOT_FOUND_MESSAGE);
 
@@ -140,10 +136,6 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
             var booking = await CreateTemporaryBookingAsync(lookupResetTourDate);
-            var selectedSupplierNames = Fixture.SeedData.ActiveSuppliers
-                .Take(Fixture.SeedData.RequiredSupplierSelectionCount)
-                .Select(supplier => supplier.Name)
-                .ToList();
             bool failFirstLookup = true;
 
             await page.RouteAsync("**/api/foodtour/checkbooking", async route => {
@@ -162,6 +154,9 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
 
             try {
                 await sut.GotoAsync();
+                var selectedSupplierNames = await sut.GetAvailableSupplierNamesAsync(Fixture.SeedData.RequiredSupplierSelectionCount);
+                selectedSupplierNames.Count.ShouldBe(Fixture.SeedData.RequiredSupplierSelectionCount);
+
                 await sut.EnterBookingLookupDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
                 await page.WaitForTimeoutAsync(700);
 
@@ -238,13 +233,12 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
             var booking = await CreateTemporaryBookingAsync(DateTime.SpecifyKind(DateTime.Today.AddDays(14).AddHours(11), DateTimeKind.Utc));
-            var supplierNames = Fixture.SeedData.ActiveSuppliers
-                .Take(Fixture.SeedData.RequiredSupplierSelectionCount - 1)
-                .Select(supplier => supplier.Name)
-                .ToList();
 
             try {
                 await sut.GotoAsync();
+                var supplierNames = await sut.GetAvailableSupplierNamesAsync(Fixture.SeedData.RequiredSupplierSelectionCount - 1);
+                supplierNames.Count.ShouldBe(Fixture.SeedData.RequiredSupplierSelectionCount - 1);
+
                 await sut.EnterBookingDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
 
                 foreach (string supplierName in supplierNames) {
@@ -263,13 +257,12 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
             var booking = await CreateTemporaryBookingAsync(DateTime.SpecifyKind(DateTime.Today.AddDays(14).AddHours(11), DateTimeKind.Utc));
-            var supplierNames = Fixture.SeedData.ActiveSuppliers
-                .Take(Fixture.SeedData.RequiredSupplierSelectionCount + 1)
-                .Select(supplier => supplier.Name)
-                .ToList();
 
             try {
                 await sut.GotoAsync();
+                var supplierNames = await sut.GetAvailableSupplierNamesAsync(Fixture.SeedData.RequiredSupplierSelectionCount + 1);
+                supplierNames.Count.ShouldBe(Fixture.SeedData.RequiredSupplierSelectionCount + 1);
+
                 await sut.EnterBookingDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
 
                 foreach (string supplierName in supplierNames) {
@@ -345,16 +338,15 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
             var booking = await CreateTemporaryBookingAsync(DateTime.SpecifyKind(DateTime.Today.AddDays(14).AddHours(11), DateTimeKind.Utc));
-            var supplierNames = Fixture.SeedData.ActiveSuppliers
-                .Take(Fixture.SeedData.RequiredSupplierSelectionCount)
-                .Select(supplier => supplier.Name)
-                .ToList();
 
             Fixture.TestEmailSender.Clear();
             Fixture.TestEmailSender.ThrowOnSend = true;
 
             try {
                 await sut.GotoAsync();
+                var supplierNames = await sut.GetAvailableSupplierNamesAsync(Fixture.SeedData.RequiredSupplierSelectionCount);
+                supplierNames.Count.ShouldBe(Fixture.SeedData.RequiredSupplierSelectionCount);
+
                 await sut.EnterBookingDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
                 await sut.SelectSuppliersAsync(supplierNames);
                 await sut.SubmitSelectionAsync();
@@ -406,12 +398,11 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     public Task SubmitSelection_ShowsBookingReferenceValidation_WhenLookupHasNotValidatedBooking() {
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
-            var supplierNames = Fixture.SeedData.ActiveSuppliers
-                .Take(Fixture.SeedData.RequiredSupplierSelectionCount)
-                .Select(supplier => supplier.Name)
-                .ToList();
 
             await sut.GotoAsync();
+            var supplierNames = await sut.GetAvailableSupplierNamesAsync(Fixture.SeedData.RequiredSupplierSelectionCount);
+            supplierNames.Count.ShouldBe(Fixture.SeedData.RequiredSupplierSelectionCount);
+
             await sut.CustomerEmailInput.FillAsync("person@example.com");
             foreach (string supplierName in supplierNames) {
                 await sut.ToggleSupplierAsync(supplierName);
