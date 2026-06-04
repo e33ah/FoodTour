@@ -36,7 +36,7 @@ public sealed class AdminVisitsApiTests(ApiApplicationFixture fixture) : ApiTest
     [Fact]
     public async Task MarkReimbursed_UpdatesDatabase_WhenVisitExists() {
         using var client = CreateAuthenticatedClient();
-        int visitId = Fixture.SeedData.SupplierVisitBookingVisits[0].Id;
+        int visitId = Fixture.SeedData.SupplierVisitBookingVisits[3].Id;
 
         var antiForgeryData = await AntiForgeryTokenHelper.GetRequestDataAsync(client, "/Admin/Visits", TestContext.Current.CancellationToken);
         var formData = new Dictionary<string, string> {
@@ -61,7 +61,7 @@ public sealed class AdminVisitsApiTests(ApiApplicationFixture fixture) : ApiTest
     [Fact]
     public async Task MarkReimbursed_TogglesReimbursement_WhenCalledTwice() {
         using var client = CreateAuthenticatedClient();
-        int visitId = Fixture.SeedData.SupplierVisitBookingVisits[0].Id;
+        int visitId = Fixture.SeedData.SupplierVisitBookingVisits[4].Id;
 
         var antiForgeryData = await AntiForgeryTokenHelper.GetRequestDataAsync(client, "/Admin/Visits", TestContext.Current.CancellationToken);
         var formData = new Dictionary<string, string> {
