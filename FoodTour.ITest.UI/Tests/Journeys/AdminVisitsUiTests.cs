@@ -40,9 +40,10 @@ public sealed class AdminVisitsUiTests(FoodTourApplicationFixture fixture) : UiT
             var visitsPage = new AdminVisitsPage(page);
 
             await dashboardPage.GotoAsync();
-            await dashboardPage.VisitsLink.ClickAsync();
+            await dashboardPage.VisitsTileLink.ClickAsync();
 
             await Expect(visitsPage.PageHeading).ToBeVisibleAsync();
+            page.Url.ShouldContain("/Admin/Visits?filter=unreimbursed");
         });
     }
 

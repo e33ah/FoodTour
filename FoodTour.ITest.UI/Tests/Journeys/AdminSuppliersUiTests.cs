@@ -141,7 +141,7 @@ public sealed class AdminSuppliersUiTests(FoodTourApplicationFixture fixture) : 
             var suppliersPage = new AdminSuppliersPage(page);
 
             await dashboardPage.GotoAsync();
-            await dashboardPage.SuppliersLink.ClickAsync();
+            await dashboardPage.SuppliersTileLink.ClickAsync();
 
             await Expect(suppliersPage.PageHeading).ToBeVisibleAsync();
         });

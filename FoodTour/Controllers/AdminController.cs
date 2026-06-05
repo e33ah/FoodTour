@@ -329,8 +329,7 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
             PastBookings = await context.Bookings.CountAsync(b => !b.IsCancelled && b.TourDate < today),
             TodayBookings = await context.Bookings.CountAsync(b => !b.IsCancelled && b.TourDate >= today && b.TourDate < tomorrow),
             UpcomingBookings = await context.Bookings.CountAsync(b => !b.IsCancelled && b.TourDate >= tomorrow),
-            ClaimedVisits = await context.Visits.CountAsync(v => v.IsClaimed),
-            UnclaimedVisits = await context.Visits.CountAsync(v => !v.IsClaimed),
+            VisitsAwaitingReimbursement = await context.Visits.CountAsync(v => v.IsClaimed && !v.IsSupplierReimbursed),
             ActiveSuppliers = await context.Suppliers.CountAsync(s => s.IsActive)
         };
         return View(result);

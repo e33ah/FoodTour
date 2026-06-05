@@ -50,7 +50,7 @@ public sealed class AdminBookingsUiTests(FoodTourApplicationFixture fixture) : U
             var bookingsPage = new AdminBookingsPage(page);
 
             await dashboardPage.GotoAsync();
-            await dashboardPage.BookingsLink.ClickAsync();
+            await dashboardPage.BookingsTileLink.ClickAsync();
 
             await Expect(bookingsPage.PageHeading).ToBeVisibleAsync();
         });

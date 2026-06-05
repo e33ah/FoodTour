@@ -8,7 +8,7 @@
 <div class="row g-3 mt-1">
 	<div class="col-sm-4">
 		<div class="card text-bg-primary h-100">
-			<div class="card-body d-flex flex-column">
+			<a asp-controller="Admin" asp-action="Bookings" class="card-body d-flex flex-column text-decoration-none text-reset" aria-label="Open bookings tab">
 				<h6 class="card-title mb-3 text-white-50"><i class="bi bi-calendar-check me-1"></i>Bookings</h6>
 				<div class="d-flex flex-grow-1">
 					<div class="flex-fill text-center d-flex flex-column justify-content-center text-white-50">
@@ -26,38 +26,33 @@
 						<div class="small text-white-50">Upcoming</div>
 					</div>
 				</div>
-			</div>
+			</a>
 		</div>
 	</div>
 	<div class="col-sm-4">
 		<div class="card text-bg-success h-100">
-			<div class="card-body d-flex flex-column">
+			<a asp-controller="Admin" asp-action="Visits" asp-route-filter="unreimbursed" class="card-body d-flex flex-column text-decoration-none text-reset" aria-label="Open visits awaiting reimbursement tab">
 				<h6 class="card-title mb-3 text-white-50"><i class="bi bi-shop me-1"></i>Visits</h6>
 				@{
-					bool hasUnclaimed = Model.UnclaimedVisits > 0;
+					bool hasVisitsAwaitingReimbursement = Model.VisitsAwaitingReimbursement > 0;
 				}
-				<div class="d-flex flex-grow-1">
-					<div class="flex-fill text-center d-flex flex-column justify-content-center">
-						<p class="display-6 mb-0 fw-bold">@Model.ClaimedVisits</p>
-						<div class="small text-white-50">Claimed</div>
-					</div>
-					<div class="vr mx-3"></div>
-					<div class="flex-fill text-center d-flex flex-column justify-content-center @(hasUnclaimed ? "text-warning" : "")">
-						<p class="display-6 mb-0 fw-bold">@Model.UnclaimedVisits</p>
-						<div class="small @(hasUnclaimed ? "" : "text-white-50")">Unclaimed</div>
+				<div class="d-flex flex-grow-1 justify-content-center align-items-center text-center">
+					<div>
+						<p class="display-4 mb-0 fw-bold @(hasVisitsAwaitingReimbursement ? "text-warning" : "")">@Model.VisitsAwaitingReimbursement</p>
+						<div class="small @(hasVisitsAwaitingReimbursement ? "text-warning" : "text-white-50")">Awaiting Reimbursement</div>
 					</div>
 				</div>
-			</div>
+			</a>
 		</div>
 	</div>
 	<div class="col-sm-4">
 		<div class="card text-bg-info h-100">
-			<div class="card-body d-flex flex-column">
+			<a asp-controller="Admin" asp-action="Suppliers" class="card-body d-flex flex-column text-decoration-none text-reset" aria-label="Open suppliers tab">
 				<h6 class="card-title mb-3 text-white-50"><i class="bi bi-building me-1"></i>Active Suppliers</h6>
 				<div class="d-flex flex-grow-1 justify-content-center align-items-center">
 					<p class="display-4 mb-0 fw-bold">@Model.ActiveSuppliers</p>
 				</div>
-			</div>
+			</a>
 		</div>
 	</div>
 </div>

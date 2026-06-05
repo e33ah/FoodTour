@@ -21,8 +21,7 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
         viewModel.PastBookings.ShouldBe(0);
         viewModel.TodayBookings.ShouldBe(0);
         viewModel.UpcomingBookings.ShouldBe(0);
-        viewModel.ClaimedVisits.ShouldBe(0);
-        viewModel.UnclaimedVisits.ShouldBe(0);
+        viewModel.VisitsAwaitingReimbursement.ShouldBe(0);
         viewModel.ActiveSuppliers.ShouldBe(0);
     }
 
@@ -84,7 +83,7 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
     }
 
     [Fact]
-    public async Task Dashboard_ReturnsClaimedVisitCount() {
+    public async Task Dashboard_ReturnsAwaitingReimbursementVisitCount_WhenVisitClaimedButNotReimbursed() {
         var context = TestHelper.CreateInMemoryContext();
         var booking = TestHelper.CreateValidBooking([1]);
         var supplier = TestHelper.CreateSupplier(1);
@@ -92,36 +91,16 @@ public class AdminControllerDashboardTests : AdminControllerTestBase {
         context.Suppliers.Add(supplier);
         await context.SaveChangesAsync(CancellationToken);
         context.Visits.AddRange(
-            TestHelper.CreateVisit(booking.Id, supplier.Id, isClaimed: true),
-            TestHelper.CreateVisit(booking.Id, supplier.Id, isClaimed: true),
-            TestHelper.CreateVisit(booking.Id, supplier.Id, isClaimed: false));
+            TestHelper.CreateVisit(booking.Id, supplier.Id, isClaimed: true, isReimbursed: false),
+            TestHelper.CreateVisit(booking.Id, supplier.Id, isClaimed: true, isReimbursed: true),
+            TestHelper.CreateVisit(booking.Id, supplier.Id, isClaimed: false, isReimbursed: false));
         await context.SaveChangesAsync(CancellationToken);
         var sut = CreateController(context: context);
 
         var result = (ViewResult)await sut.Dashboard();
 
         var viewModel = result.Model.ShouldBeOfType<AdminDashboardVM>();
-        viewModel.ClaimedVisits.ShouldBe(2);
-    }
-
-    [Fact]
-    public async Task Dashboard_ReturnsUnclaimedVisitCount() {
-        var context = TestHelper.CreateInMemoryContext();
-        var booking = TestHelper.CreateValidBooking([1]);
-        var supplier = TestHelper.CreateSupplier(1);
-        context.Bookings.Add(booking);
-        context.Suppliers.Add(supplier);
-        await context.SaveChangesAsync(CancellationToken);
-        context.Visits.AddRange(
-            TestHelper.CreateVisit(booking.Id, supplier.Id, isClaimed: false),
-            TestHelper.CreateVisit(booking.Id, supplier.Id, isClaimed: true));
-        await context.SaveChangesAsync(CancellationToken);
-        var sut = CreateController(context: context);
-
-        var result = (ViewResult)await sut.Dashboard();
-
-        var viewModel = result.Model.ShouldBeOfType<AdminDashboardVM>();
-        viewModel.UnclaimedVisits.ShouldBe(1);
+        viewModel.VisitsAwaitingReimbursement.ShouldBe(1);
     }
 
     [Fact]
