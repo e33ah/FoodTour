@@ -26,8 +26,8 @@ jobs:
       FtpHost: ${{ secrets.FTP_HOST_PROD }}
       FtpUser: ${{ secrets.FTP_USER_PROD }}
       FtpPassword: ${{ secrets.FTP_PASSWORD_PROD }}
-      GoogleClientId: ${{ secrets.GOOGLE_CLIENT_ID_PROD }}
-      GoogleClientSecret: ${{ secrets.GOOGLE_CLIENT_SECRET_PROD }}
+      GoogleClientId: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GoogleClientSecret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v6
 

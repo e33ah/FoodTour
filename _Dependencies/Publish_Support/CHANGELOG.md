@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-06-25 Etna
+
+### Added
+
+#### Admin Experience
+- Google OAuth admin authentication with email-whitelist authorisation, plus dedicated admin login, logout, and access-denied flows
+- Admin bookings management with booking detail views, tab filtering, pagination, and sortable columns
+- Admin supplier management with list, create, edit, and soft-delete (inactive) support
+- Admin visits management with filtering, sorting, pagination, and reimbursement status controls
+- Visit reimbursement tracking persisted on visits, including reimbursement timestamp data
+
+#### Testing & Quality
+- API integration test infrastructure with isolated fixtures, request helpers, shared test data, and broader endpoint coverage
+- Playwright UI integration testing with page objects, diagnostics, fixture hardening, and expanded end-to-end journey coverage
+- CI pipeline support for UI integration tests, including browser installation and failure artifact upload
+
+### Changed
+
+#### Admin Experience
+- Admin dashboard metrics and cards were refined for clearer navigation, improved accessibility labels, and emphasis on visits awaiting reimbursement
+- Admin bookings and visits screens were improved for accessibility, sorting behaviour, and overall usability
+
+#### Infrastructure & DevOps
+- Deployment now injects Google OAuth credentials into deployed configuration from managed pipeline secrets
+- Build and test pipeline behaviour was updated to better isolate integration test projects and execution paths
+- Package maintenance updates include MailKit `4.17.0` and additional dependency version refreshes
+
+### Fixed
+
+#### Booking Flow
+- Booking lookup and client-side input handling were hardened to reduce stale async responses and race-condition issues
+
+
 ## [1.0.2] - 2026-04-28
 
 ### Added
@@ -99,6 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflow with automated GitHub release creation
 - `IsLocalDeployEnabled` flag for controlling auto-migrations per environment
 
+[1.1.0]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.0
 [1.0.2]: https://github.com/e33ah/FoodTour/releases/tag/v1.0.2
 [1.0.1]: https://github.com/e33ah/FoodTour/releases/tag/v1.0.1
 [1.0.0]: https://github.com/e33ah/FoodTour/releases/tag/v1.0.0
