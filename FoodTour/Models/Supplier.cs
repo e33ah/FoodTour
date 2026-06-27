@@ -13,6 +13,9 @@ public class Supplier {
     [MaxLength(1000)]
     public string? Description { get; set; }
 
+    [MaxLength(250)]
+    public string? FoodTourOfferDescription { get; set; }
+
     [Required]
     [MaxLength(100)]
     public string ContactName { get; set; } = null!;

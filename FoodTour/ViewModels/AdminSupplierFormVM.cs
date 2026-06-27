@@ -16,6 +16,10 @@ public class AdminSupplierFormVM : IValidatableObject {
     [MaxLength(1000)]
     public string? Description { get; set; }
 
+    [Display(Name = "Food and drink items included per person")]
+    [MaxLength(250)]
+    public string? FoodTourOfferDescription { get; set; }
+
     [Display(Name = "Contact name")]
     [Required]
     [MaxLength(100)]
@@ -95,6 +99,7 @@ public class AdminSupplierFormVM : IValidatableObject {
             Name = supplier.Name,
             Address = supplier.Address,
             Description = supplier.Description,
+            FoodTourOfferDescription = supplier.FoodTourOfferDescription,
             ContactName = supplier.ContactName,
             ContactEmail = supplier.ContactEmail,
             OpeningTimes = supplier.OpeningTimes,
@@ -127,6 +132,7 @@ public class AdminSupplierFormVM : IValidatableObject {
         supplier.Name = Name;
         supplier.Address = Address;
         supplier.Description = Description;
+        supplier.FoodTourOfferDescription = FoodTourOfferDescription;
         supplier.ContactName = ContactName;
         supplier.ContactEmail = ContactEmail?.Trim() ?? string.Empty;
         supplier.OpeningTimes = OpeningTimes;

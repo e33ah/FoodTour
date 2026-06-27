@@ -1,91 +1,115 @@
 ﻿@model FoodTour.Models.SupplierVisitVM
 
 @{
-	ViewData["Title"] = "Food Tour Visit";
+    ViewData["Title"] = "Food Tour Visit";
 }
 
 <div class="container mt-5">
-	<img src="~/images/logo_with_wording.png" alt="Kabincraft Food Tours Logo" class="img-fluid mb-3 mx-auto d-block page-logo" />
-	<div class="row justify-content-center text-center">
-		<div class="col-12 col-md-8 col-lg-6">
-			<div class="card shadow-sm">
-				<div class="card-body p-4 p-md-5">
+    <img src="~/images/logo_with_wording.png" alt="Kabincraft Food Tours Logo" class="img-fluid mb-3 mx-auto d-block page-logo" />
+    <div class="row justify-content-center text-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-4 p-md-5">
 
-					<!-- Supplier Visit can only be captured on the tour date -->
-					@if (Model.TourDate.Date < @DateTime.Today) {
-						<h1 class="card-title mb-4">
-							<i class="bi bi-exclamation-triangle text-warning"></i> This tour has ended!
-						</h1>
-						<p>This tour took place on <strong>@Model.TourDate.ToString("dd MMMM yyyy")</strong>.</p>
-						<p>Please do not provide tasting experiences for this tour.</p>
-					}
-					else if (Model.TourDate.Date > @DateTime.Today) {
-						<h1 class="card-title mb-4">
-							<i class="bi bi-exclamation-triangle text-warning"></i> Your customers are early!
-						</h1>
-						<p>Tasting experiences for this tour are only available on <strong>@Model.TourDate.ToString("dd MMMM yyyy")</strong>.</p>
-						<p>Please ask the customer to come back on the correct day to redeem them.</p>
-					}
-					else {
-						<h1 class="card-title mb-4">
-							<i class="bi bi-fork-knife text-primary"></i> Food Tour Visit
-						</h1>
-						<p class="text-muted">Thank you for greeting our Weymouth Food Tour customer(s).</p>
-						<div>
-							<form asp-action="SupplierVisit" asp-route-qrToken="@Model.QrToken" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
-								@Html.AntiForgeryToken()
-								<div class="col-12 col-md-10 col-lg-8 py-1">
-									<div id="supplierErrorRegion" asp-validation-summary="ModelOnly" class="text-danger mb-2 @(!ViewData.ModelState.IsValid ? "" : "d-none")" role="alert" aria-live="polite" aria-atomic="true"></div>
-									<div class="alert alert-info mb-3">
-										<i class="bi bi-people-fill"></i>
-										<strong>Total Tour Size:</strong> @Model.TotalGuests guest@(Model.TotalGuests != 1 ? "s" : "")
-									</div>
+                    <!-- Supplier Visit can only be captured on the tour date -->
+                    @if (Model.TourDate.Date < @DateTime.Today) {
+                        <h1 class="card-title mb-4">
+                            <i class="bi bi-exclamation-triangle text-warning"></i> This tour has ended!
+                        </h1>
+                        <p>This tour took place on <strong>@Model.TourDate.ToString("dd MMMM yyyy")</strong>.</p>
+                        <p>Please do not provide tasting experiences for this tour.</p>
+                    }
+                    else if (Model.TourDate.Date > @DateTime.Today) {
+                        <h1 class="card-title mb-4">
+                            <i class="bi bi-exclamation-triangle text-warning"></i> Your customers are early!
+                        </h1>
+                        <p>Tasting experiences for this tour are only available on <strong>@Model.TourDate.ToString("dd MMMM yyyy")</strong>.</p>
+                        <p>Please ask the customer to come back on the correct day to redeem them.</p>
+                    }
+                    else {
+                        <h1 class="card-title mb-4">
+                            <i class="bi bi-fork-knife text-primary"></i> Food Tour Visit
+                        </h1>
+                        <p class="text-muted">Thank you for greeting our Weymouth Food Tour customer@(Model.TotalGuests != 1 ? "s" : "").</p>
+                        <div>
+                            <form asp-action="SupplierVisit" asp-route-qrToken="@Model.QrToken" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
+                                @Html.AntiForgeryToken()
+                                <div class="col-12 col-md-10 col-lg-8 py-1">
+                                    <div id="supplierErrorRegion" asp-validation-summary="ModelOnly" class="text-danger mb-2 @(!ViewData.ModelState.IsValid ? "" : "d-none")" role="alert" aria-live="polite" aria-atomic="true"></div>
 
-									<label asp-for="SelectedSupplierId" class="form-label">Please select your business:</label>
-									<span asp-validation-for="SelectedSupplierId" class="text-danger"></span>
-									<select asp-for="SelectedSupplierId" class="form-select">
-										<option value="">-- Select business --</option>
-										@if (Model?.Suppliers != null) {
-											foreach (var supplier in Model.Suppliers) {
-												<option value="@supplier.Id" data-requires-code="@supplier.RequiresConfirmationCode.ToString().ToLower()">@supplier.Name</option>
-											}
-										}
-									</select>
+                                    <label asp-for="SelectedSupplierId" class="form-label visually-hidden">Please select your business:</label>
+                                    <span asp-validation-for="SelectedSupplierId" class="text-danger"></span>
+                                    <select asp-for="SelectedSupplierId" class="form-select">
+                                        <option value="">-- Select business --</option>
+                                        @if (Model?.Suppliers != null) {
+                                            foreach (var supplier in Model.Suppliers) {
+                                                <option value="@supplier.Id"
+                                                        data-requires-code="@supplier.RequiresConfirmationCode.ToString().ToLower()"
+                                                        data-offer-description="@supplier.FoodTourOfferDescription">@supplier.Name</option>
+                                            }
+                                        }
+                                    </select>
 
-									<!-- Hidden as requested by Kabincraft - may be redisplayed if business rules change -->
-									<label for="tastingExperiencesClaimed" class="form-label mt-3 d-none">Number of guests claiming:</label>
-									<select id="tastingExperiencesClaimed" name="tastingExperiencesClaimed" class="form-select d-none">
-										@for (int i = 1; i <= Model.TotalGuests; i++) {
-											<option value="@i" selected="@(i == Model.TotalGuests)">@i</option>
-										}
-									</select>
+                                    <div id="supplierDetailsSection" class="d-none">
+                                        <!-- Hidden as requested by Kabincraft - may be redisplayed if business rules change -->
+                                        <label for="tastingExperiencesClaimed" class="form-label mt-3 d-none">Number of guests claiming:</label>
+                                        <select id="tastingExperiencesClaimed" name="tastingExperiencesClaimed" class="form-select d-none">
+                                            @for (int i = 1; i <= Model.TotalGuests; i++) {
+                                                <option value="@i" selected="@(i == Model.TotalGuests)">@i</option>
+                                            }
+                                        </select>
 
-									<label asp-for="SupplierCode" class="form-label mt-3">Enter your business code (if required):</label>
-									<input asp-for="SupplierCode" class="form-control" autocomplete="off" />
-									<span asp-validation-for="SupplierCode" class="text-danger"></span>
-									<button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
-								</div>
-							</form>
-						</div>
-					}
-				</div>
-			</div>
-		</div>
-		<p class="text-muted mt-4">
-			Need help? Visit our
-			<a asp-controller="Home" asp-action="UserSupport">Support</a>
-			page.
-		</p>
-	</div>
+                                        <div id="supplierCodeSection" class="mb-3 d-none">
+                                            <label asp-for="SupplierCode" class="form-label mt-3">Enter your business code:</label>
+                                            <input asp-for="SupplierCode" class="form-control" autocomplete="off" />
+                                            <span asp-validation-for="SupplierCode" class="text-danger"></span>
+                                        </div>
+
+                                        <div id="supplierOfferDescription" class="alert alert-info mb-3 py-2 d-none" role="status" aria-live="polite" aria-atomic="true"
+                                             aria-label="Food and drink items included per person">
+                                            <span id="supplierOfferDescriptionText"></span>
+                                        </div>
+
+                                        <div class=" bg-light mt-3 p-1 rounded-2">
+                                            <i class="bi bi-people-fill"></i>
+                                            This code is valid for: @Model.TotalGuests @(Model.TotalGuests != 1 ? "people" : "person")
+                                        </div>
+
+                                        <button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <p class="text-muted mt-4">
+            Need help? Visit our
+            <a asp-controller="Home" asp-action="UserSupport">Support</a>
+            page.
+        </p>
+    </div>
 </div>
 @section Scripts {
     <script>
         (function () {
             var supplierSelect = document.querySelector('select[name="SelectedSupplierId"]');
+            var supplierDetailsSection = document.getElementById('supplierDetailsSection');
+            var supplierCodeSection = document.getElementById('supplierCodeSection');
             var confirmationCodeInput = document.querySelector('input[name="SupplierCode"]');
             var supplierErrorRegion = document.getElementById('supplierErrorRegion');
             var supplierCodeValidationSpan = document.querySelector('span[data-valmsg-for="SupplierCode"]');
-            if (!supplierSelect || !confirmationCodeInput) { return; }
+            var supplierOfferDescription = document.getElementById('supplierOfferDescription');
+            if (!supplierSelect || !confirmationCodeInput || !supplierDetailsSection || !supplierCodeSection) { return; }
+
+            function isSupplierSelected() {
+                return supplierSelect.value !== '';
+            }
+
+            function updateSupplierDetailsState() {
+                supplierDetailsSection.classList.toggle('d-none', !isSupplierSelected());
+            }
 
             function clearWarnings() {
                 if (supplierErrorRegion) {
@@ -100,19 +124,47 @@
             function updateConfirmationCodeState() {
                 var opt = supplierSelect.options[supplierSelect.selectedIndex];
                 var requires = opt && opt.dataset && opt.dataset.requiresCode === 'true';
+                var showSupplierCode = isSupplierSelected() && requires;
+                supplierCodeSection.classList.toggle('d-none', !showSupplierCode);
                 confirmationCodeInput.disabled = !requires;
                 confirmationCodeInput.classList.toggle('bg-light', !requires);
                 confirmationCodeInput.classList.toggle('text-muted', !requires);
                 confirmationCodeInput.setAttribute('aria-disabled', (!requires).toString());
+                if (!showSupplierCode) {
+                    confirmationCodeInput.value = '';
+                    if (supplierCodeValidationSpan) {
+                        supplierCodeValidationSpan.textContent = '';
+                    }
+                }
+            }
+
+            function updateOfferDescriptionState() {
+                if (!supplierOfferDescription) {
+                    return;
+                }
+
+                var opt = supplierSelect.options[supplierSelect.selectedIndex];
+                var offerDescription = opt && opt.dataset ? (opt.dataset.offerDescription || '').trim() : '';
+                var showOfferDescription = isSupplierSelected() && offerDescription.length > 0;
+                supplierOfferDescriptionText.textContent = offerDescription;
+                supplierOfferDescription.classList.toggle('d-none', !showOfferDescription);
+                var supplierOfferDescriptionLabel = document.getElementById('supplierOfferDescriptionLabel');
+                if (supplierOfferDescriptionLabel) {
+                    supplierOfferDescriptionLabel.classList.toggle('d-none', !showOfferDescription);
+                }
             }
 
             supplierSelect.addEventListener('change', function () {
+                updateSupplierDetailsState();
                 updateConfirmationCodeState();
+                updateOfferDescriptionState();
                 clearWarnings();
             });
 
             // initialize
+            updateSupplierDetailsState();
             updateConfirmationCodeState();
+            updateOfferDescriptionState();
         })();
     </script>
 }

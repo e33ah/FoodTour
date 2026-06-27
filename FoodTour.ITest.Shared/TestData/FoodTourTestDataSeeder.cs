@@ -154,6 +154,7 @@ public static class FoodTourTestDataSeeder {
                 address: "1 High Street, Weymouth",
                 contactName: "Bob Smith",
                 contactEmail: "bob@example.com",
+                foodTourOfferDescription: "Small fish and chips.",
                 description: "Traditional British fish and chips served with mushy peas and tartare sauce. Fresh locally caught fish battered to perfection and fried to a golden crisp.",
                 tag1: "Fish&Chips",
                 tag2: "Lunch",
@@ -164,6 +165,7 @@ public static class FoodTourTestDataSeeder {
                 address: "3B High Street, Weymouth",
                 contactName: "Sue Smith",
                 contactEmail: "sue@example.com",
+                foodTourOfferDescription: "1 scone with jam and 1 pot of tea per person.",
                 tag1: "AfternoonTea",
                 openingTimes: string.Empty),
             CreateSupplier(
@@ -251,6 +253,7 @@ public static class FoodTourTestDataSeeder {
         string contactName,
         string contactEmail,
         bool isActive = true,
+        string? foodTourOfferDescription = null,
         string? description = null,
         string? tag1 = null,
         string? tag2 = null,
@@ -267,6 +270,7 @@ public static class FoodTourTestDataSeeder {
         return new Supplier {
             Name = name,
             Address = address,
+            FoodTourOfferDescription = foodTourOfferDescription,
             Description = description,
             ContactName = contactName,
             ContactEmail = contactEmail,

@@ -116,7 +116,7 @@ public static class TestHelper {
         return context;
     }
 
-    public static Supplier CreateSupplier(int id, string? name = null, bool isActive = true, string? address = null) {
+    public static Supplier CreateSupplier(int id, string? name = null, bool isActive = true, string? address = null, string? foodTourOfferDescription = null) {
         string supplierName = name ?? $"{SUPPLIER_NAME_1} {id}";
         string supplierAddress = address ?? $"{SUPPLIER_ADDRESS_1}";
         return new Supplier {
@@ -127,6 +127,7 @@ public static class TestHelper {
             OpeningTimes = SUPPLIER_OPENING_TIMES_1,
             IsActive = isActive,
             Address = supplierAddress,
+            FoodTourOfferDescription = foodTourOfferDescription,
             ConfirmationCode = $"CODE{id}"
         };
     }

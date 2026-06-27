@@ -44,6 +44,13 @@
 						<span asp-validation-for="Description" class="text-danger"></span>
 					</div>
 
+					<div class="mb-3">
+						<label asp-for="FoodTourOfferDescription" class="form-label"></label>
+						<input asp-for="FoodTourOfferDescription" class="form-control" placeholder="e.g. 1 small tasting plate per person." aria-describedby="food-tour-offer-description-help" />
+						<span asp-validation-for="FoodTourOfferDescription" class="text-danger"></span>
+                        <div id="food-tour-offer-description-help" class="form-text">Brief description of what is included in the food tour offer.</div>
+					</div>
+
 					<div class="row">
 							<div class="col-12 col-xl-6">
 								<div class="mb-3">

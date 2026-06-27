@@ -7,8 +7,9 @@ public sealed class SupplierVisitPage(IPage page) {
     private const string FOOD_TOUR_VISIT_HEADING = "Food Tour Visit";
     private const string INVALID_BUSINESS_CODE_MESSAGE = "Invalid business code provided. Please try again or contact Support.";
     private const string SELECT_BUSINESS_LABEL = "Please select your business:";
-    private const string SUPPLIER_CODE_LABEL = "Enter your business code (if required):";
+    private const string SUPPLIER_CODE_LABEL = "Enter your business code:";
     private const string SUPPLIER_VISIT_PATH_TEMPLATE = "/Home/SupplierVisit?qrToken={0}";
+    private const string SUPPLIER_FOOD_TOUR_OFFER = "Food and drink items included per person";
 
     public ILocator ConfirmVisitButton => page.GetByRole(AriaRole.Button, new PageGetByRoleOptions {
         Name = CONFIRM_VISIT_BUTTON
@@ -31,6 +32,7 @@ public sealed class SupplierVisitPage(IPage page) {
     public ILocator SupplierErrorRegion => page.GetByRole(AriaRole.Alert);
 
     public ILocator SupplierSelect => page.GetByLabel(SELECT_BUSINESS_LABEL);
+    public ILocator SupplierOfferDescription => page.GetByLabel(SUPPLIER_FOOD_TOUR_OFFER);
 
     public async Task GotoAsync(Guid qrToken) {
         string supplierVisitPath = string.Format(SUPPLIER_VISIT_PATH_TEMPLATE, qrToken);
@@ -51,4 +53,6 @@ public sealed class SupplierVisitPage(IPage page) {
         await ConfirmVisitAsync(supplierName, "WRONG-CODE");
         await Expect(SupplierErrorRegion).ToContainTextAsync(INVALID_BUSINESS_CODE_MESSAGE);
     }
+
+    public async Task SelectSupplierAsync(string supplierName) => await SupplierSelect.SelectOptionAsync(new SelectOptionValue { Label = supplierName });
 }

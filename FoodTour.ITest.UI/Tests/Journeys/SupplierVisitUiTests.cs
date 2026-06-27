@@ -2,6 +2,7 @@ namespace FoodTour.ITest.UI.Tests;
 
 [Collection("FoodTour application")]
 public class SupplierVisitUiTests(FoodTourApplicationFixture fixture) : UiTestBase(fixture) {
+    private const string FISH_AND_CHIPS_OFFER_DESCRIPTION = "Small fish and chips.";
     private const string SUPPLIER_VISIT_PATH_TEMPLATE = "/Home/SupplierVisit?qrToken={0}";
     private const string TOUR_CANCELLED_URL_PATTERN = "**/Home/TourCancelled*";
     private const string TOUR_COMPLETED_URL_PATTERN = "**/Home/TourCompleted*";
@@ -16,16 +17,21 @@ public class SupplierVisitUiTests(FoodTourApplicationFixture fixture) : UiTestBa
             var firstVisit = Fixture.SeedData.SupplierVisitBookingVisits[0];
             var supplier = Fixture.SeedData.Suppliers.Single(seededSupplier => seededSupplier.Id == firstVisit.SupplierId);
 
-            await sut.GotoAsync(booking.QrToken);
-            await sut.ConfirmVisitAsync(supplier.Name, supplier.ConfirmationCode);
+            try {
+                await SetAllSupplierVisitClaimsAsync(false);
+                await sut.GotoAsync(booking.QrToken);
+                await sut.ConfirmVisitAsync(supplier.Name, supplier.ConfirmationCode);
 
-            await page.WaitForURLAsync(VISIT_CONFIRMATION_URL_PATTERN);
-            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
-            page.Url.ShouldContain(VISIT_CONFIRMATION_PATH);
-            var visitConfirmationPage = new VisitConfirmationPage(page);
+                await page.WaitForURLAsync(VISIT_CONFIRMATION_URL_PATTERN);
+                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+                page.Url.ShouldContain(VISIT_CONFIRMATION_PATH);
+                var visitConfirmationPage = new VisitConfirmationPage(page);
 
-            await Expect(visitConfirmationPage.SuccessHeading).ToBeVisibleAsync();
-            await Expect(visitConfirmationPage.PreparationAlert).ToContainTextAsync(booking.TotalGuests.ToString());
+                await Expect(visitConfirmationPage.SuccessHeading).ToBeVisibleAsync();
+                await Expect(visitConfirmationPage.PreparationAlert).ToContainTextAsync(booking.TotalGuests.ToString());
+            } finally {
+                await SetAllSupplierVisitClaimsAsync(false);
+            }
         });
     }
 
@@ -37,11 +43,28 @@ public class SupplierVisitUiTests(FoodTourApplicationFixture fixture) : UiTestBa
             var firstVisit = Fixture.SeedData.SupplierVisitBookingVisits[0];
             var supplier = Fixture.SeedData.Suppliers.Single(seededSupplier => seededSupplier.Id == firstVisit.SupplierId);
 
+            await SetAllSupplierVisitClaimsAsync(false);
             await sut.GotoAsync(booking.QrToken);
             await sut.ConfirmVisitWithInvalidCodeAsync(supplier.Name);
 
             await Expect(sut.SupplierErrorRegion).ToBeVisibleAsync();
             page.Url.ShouldContain("/Home/SupplierVisit");
+        });
+    }
+
+    [Fact]
+    public Task SelectSupplier_ShowsFoodTourOfferDescription_WhenSupplierHasOfferDetails() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new SupplierVisitPage(page);
+            var booking = Fixture.SeedData.SupplierVisitBooking;
+            const string TEST_SUPPLIER_NAME = "Fish and Chips";
+
+            await SetAllSupplierVisitClaimsAsync(false);
+            await sut.GotoAsync(booking.QrToken);
+            await sut.SelectSupplierAsync(TEST_SUPPLIER_NAME);
+
+            await Expect(sut.SupplierOfferDescription).ToBeVisibleAsync();
+            await Expect(sut.SupplierOfferDescription).ToContainTextAsync(FISH_AND_CHIPS_OFFER_DESCRIPTION);
         });
     }
 

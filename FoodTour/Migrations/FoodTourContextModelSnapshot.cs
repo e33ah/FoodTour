@@ -17,7 +17,7 @@ namespace FoodTour.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.8")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -134,6 +134,10 @@ namespace FoodTour.Migrations
 
                     b.Property<bool>("EmailNotificationsEnabled")
                         .HasColumnType("bit");
+
+                    b.Property<string>("FoodTourOfferDescription")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");

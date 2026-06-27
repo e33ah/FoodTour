@@ -4,9 +4,10 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
     [Fact]
     public async Task SupplierVisit_ReturnsViewResult_WithSupplierDetails() {
         string supplierName = "Gourmet Bites";
+        string foodTourOfferDescription = "1 small tasting plate per guest";
         int supplierId = 1;
         int bookingId = 1;
-        var supplier = TestHelper.CreateSupplier(supplierId, supplierName, true);
+        var supplier = TestHelper.CreateSupplier(supplierId, supplierName, true, foodTourOfferDescription: foodTourOfferDescription);
         var booking = TestHelper.CreateValidBooking([bookingId]);
         var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
         var sut = CreateConfiguredController(context);
@@ -17,6 +18,7 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
         var model = viewResult.Model.ShouldBeOfType<SupplierVisitVM>();
         model.Suppliers.Count.ShouldBe(1);
         model.Suppliers[0].Name.ShouldBe(supplierName);
+        model.Suppliers[0].FoodTourOfferDescription.ShouldBe(foodTourOfferDescription);
     }
 
     [Fact]

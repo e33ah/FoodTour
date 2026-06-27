@@ -70,4 +70,31 @@ public class AdminSupplierFormVMTests {
 
         result.ShouldBeTrue();
     }
+
+    [Fact]
+    public void FromSupplier_MapsFoodTourOfferDescription() {
+        const string offerDescription = "1 scone with jam and 1 pot of tea";
+        var supplier = TestHelper.CreateSupplier(1, "Supplier", true, foodTourOfferDescription: offerDescription);
+
+        var result = AdminSupplierFormVM.FromSupplier(supplier);
+
+        result.FoodTourOfferDescription.ShouldBe(offerDescription);
+    }
+
+    [Fact]
+    public void ApplyTo_MapsFoodTourOfferDescription() {
+        const string offerDescription = "Small fish and chips";
+        var supplier = TestHelper.CreateSupplier(1, "Supplier");
+        var sut = new AdminSupplierFormVM {
+            Name = "Supplier",
+            ContactName = "Contact",
+            ContactEmail = "contact@test.com",
+            ConfirmationCode = "TOUR",
+            FoodTourOfferDescription = offerDescription
+        };
+
+        sut.ApplyTo(supplier);
+
+        supplier.FoodTourOfferDescription.ShouldBe(offerDescription);
+    }
 }
