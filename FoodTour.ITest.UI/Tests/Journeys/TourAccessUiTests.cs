@@ -14,6 +14,7 @@ public class TourAccessUiTests(FoodTourApplicationFixture fixture) : UiTestBase(
             await page.GotoAsync(string.Format(FOOD_TOUR_CODE_PATH_TEMPLATE, booking.QrToken));
 
             await page.WaitForURLAsync(TOUR_CANCELLED_URL_PATTERN);
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
             page.Url.ShouldContain("/Home/TourCancelled");
             var tourCancelledPage = new TourCancelledPage(page);
 
@@ -31,6 +32,7 @@ public class TourAccessUiTests(FoodTourApplicationFixture fixture) : UiTestBase(
             await page.GotoAsync(string.Format(FOOD_TOUR_CODE_PATH_TEMPLATE, booking.QrToken));
 
             await page.WaitForURLAsync(string.Format(FOOD_TOUR_CODE_URL_PATTERN_TEMPLATE, booking.QrToken));
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
             page.Url.ShouldContain("/Home/FoodTourCode");
             var foodTourQrCodePage = new FoodTourQRCodePage(page);
 
@@ -49,6 +51,7 @@ public class TourAccessUiTests(FoodTourApplicationFixture fixture) : UiTestBase(
                 await page.GotoAsync(string.Format(FOOD_TOUR_CODE_PATH_TEMPLATE, booking.QrToken));
 
                 await page.WaitForURLAsync(string.Format(FOOD_TOUR_CODE_URL_PATTERN_TEMPLATE, booking.QrToken));
+                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                 page.Url.ShouldContain("/Home/FoodTourCode");
                 var foodTourQrCodePage = new FoodTourQRCodePage(page);
 

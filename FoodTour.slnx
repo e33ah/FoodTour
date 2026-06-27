@@ -3,15 +3,6 @@
     <File Path=".github/copilot-instructions.md" />
     <File Path="README.md" />
   </Folder>
-  <Project Path="FoodTour.ITest.API/FoodTour.ITest.API.csproj">
-    <Build Solution="Debug|*" Project="false" />
-  </Project>
-  <Project Path="FoodTour.ITest.Shared/FoodTour.ITest.Shared.csproj">
-    <Build Solution="Debug|*" Project="false" />
-  </Project>
-  <Project Path="FoodTour.ITest.UI/FoodTour.ITest.UI.csproj" Id="d0aac504-a51e-3f1d-c92b-ce2ce6c40f28">
-    <Build Solution="Debug|*" Project="false" />
-  </Project>
   <Project Path="FoodTour.Pipeline/FoodTour.Pipeline.csproj">
     <Build Project="false" />
   </Project>

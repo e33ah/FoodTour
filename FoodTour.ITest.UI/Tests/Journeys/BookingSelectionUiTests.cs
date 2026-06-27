@@ -33,6 +33,7 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
                 await sut.SubmitSelectionAsync();
 
                 await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
+                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                 page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
                 var bookingSummaryPage = new BookingSummaryPage(page);
 
@@ -45,6 +46,7 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
                 await bookingSummaryPage.ConfirmBookingButton.ClickAsync();
 
                 await page.WaitForURLAsync(BOOKING_CONFIRMATION_URL_PATTERN);
+                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                 var bookingConfirmationPage = new BookingConfirmationPage(page);
 
                 await Expect(bookingConfirmationPage.BookingConfirmationHeading).ToBeVisibleAsync();
@@ -71,6 +73,7 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
             await sut.ViewYourTourDetailsButton.ClickAsync();
 
             await page.WaitForURLAsync(expectedFoodTourCodeUrlPattern);
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
             var foodTourQrCodePage = new FoodTourQRCodePage(page);
 
             await Expect(foodTourQrCodePage.TourSummaryHeading).ToBeVisibleAsync();
@@ -111,6 +114,7 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
                 await sut.SubmitSelectionAsync();
 
                 await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
+                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                 page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
             } finally {
                 await DeleteTemporaryBookingAsync(booking.Id);
@@ -171,6 +175,7 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
                 await sut.SubmitSelectionAsync();
 
                 await page.WaitForURLAsync(BOOKING_SUMMARY_URL_PATTERN);
+                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                 page.Url.ShouldContain(BOOKING_SUMMARY_PATH);
             } finally {
                 await DeleteTemporaryBookingAsync(booking.Id);
@@ -327,6 +332,7 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
             await bookingSummaryPage.ConfirmBookingButton.ClickAsync();
 
             await page.WaitForURLAsync(BOOKING_CONFIRMATION_URL_PATTERN);
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
             var bookingConfirmationPage = new BookingConfirmationPage(page);
 
             await Expect(bookingConfirmationPage.BookingConfirmationHeading).ToBeVisibleAsync();

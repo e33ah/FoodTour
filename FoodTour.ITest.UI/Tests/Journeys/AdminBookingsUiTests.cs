@@ -37,7 +37,8 @@ public sealed class AdminBookingsUiTests(FoodTourApplicationFixture fixture) : U
             await sut.GotoAsync();
             await sut.ClickBookingDetailAsync(confirmedBooking.PurchaseCode);
 
-            await page.WaitForURLAsync($"**/Admin/BookingDetail/{confirmedBooking.Id}");
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+            page.Url.ShouldEndWith($"/Admin/BookingDetail/{confirmedBooking.Id}");
             string html = await page.ContentAsync();
             html.ShouldContain(confirmedBooking.CustomerEmail);
         });

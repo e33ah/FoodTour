@@ -39,6 +39,7 @@ public sealed class AdminSuppliersUiTests(FoodTourApplicationFixture fixture) : 
                 await createPage.ClickSaveAsync();
 
                 await page.WaitForURLAsync("**/Admin/Suppliers");
+                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                 bool hasSupplier = await suppliersPage.HasSupplierAsync(newSupplierName);
                 hasSupplier.ShouldBeTrue();
             } finally {
@@ -118,6 +119,7 @@ public sealed class AdminSuppliersUiTests(FoodTourApplicationFixture fixture) : 
                 await editPage.ClickSaveAsync();
 
                 await page.WaitForURLAsync("**/Admin/Suppliers");
+                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
 
                 await using var context = Fixture.CreateDbContext();
                 var updatedSupplier = await context.Suppliers.FindAsync([supplier.Id], TestContext.Current.CancellationToken);

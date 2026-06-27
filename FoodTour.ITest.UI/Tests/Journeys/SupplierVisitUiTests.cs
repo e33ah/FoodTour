@@ -20,6 +20,7 @@ public class SupplierVisitUiTests(FoodTourApplicationFixture fixture) : UiTestBa
             await sut.ConfirmVisitAsync(supplier.Name, supplier.ConfirmationCode);
 
             await page.WaitForURLAsync(VISIT_CONFIRMATION_URL_PATTERN);
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
             page.Url.ShouldContain(VISIT_CONFIRMATION_PATH);
             var visitConfirmationPage = new VisitConfirmationPage(page);
 
@@ -52,6 +53,7 @@ public class SupplierVisitUiTests(FoodTourApplicationFixture fixture) : UiTestBa
             await page.GotoAsync(string.Format(SUPPLIER_VISIT_PATH_TEMPLATE, booking.QrToken));
 
             await page.WaitForURLAsync(TOUR_CANCELLED_URL_PATTERN);
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
             var tourCancelledPage = new TourCancelledPage(page);
 
             await Expect(tourCancelledPage.PageHeading).ToBeVisibleAsync();
@@ -93,6 +95,7 @@ public class SupplierVisitUiTests(FoodTourApplicationFixture fixture) : UiTestBa
                 await page.GotoAsync(string.Format(SUPPLIER_VISIT_PATH_TEMPLATE, booking.QrToken));
 
                 await page.WaitForURLAsync(TOUR_COMPLETED_URL_PATTERN);
+                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                 var tourCompletedPage = new TourCompletedPage(page);
 
                 await Expect(tourCompletedPage.PageHeading).ToBeVisibleAsync();

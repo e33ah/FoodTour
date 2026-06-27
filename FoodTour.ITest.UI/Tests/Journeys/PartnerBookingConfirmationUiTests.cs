@@ -27,6 +27,7 @@ public partial class PartnerBookingConfirmationUiTests(FoodTourApplicationFixtur
 
                 await page.GotoAsync(partnerConfirmationUrl);
                 await page.WaitForURLAsync(PARTNER_BOOKING_CONFIRMATION_URL_PATTERN);
+                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                 page.Url.ShouldContain(PARTNER_BOOKING_CONFIRMATION_PATH);
                 var partnerBookingConfirmationPage = new PartnerBookingConfirmationPage(page);
 
@@ -66,6 +67,7 @@ public partial class PartnerBookingConfirmationUiTests(FoodTourApplicationFixtur
         return ExecutePageTestAsync(async page => {
             await page.GotoAsync($"{COMPLETE_PARTNER_BOOKING_CONFIRMATION_PATH}?validation=invalid-token");
             await page.WaitForURLAsync(PARTNER_BOOKING_CONFIRMATION_URL_PATTERN);
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
             var sut = new PartnerBookingConfirmationPage(page);
 
             await Expect(sut.PageHeading).ToBeVisibleAsync();
@@ -87,6 +89,7 @@ public partial class PartnerBookingConfirmationUiTests(FoodTourApplicationFixtur
 
             await page.GotoAsync($"{COMPLETE_PARTNER_BOOKING_CONFIRMATION_PATH}?validation={Uri.EscapeDataString(expiredValidation)}");
             await page.WaitForURLAsync(PARTNER_BOOKING_CONFIRMATION_URL_PATTERN);
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
             var sut = new PartnerBookingConfirmationPage(page);
 
             await Expect(sut.PageHeading).ToBeVisibleAsync();
