@@ -41,7 +41,7 @@ public class VisitsController(FoodTourContext context, AdminNotificationService 
         return Ok(new { success = true, tastingExperiencesClaimed = payload!.TastingExperiencesClaimed, totalGuests = booking.TotalGuests });
     }
 
-    public record RecordVisitDTO(Guid QrToken, int SelectedSupplierId, string SupplierCode, int TastingExperiencesClaimed);
+    public record RecordVisitDTO(Guid QrToken, int SelectedSupplierId, string? SupplierCode, int TastingExperiencesClaimed);
 
     private record ValidationResult<T>(bool IsValid, string ErrorMessage, T? Data = default);
 
@@ -64,7 +64,7 @@ public class VisitsController(FoodTourContext context, AdminNotificationService 
             return new ValidationResult<(Booking, Supplier, Visit)>(false, "Business not found in Food Tour. Please contact Support.");
         }
 
-        if (!string.Equals(supplier.ConfirmationCode, payload!.SupplierCode, StringComparison.OrdinalIgnoreCase)) {
+        if (supplier.RequiresConfirmationCode && !string.Equals(supplier.ConfirmationCode, payload!.SupplierCode, StringComparison.OrdinalIgnoreCase)) {
             Log.Warning("RecordVisit supplier passcode mismatch for supplier id {SupplierId}.", payload.SelectedSupplierId);
             return new ValidationResult<(Booking, Supplier, Visit)>(false, "Invalid business code provided. Please try again or contact Support.");
         }
@@ -86,7 +86,7 @@ public class VisitsController(FoodTourContext context, AdminNotificationService 
     }
 
     private static bool TryValidateRecordVisitPayload(RecordVisitDTO? payload, out string errorMessage) {
-        if (payload == null || payload.SelectedSupplierId <= 0 || payload.QrToken == Guid.Empty || string.IsNullOrEmpty(payload.SupplierCode)) {
+        if (payload == null || payload.SelectedSupplierId <= 0 || payload.QrToken == Guid.Empty) {
             errorMessage = "Invalid booking or business information.";
             return false;
         }

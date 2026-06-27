@@ -7,7 +7,7 @@ public sealed class SupplierVisitPage(IPage page) {
     private const string FOOD_TOUR_VISIT_HEADING = "Food Tour Visit";
     private const string INVALID_BUSINESS_CODE_MESSAGE = "Invalid business code provided. Please try again or contact Support.";
     private const string SELECT_BUSINESS_LABEL = "Please select your business:";
-    private const string SUPPLIER_CODE_LABEL = "Enter your business Code:";
+    private const string SUPPLIER_CODE_LABEL = "Enter your business code (if required):";
     private const string SUPPLIER_VISIT_PATH_TEMPLATE = "/Home/SupplierVisit?qrToken={0}";
 
     public ILocator ConfirmVisitButton => page.GetByRole(AriaRole.Button, new PageGetByRoleOptions {

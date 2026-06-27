@@ -32,9 +32,10 @@
 						</h1>
 						<p class="text-muted">Thank you for greeting our Weymouth Food Tour customer(s).</p>
 						<div>
-							<form id="supplierVisitForm" asp-action="SupplierSelect" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
+							<form asp-action="SupplierVisit" asp-route-qrToken="@Model.QrToken" method="post" class="row d-flex flex-row align-items-center mb-2 justify-content-center">
 								@Html.AntiForgeryToken()
 								<div class="col-12 col-md-10 col-lg-8 py-1">
+									<div id="supplierErrorRegion" asp-validation-summary="ModelOnly" class="text-danger mb-2 @(!ViewData.ModelState.IsValid ? "" : "d-none")" role="alert" aria-live="polite" aria-atomic="true"></div>
 									<div class="alert alert-info mb-3">
 										<i class="bi bi-people-fill"></i>
 										<strong>Total Tour Size:</strong> @Model.TotalGuests guest@(Model.TotalGuests != 1 ? "s" : "")
@@ -46,7 +47,7 @@
 										<option value="">-- Select business --</option>
 										@if (Model?.Suppliers != null) {
 											foreach (var supplier in Model.Suppliers) {
-												<option value="@supplier.Id">@supplier.Name</option>
+												<option value="@supplier.Id" data-requires-code="@supplier.RequiresConfirmationCode.ToString().ToLower()">@supplier.Name</option>
 											}
 										}
 									</select>
@@ -59,11 +60,11 @@
 										}
 									</select>
 
-									<label for="supplierCode" class="form-label mt-3">Enter your business Code:</label>
-									<input id="supplierCode" name="supplierCode" type="text" class="form-control" autocomplete="off" />
+									<label asp-for="SupplierCode" class="form-label mt-3">Enter your business code (if required):</label>
+									<input asp-for="SupplierCode" class="form-control" autocomplete="off" />
+									<span asp-validation-for="SupplierCode" class="text-danger"></span>
 									<button type="submit" id="btnConfirmVisit" class="btn btn-primary mt-4">Confirm Visit</button>
 								</div>
-								<div id="supplierErrorRegion" class="text-danger d-none" role="alert" aria-live="polite" aria-atomic="true"></div>
 							</form>
 						</div>
 					}
@@ -77,103 +78,41 @@
 		</p>
 	</div>
 </div>
-
 @section Scripts {
-	<script type="text/javascript">
-		(function () {
-		var form = document.getElementById('supplierVisitForm');
-		if (!form) {
-		return;
-		}
+    <script>
+        (function () {
+            var supplierSelect = document.querySelector('select[name="SelectedSupplierId"]');
+            var confirmationCodeInput = document.querySelector('input[name="SupplierCode"]');
+            var supplierErrorRegion = document.getElementById('supplierErrorRegion');
+            var supplierCodeValidationSpan = document.querySelector('span[data-valmsg-for="SupplierCode"]');
+            if (!supplierSelect || !confirmationCodeInput) { return; }
 
-		form.addEventListener('submit', async function (e) {
-		e.preventDefault();
+            function clearWarnings() {
+                if (supplierErrorRegion) {
+                    supplierErrorRegion.textContent = '';
+                    supplierErrorRegion.classList.add('d-none');
+                }
+                if (supplierCodeValidationSpan) {
+                    supplierCodeValidationSpan.textContent = '';
+                }
+            }
 
-		var select = form.querySelector('select[name="SelectedSupplierId"]');
-		var selectedValue = select ? select.value : '';
-		var supplierCodeInput = form.querySelector('input[name="supplierCode"]');
-		var supplierCode = supplierCodeInput ? supplierCodeInput.value.trim() : '';
-		var tastingSelect = form.querySelector('select[name="tastingExperiencesClaimed"]');
-		var tastingExperiencesClaimed = tastingSelect ? Number(tastingSelect.value) : 0;
-		var errorRegion = document.getElementById('supplierErrorRegion');
+            function updateConfirmationCodeState() {
+                var opt = supplierSelect.options[supplierSelect.selectedIndex];
+                var requires = opt && opt.dataset && opt.dataset.requiresCode === 'true';
+                confirmationCodeInput.disabled = !requires;
+                confirmationCodeInput.classList.toggle('bg-light', !requires);
+                confirmationCodeInput.classList.toggle('text-muted', !requires);
+                confirmationCodeInput.setAttribute('aria-disabled', (!requires).toString());
+            }
 
-		if (!selectedValue) {
-		if (errorRegion) {
-		errorRegion.textContent = 'Please select your business to confirm the visit.';
-		errorRegion.classList.remove('d-none');
-		}
-		return;
-		}
+            supplierSelect.addEventListener('change', function () {
+                updateConfirmationCodeState();
+                clearWarnings();
+            });
 
-		if (!supplierCode) {
-		if (errorRegion) {
-		errorRegion.textContent = 'Please enter your business\'s code to confirm the visit.';
-		errorRegion.classList.remove('d-none');
-		}
-		return;
-		}
-
-		if (!tastingExperiencesClaimed || tastingExperiencesClaimed <= 0) {
-		if (errorRegion) {
-		errorRegion.textContent = 'Please select the number of tasting experiences provided.';
-		errorRegion.classList.remove('d-none');
-		}
-		return;
-		}
-
-		if (errorRegion) {
-		errorRegion.classList.add('d-none');
-		errorRegion.textContent = '';
-		}
-
-		var tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
-		var token = tokenInput ? tokenInput.value : '';
-
-		var payload = {
-		qrToken: '@Model.QrToken',
-		selectedSupplierId: Number(selectedValue),
-		supplierCode: supplierCode,
-		tastingExperiencesClaimed: tastingExperiencesClaimed
-		};
-
-		try {
-		var response = await fetch('/api/visits/record', {
-		method: 'PUT',
-		headers: {
-		'Content-Type': 'application/json',
-		'RequestVerificationToken': token
-		},
-		body: JSON.stringify(payload)
-		});
-
-		if (response.ok) {
-		var result = await response.json();
-		var redirectUrl = '/Home/VisitConfirmation?claimed=' + result.tastingExperiencesClaimed + '&total=' + result.totalGuests;
-		window.location.href = redirectUrl;
-		return;
-		}
-
-		var errorText = 'An error occurred while recording the visit.';
-		try {
-		var errorResponse = await response.json();
-		if (errorResponse && errorResponse.error) {
-		errorText = errorResponse.error;
-		}
-		} catch (parseErr) {
-		// ignore JSON parse errors and use generic message
-		}
-
-		if (errorRegion) {
-		errorRegion.textContent = errorText;
-		errorRegion.classList.remove('d-none');
-		}
-		} catch (networkErr) {
-		if (errorRegion) {
-		errorRegion.textContent = 'Network error while recording the visit. Please try again.';
-		errorRegion.classList.remove('d-none');
-		}
-		}
-		});
-		})();
-	</script>
+            // initialize
+            updateConfirmationCodeState();
+        })();
+    </script>
 }

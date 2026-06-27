@@ -308,6 +308,8 @@ public static class TestHelper {
         var context = CreateContextWithActiveSuppliersCount(contextSupplierCount);
         await context.SaveChangesAsync();
         var emailSender = Mock.Of<IEmailSender>();
+        var adminNotificationService = CreateAdminNotificationService().service;
+        var supplierNotificationService = CreateSupplierNotificationService().service;
         var templateRendererMock = new Mock<IRazorTemplateRenderer>();
         templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync("<html>Mock email body</html>");
@@ -316,11 +318,13 @@ public static class TestHelper {
         var bookingValidationService = new BookingValidationService(context);
         var bookingUpdateService = new BookingUpdateService(context);
         var partnerBookingConfirmationService = CreatePartnerBookingConfirmationService(context);
-        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, bookingUpdateService, partnerBookingConfirmationService);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, bookingUpdateService, partnerBookingConfirmationService, adminNotificationService, supplierNotificationService);
     }
 
     public static HomeController CreateHomeController(FoodTourContext context, IEmailSender? emailSender = null) {
         emailSender ??= Mock.Of<IEmailSender>();
+        var adminNotificationService = CreateAdminNotificationService().service;
+        var supplierNotificationService = CreateSupplierNotificationService().service;
         var templateRendererMock = new Mock<IRazorTemplateRenderer>();
         templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync("<html>Mock email body</html>");
@@ -329,7 +333,7 @@ public static class TestHelper {
         var bookingValidationService = new BookingValidationService(context);
         var bookingUpdateService = new BookingUpdateService(context);
         var partnerBookingConfirmationService = CreatePartnerBookingConfirmationService(context);
-        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, bookingUpdateService, partnerBookingConfirmationService);
+        return new HomeController(context, emailSender, bookingEmailService, supportOptions, bookingValidationService, bookingUpdateService, partnerBookingConfirmationService, adminNotificationService, supplierNotificationService);
     }
 
     public static Mock<IEmailSender> CreateMockEmailSender() {

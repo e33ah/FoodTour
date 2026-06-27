@@ -130,4 +130,42 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
         model.BookingId.ShouldBe(booking.Id);
         model.BookingId.ShouldBeGreaterThan(0);
     }
+
+    [Fact]
+    public async Task SupplierVisit_Post_ReturnsViewWithError_WhenSupplierCodeRequiredAndMissing() {
+        var supplier = TestHelper.CreateSupplier(1, "Test Supplier", true);
+        supplier.RequiresConfirmationCode = true;
+        var booking = TestHelper.CreateValidBooking([1]);
+        booking.TourDate = DateTime.Today;
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        context.Visits.Add(new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = false });
+        context.SaveChanges();
+        var sut = CreateConfiguredController(context);
+
+        var result = await sut.SupplierVisit(booking.QrToken, supplier.Id, string.Empty, booking.TotalGuests);
+
+        var viewResult = result.ShouldBeOfType<ViewResult>();
+        viewResult.ViewName.ShouldBeNull();
+        sut.ModelState.IsValid.ShouldBeFalse();
+        sut.ModelState[string.Empty]!.Errors.Select(error => error.ErrorMessage).ShouldContain("Invalid business code provided. Please try again or contact Support.");
+    }
+
+    [Fact]
+    public async Task SupplierVisit_Post_RedirectsToVisitConfirmation_WhenSupplierCodeOptionalAndMissing() {
+        var supplier = TestHelper.CreateSupplier(1, "Test Supplier", true);
+        supplier.RequiresConfirmationCode = false;
+        var booking = TestHelper.CreateValidBooking([1]);
+        booking.TourDate = DateTime.Today;
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([supplier], [booking]);
+        context.Visits.Add(new Visit { BookingId = booking.Id, SupplierId = supplier.Id, IsClaimed = false });
+        context.SaveChanges();
+        var sut = CreateConfiguredController(context);
+
+        var result = await sut.SupplierVisit(booking.QrToken, supplier.Id, string.Empty, booking.TotalGuests);
+
+        var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
+        redirectResult.ActionName.ShouldBe(nameof(HomeController.VisitConfirmation));
+        redirectResult.RouteValues!["claimed"].ShouldBe(booking.TotalGuests);
+        redirectResult.RouteValues["total"].ShouldBe(booking.TotalGuests);
+    }
 }

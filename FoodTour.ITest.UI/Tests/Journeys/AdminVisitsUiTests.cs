@@ -1,4 +1,4 @@
-namespace FoodTour.ITest.UI.Tests.Journeys;
+namespace FoodTour.ITest.UI.Tests;
 
 [Collection("FoodTour application")]
 public sealed class AdminVisitsUiTests(FoodTourApplicationFixture fixture) : UiTestBase(fixture) {

@@ -1,6 +1,6 @@
 namespace FoodTour.Models;
 
-public class AdminSupplierFormVM {
+public class AdminSupplierFormVM : IValidatableObject {
     public int Id { get; set; }
 
     [Display(Name = "Business Name")]
@@ -22,7 +22,6 @@ public class AdminSupplierFormVM {
     public string ContactName { get; set; } = string.Empty;
 
     [Display(Name = "Contact email")]
-    [Required]
     [MaxLength(256)]
     [SemicolonSeparatedEmailAddresses]
     public string ContactEmail { get; set; } = string.Empty;
@@ -81,9 +80,11 @@ public class AdminSupplierFormVM {
     public string? Tag4 { get; set; }
 
     [Display(Name = "Confirmation code")]
-    [Required]
     [MaxLength(50)]
     public string ConfirmationCode { get; set; } = "TOUR";
+
+    [Display(Name = "Require confirmation code")]
+    public bool RequiresConfirmationCode { get; set; } = true;
 
     [Display(Name = "Email notifications enabled")]
     public bool EmailNotificationsEnabled { get; set; }
@@ -111,6 +112,7 @@ public class AdminSupplierFormVM {
             Tag3 = supplier.Tag3,
             Tag4 = supplier.Tag4,
             ConfirmationCode = supplier.ConfirmationCode,
+            RequiresConfirmationCode = supplier.RequiresConfirmationCode,
             EmailNotificationsEnabled = supplier.EmailNotificationsEnabled
         };
     }
@@ -126,7 +128,7 @@ public class AdminSupplierFormVM {
         supplier.Address = Address;
         supplier.Description = Description;
         supplier.ContactName = ContactName;
-        supplier.ContactEmail = ContactEmail;
+        supplier.ContactEmail = ContactEmail?.Trim() ?? string.Empty;
         supplier.OpeningTimes = OpeningTimes;
         supplier.OpeningTimesMonday = OpeningTimesMonday;
         supplier.OpeningTimesTuesday = OpeningTimesTuesday;
@@ -140,7 +142,22 @@ public class AdminSupplierFormVM {
         supplier.Tag2 = Tag2;
         supplier.Tag3 = Tag3;
         supplier.Tag4 = Tag4;
-        supplier.ConfirmationCode = ConfirmationCode;
+        supplier.ConfirmationCode = ConfirmationCode?.Trim() ?? string.Empty;
+        supplier.RequiresConfirmationCode = RequiresConfirmationCode;
         supplier.EmailNotificationsEnabled = EmailNotificationsEnabled;
+    }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
+        if (RequiresConfirmationCode && string.IsNullOrWhiteSpace(ConfirmationCode)) {
+            yield return new ValidationResult(
+                "Confirmation code is required when code confirmation is enabled.",
+                [nameof(ConfirmationCode)]);
+        }
+
+        if (EmailNotificationsEnabled && string.IsNullOrWhiteSpace(ContactEmail)) {
+            yield return new ValidationResult(
+                "Contact email is required when email notifications are enabled.",
+                [nameof(ContactEmail)]);
+        }
     }
 }

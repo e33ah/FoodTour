@@ -167,6 +167,8 @@ public class HomeControllerPartnerBookingConfirmationTests : HomeControllerTestB
 
         var bookingEmailService = new BookingEmailService(templateRendererMock.Object);
         var partnerBookingConfirmationService = TestHelper.CreatePartnerBookingConfirmationService(context);
+        var adminNotificationService = TestHelper.CreateAdminNotificationService().service;
+        var supplierNotificationService = TestHelper.CreateSupplierNotificationService().service;
         var sut = new HomeController(
             context,
             emailSenderMock.Object,
@@ -174,7 +176,9 @@ public class HomeControllerPartnerBookingConfirmationTests : HomeControllerTestB
             TestHelper.CreateSupportOptions(),
             new BookingValidationService(context),
             new BookingUpdateService(context),
-            partnerBookingConfirmationService);
+            partnerBookingConfirmationService,
+            adminNotificationService,
+            supplierNotificationService);
 
         sut.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
         sut.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };

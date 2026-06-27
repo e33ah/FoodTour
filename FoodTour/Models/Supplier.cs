@@ -62,6 +62,8 @@ public class Supplier {
     [MaxLength(50)]
     public string ConfirmationCode { get; set; } = null!;
 
+    public bool RequiresConfirmationCode { get; set; } = true;
+
     public bool EmailNotificationsEnabled { get; set; }
 
 

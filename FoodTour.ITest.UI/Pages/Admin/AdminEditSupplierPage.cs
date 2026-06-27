@@ -11,24 +11,15 @@ public sealed class AdminEditSupplierPage(IPage page) {
     private const string SAVE_BUTTON = "Save";
     private const string CANCEL_LINK = "Cancel";
 
-    public ILocator PageHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions {
-        Name = EDIT_SUPPLIER_HEADING
-    });
-
+    public ILocator PageHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = EDIT_SUPPLIER_HEADING });
     public ILocator NameInput => page.GetByLabel(SUPPLIER_NAME_LABEL);
     public ILocator AddressInput => page.GetByLabel(ADDRESS_LABEL);
     public ILocator ContactNameInput => page.GetByLabel(CONTACT_NAME_LABEL);
     public ILocator ContactEmailInput => page.GetByLabel(CONTACT_EMAIL_LABEL);
     public ILocator OpeningTimesInput => page.GetByLabel(OPENING_TIMES_LABEL);
     public ILocator IsActiveCheckBox => page.GetByLabel(IS_ACTIVE_LABEL);
-
-    public ILocator SaveButton => page.GetByRole(AriaRole.Button, new PageGetByRoleOptions {
-        Name = SAVE_BUTTON
-    });
-
-    public ILocator CancelLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions {
-        Name = CANCEL_LINK
-    });
+    public ILocator SaveButton => page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = SAVE_BUTTON }).First;
+    public ILocator CancelLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = CANCEL_LINK });
 
     public async Task GotoAsync(int supplierId) {
         await page.GotoAsync($"/Admin/EditSupplier/{supplierId}");
@@ -40,15 +31,9 @@ public sealed class AdminEditSupplierPage(IPage page) {
         await OpeningTimesInput.FillAsync(openingTimes);
     }
 
-    public async Task ClickSaveAsync() {
-        await SaveButton.ClickAsync();
-    }
+    public async Task ClickSaveAsync() => await SaveButton.ClickAsync();
 
-    public async Task<string?> GetNameValueAsync() {
-        return await NameInput.InputValueAsync();
-    }
+    public async Task<string?> GetNameValueAsync() => await NameInput.InputValueAsync();
 
-    public async Task UncheckIsActiveAsync() {
-        await IsActiveCheckBox.UncheckAsync();
-    }
+    public async Task UncheckIsActiveAsync() => await IsActiveCheckBox.UncheckAsync();
 }
