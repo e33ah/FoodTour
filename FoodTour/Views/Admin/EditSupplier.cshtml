@@ -105,6 +105,8 @@
                     </div>
 
                     <h2 class="h5 mt-4">Tags</h2>
+                    <p class="text-muted small mb-3">Tags display as little badges on the main screen. They are optional.</p>
+
                     <div class="row">
                         <div class="col-12 col-md-3 mb-3">
                             <label asp-for="Tag1" class="form-label"></label>
@@ -133,7 +135,7 @@
             <div class="card mb-3">
                 <div class="card-body">
                     <h2 class="h5">Opening times</h2>
-                    <p class="text-muted small mb-3">Day-specific values override the general opening times.</p>
+                    <p class="text-muted small mb-3">Day-specific values will override the default opening times.</p>
 
                     <div class="mb-3">
                         <label asp-for="OpeningTimes" class="form-label"></label>

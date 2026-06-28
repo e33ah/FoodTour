@@ -13,22 +13,10 @@ public sealed class AdminBookingsPage(IPage page) {
     });
 
     public ILocator BookingsTable => page.Locator("table");
-
-    public ILocator FilterAllLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions {
-        Name = FILTER_ALL
-    });
-
-    public ILocator FilterUpcomingLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions {
-        Name = FILTER_UPCOMING
-    });
-
-    public ILocator FilterPastLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions {
-        Name = FILTER_PAST
-    });
-
-    public ILocator FilterCancelledLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions {
-        Name = FILTER_CANCELLED
-    });
+    public ILocator FilterAllLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = FILTER_ALL });
+    public ILocator FilterUpcomingLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = FILTER_UPCOMING });
+    public ILocator FilterPastLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = FILTER_PAST });
+    public ILocator FilterCancelledLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = FILTER_CANCELLED });
 
     public async Task GotoAsync() {
         await page.GotoAsync("/Admin/Bookings");
@@ -39,9 +27,7 @@ public sealed class AdminBookingsPage(IPage page) {
         var row = page.Locator("tr").Filter(new LocatorFilterOptions {
             HasText = purchaseCode
         });
-        await row.GetByRole(AriaRole.Link, new LocatorGetByRoleOptions {
-            Name = "View"
-        }).ClickAsync();
+        await row.GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "View" }).ClickAsync();
     }
 
     public async Task<bool> HasBookingAsync(string customerEmail) {

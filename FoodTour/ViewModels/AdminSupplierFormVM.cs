@@ -30,35 +30,35 @@ public class AdminSupplierFormVM : IValidatableObject {
     [SemicolonSeparatedEmailAddresses]
     public string ContactEmail { get; set; } = string.Empty;
 
-    [Display(Name = "Opening times (general)")]
+    [Display(Name = "Opening times (default)")]
     [MaxLength(500)]
     public string? OpeningTimes { get; set; }
 
-    [Display(Name = "Opening times (Monday)")]
+    [Display(Name = "Monday")]
     [MaxLength(500)]
     public string? OpeningTimesMonday { get; set; }
 
-    [Display(Name = "Opening times (Tuesday)")]
+    [Display(Name = "Tuesday")]
     [MaxLength(500)]
     public string? OpeningTimesTuesday { get; set; }
 
-    [Display(Name = "Opening times (Wednesday)")]
+    [Display(Name = "Wednesday")]
     [MaxLength(500)]
     public string? OpeningTimesWednesday { get; set; }
 
-    [Display(Name = "Opening times (Thursday)")]
+    [Display(Name = "Thursday")]
     [MaxLength(500)]
     public string? OpeningTimesThursday { get; set; }
 
-    [Display(Name = "Opening times (Friday)")]
+    [Display(Name = "Friday")]
     [MaxLength(500)]
     public string? OpeningTimesFriday { get; set; }
 
-    [Display(Name = "Opening times (Saturday)")]
+    [Display(Name = "Saturday")]
     [MaxLength(500)]
     public string? OpeningTimesSaturday { get; set; }
 
-    [Display(Name = "Opening times (Sunday)")]
+    [Display(Name = "Sunday")]
     [MaxLength(500)]
     public string? OpeningTimesSunday { get; set; }
 

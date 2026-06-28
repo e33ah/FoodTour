@@ -6,7 +6,7 @@ public sealed class AdminEditSupplierPage(IPage page) {
     private const string ADDRESS_LABEL = "Business Address";
     private const string CONTACT_NAME_LABEL = "Contact name";
     private const string CONTACT_EMAIL_LABEL = "Contact email";
-    private const string OPENING_TIMES_LABEL = "Opening times (general)";
+    private const string OPENING_TIMES_LABEL = "Opening times (default)";
     private const string IS_ACTIVE_LABEL = "Active";
     private const string SAVE_BUTTON = "Save";
     private const string CANCEL_LINK = "Cancel";
