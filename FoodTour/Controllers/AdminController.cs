@@ -295,19 +295,20 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         }
     }
 
-    public async Task<IActionResult> EditSupplier(int id) {
+    public async Task<IActionResult> EditSupplier(int id, string? filter = null) {
         var supplier = await context.Suppliers.FindAsync(id);
         if (supplier == null) {
             return NotFound();
         }
 
         var result = AdminSupplierFormVM.FromSupplier(supplier);
+        ViewData["SuppliersFilter"] = filter;
         return View(result);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditSupplier(int id, AdminSupplierFormVM model) {
+    public async Task<IActionResult> EditSupplier(int id, AdminSupplierFormVM model, string? filter = null) {
         if (id != model.Id) {
             return BadRequest();
         }
@@ -318,6 +319,7 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         }
 
         if (!ModelState.IsValid) {
+            ViewData["SuppliersFilter"] = filter;
             return View(model);
         }
 
@@ -326,10 +328,11 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         try {
             await context.SaveChangesAsync();
             Log.Information("Supplier {SupplierId} updated", supplier.Id);
-            return RedirectToAction(nameof(Suppliers));
+            return RedirectToAction(nameof(Suppliers), new { filter });
         } catch (Exception ex) {
             Log.Error(ex, "Failed to update supplier {SupplierId}", supplier.Id);
             ModelState.AddModelError(string.Empty, "Failed to update supplier. Please try again.");
+            ViewData["SuppliersFilter"] = filter;
             return View(model);
         }
     }

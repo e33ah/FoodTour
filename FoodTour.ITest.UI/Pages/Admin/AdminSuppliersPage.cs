@@ -3,7 +3,6 @@ namespace FoodTour.ITest.UI.Pages.Admin;
 public sealed class AdminSuppliersPage(IPage page) {
     private const string SUPPLIERS_HEADING = "Suppliers";
     private const string ADD_SUPPLIER_BUTTON = "Add Supplier";
-    private const string EDIT_BUTTON = "Edit";
     private const string DISABLE_BUTTON = "Disable";
     private const string ALL_FILTER = "All";
     private const string ACTIVE_FILTER = "Active";
@@ -56,12 +55,10 @@ public sealed class AdminSuppliersPage(IPage page) {
     public async Task ClickEmailsHeaderAsync() => await EmailsHeader.ClickAsync();
 
     public async Task ClickEditSupplierAsync(string supplierName) {
-        var row = page.Locator("tr").Filter(new LocatorFilterOptions {
+        var row = page.Locator("tbody tr").Filter(new LocatorFilterOptions {
             HasText = supplierName
         });
-        await row.GetByRole(AriaRole.Link, new LocatorGetByRoleOptions {
-            Name = EDIT_BUTTON
-        }).ClickAsync();
+        await row.First.ClickAsync();
     }
 
     public async Task ClickDisableSupplierAsync(string supplierName) {

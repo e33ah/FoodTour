@@ -24,10 +24,10 @@ public sealed class AdminBookingsPage(IPage page) {
     }
 
     public async Task ClickBookingDetailAsync(string purchaseCode) {
-        var row = page.Locator("tr").Filter(new LocatorFilterOptions {
+        var row = page.Locator("tbody tr").Filter(new LocatorFilterOptions {
             HasText = purchaseCode
         });
-        await row.GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "View" }).ClickAsync();
+        await row.First.ClickAsync();
     }
 
     public async Task<bool> HasBookingAsync(string customerEmail) {

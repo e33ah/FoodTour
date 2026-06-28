@@ -46,7 +46,7 @@ public sealed class AdminCreateSupplierPage(IPage page) {
         await OpeningTimesInput.FillAsync(openingTimes);
     }
 
-    private async Task SetCheckbox(bool check, ILocator checkbox) {
+    private static async Task SetCheckbox(bool check, ILocator checkbox) {
         if (check) {
             await checkbox.CheckAsync();
         } else {

@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Edit Supplier";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    string? suppliersFilter = ViewData["SuppliersFilter"] as string;
 }
 
 <div class="d-flex justify-content-between align-items-center mt-3">
@@ -10,7 +11,7 @@
         <p class="text-muted mb-0">@Model.Name</p>
     </div>
     <div class="d-flex gap-2">
-        <a asp-action="Suppliers" class="btn btn-sm btn-outline-secondary">
+        <a asp-action="Suppliers" asp-route-filter="@suppliersFilter" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-left" aria-hidden="true"></i> Back
         </a>
         <button type="submit" form="edit-supplier-form" class="btn btn-sm btn-primary">
@@ -26,7 +27,7 @@
     </div>
 }
 
-<form asp-action="EditSupplier" asp-route-id="@Model.Id" method="post" class="mt-3" id="edit-supplier-form">
+<form asp-action="EditSupplier" asp-route-id="@Model.Id" asp-route-filter="@suppliersFilter" method="post" class="mt-3" id="edit-supplier-form">
     @Html.AntiForgeryToken()
     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
     <input asp-for="Id" type="hidden" />

@@ -9,7 +9,7 @@ public sealed class AdminEditSupplierPage(IPage page) {
     private const string OPENING_TIMES_LABEL = "Opening times (default)";
     private const string IS_ACTIVE_LABEL = "Active";
     private const string SAVE_BUTTON = "Save";
-    private const string CANCEL_LINK = "Cancel";
+    private const string BACK_BUTTON = "Back";
 
     public ILocator PageHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = EDIT_SUPPLIER_HEADING });
     public ILocator NameInput => page.GetByLabel(SUPPLIER_NAME_LABEL);
@@ -19,7 +19,7 @@ public sealed class AdminEditSupplierPage(IPage page) {
     public ILocator OpeningTimesInput => page.GetByLabel(OPENING_TIMES_LABEL);
     public ILocator IsActiveCheckBox => page.GetByLabel(IS_ACTIVE_LABEL);
     public ILocator SaveButton => page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = SAVE_BUTTON }).First;
-    public ILocator CancelLink => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = CANCEL_LINK });
+    public ILocator BackButton => page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = BACK_BUTTON });
 
     public async Task GotoAsync(int supplierId) {
         await page.GotoAsync($"/Admin/EditSupplier/{supplierId}");
@@ -36,4 +36,6 @@ public sealed class AdminEditSupplierPage(IPage page) {
     public async Task<string?> GetNameValueAsync() => await NameInput.InputValueAsync();
 
     public async Task UncheckIsActiveAsync() => await IsActiveCheckBox.UncheckAsync();
+
+    public async Task ClickBackAsync() => await BackButton.ClickAsync();
 }

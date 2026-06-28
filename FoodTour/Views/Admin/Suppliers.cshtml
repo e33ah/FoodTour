@@ -12,7 +12,7 @@
 </div>
 
 <p class="text-muted small mt-2 mb-0">
-	To deactivate a supplier, edit it and untick <strong>Active</strong>.
+	Click a supplier to edit it.
 </p>
 
 <div class="btn-group mt-3" role="group" aria-label="Supplier filter">
@@ -56,12 +56,12 @@
 							<span class="visually-hidden">@(Model.IsSortedBy(AdminSuppliersVM.SORT_EMAILS) ? (Model.SortDescending ? ", sorted descending" : ", sorted ascending") : ", click to sort")</span>
 						</a>
 					</th>
-					<th scope="col">Actions</th>
 				</tr>
 			</thead>
 			<tbody>
 				@foreach (var supplier in Model.Suppliers) {
-					<tr class="@(supplier.IsActive ? "" : "table-secondary text-body-secondary")">
+					string? editSupplierUrl = Url.Action("EditSupplier", "Admin", new { id = supplier.Id, filter = Model.ActiveFilter });
+					<tr class="@(supplier.IsActive ? "" : "table-secondary text-body-secondary")" onclick="window.location.href='@editSupplierUrl'" style="cursor: pointer;">
 						<td>
 							<div class="fw-semibold">@supplier.Name</div>
 							@if (!string.IsNullOrWhiteSpace(supplier.Address)) {
@@ -85,11 +85,6 @@
 							} else {
 								<span class="badge bg-secondary-subtle text-secondary-emphasis">Disabled</span>
 							}
-						</td>
-						<td class="text-nowrap text-end">
-							<a asp-action="EditSupplier" asp-route-id="@supplier.Id" class="btn btn-sm btn-outline-secondary" aria-label="Edit @supplier.Name">
-								<i class="bi bi-pencil" aria-hidden="true"></i> Edit
-							</a>
 						</td>
 					</tr>
 				}

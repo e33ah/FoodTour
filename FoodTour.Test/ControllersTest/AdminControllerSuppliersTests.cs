@@ -201,11 +201,12 @@ public class AdminControllerSuppliersTests : AdminControllerTestBase {
         var context = TestHelper.CreateContextWithSuppliers(TestHelper.CreateSupplier(1, "Alpha"));
         var sut = CreateController(context: context);
 
-        var result = (ViewResult)await sut.EditSupplier(1);
+        var result = (ViewResult)await sut.EditSupplier(1, filter: "inactive");
 
         var vm = result.Model.ShouldBeOfType<AdminSupplierFormVM>();
         vm.Name.ShouldBe("Alpha");
         vm.Id.ShouldBe(1);
+        result.ViewData["SuppliersFilter"].ShouldBe("inactive");
     }
 
     [Fact]
@@ -229,9 +230,12 @@ public class AdminControllerSuppliersTests : AdminControllerTestBase {
         model.Name = "Updated";
         model.IsActive = false;
 
-        var result = await sut.EditSupplier(supplier.Id, model);
+        var result = await sut.EditSupplier(supplier.Id, model, filter: "active");
 
-        result.ShouldBeOfType<RedirectToActionResult>().ActionName.ShouldBe(nameof(AdminController.Suppliers));
+        var redirectResult = result.ShouldBeOfType<RedirectToActionResult>();
+        redirectResult.ActionName.ShouldBe(nameof(AdminController.Suppliers));
+        redirectResult.RouteValues.ShouldNotBeNull();
+        redirectResult.RouteValues.ShouldContainKeyAndValue("filter", "active");
 
         var updated = await context.Suppliers.FindAsync([supplier.Id], CancellationToken);
         updated!.Name.ShouldBe("Updated");

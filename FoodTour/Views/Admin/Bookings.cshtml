@@ -50,12 +50,12 @@
 					</th>
 					<th scope="col" class="text-center">Tasting Experiences</th>
 					<th scope="col">Status</th>
-					<th scope="col"></th>
 				</tr>
 			</thead>
 			<tbody>
 				@foreach (var booking in Model.Bookings) {
-					<tr>
+					string? bookingDetailUrl = Url.Action("BookingDetail", "Admin", new { id = booking.Id });
+					<tr onclick="window.location.href='@bookingDetailUrl'" style="cursor: pointer;">
 						<td class="text-nowrap">@booking.TourDate.ToString("ddd dd MMM yyyy")</td>
 						<td>
 							@if (!string.IsNullOrEmpty(booking.CustomerName)) {
@@ -82,11 +82,6 @@
 							} else {
 									<span class="badge bg-success-subtle text-success-emphasis">Upcoming</span>
 							}
-						</td>
-						<td>
-							<a asp-action="BookingDetail" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-secondary">
-								<i class="bi bi-eye"></i> View
-							</a>
 						</td>
 					</tr>
 				}

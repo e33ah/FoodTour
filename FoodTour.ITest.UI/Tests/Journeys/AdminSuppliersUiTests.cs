@@ -152,6 +152,24 @@ public sealed class AdminSuppliersUiTests(FoodTourApplicationFixture fixture) : 
     }
 
     [Fact]
+    public Task EditSupplier_ReturnsToSameFilter_WhenBackClicked() {
+        return ExecutePageTestAsync(async page => {
+            var suppliersPage = new AdminSuppliersPage(page);
+            var editPage = new AdminEditSupplierPage(page);
+            var inactiveSupplier = Fixture.SeedData.InactiveSupplier;
+
+            await suppliersPage.GotoAsync();
+            await suppliersPage.ClickInactiveFilterAsync();
+            await suppliersPage.ClickEditSupplierAsync(inactiveSupplier.Name);
+
+            await Expect(editPage.PageHeading).ToBeVisibleAsync();
+            await editPage.ClickBackAsync();
+
+            page.Url.ShouldContain("/Admin/Suppliers?filter=inactive");
+        });
+    }
+
+    [Fact]
     public Task DisableSupplier_SetsSupplierInactive_WhenConfirmed() {
         return ExecutePageTestAsync(async page => {
             var sut = new AdminSuppliersPage(page);
