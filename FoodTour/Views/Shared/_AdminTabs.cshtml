@@ -15,7 +15,7 @@
 			</a>
 		</li>
 		<li class="nav-item">
-			<a class="nav-link @(currentAction == "Visits" ? "active" : "text-dark")" asp-controller="Admin" asp-action="Visits">
+			<a class="nav-link @(currentAction == "Visits" ? "active" : "text-dark")" asp-controller="Admin" asp-action="Visits" asp-route-filter="unreimbursed">
 				<i class="bi bi-shop" aria-hidden="true"></i> Visits
 			</a>
 		</li>
@@ -23,7 +23,7 @@
 			@{
 				bool isSuppliersTab = currentAction is "Suppliers" or "CreateSupplier" or "EditSupplier";
 			}
-			<a class="nav-link @(isSuppliersTab ? "active" : "text-dark")" asp-controller="Admin" asp-action="Suppliers">
+			<a class="nav-link @(isSuppliersTab ? "active" : "text-dark")" asp-controller="Admin" asp-action="Suppliers" asp-route-filter="active">
 				<i class="bi bi-building" aria-hidden="true"></i> Suppliers
 			</a>
 		</li>

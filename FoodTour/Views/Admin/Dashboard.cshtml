@@ -8,7 +8,7 @@
 <div class="row g-3 mt-1">
 	<div class="col-sm-4">
 		<div class="card text-bg-primary h-100">
-			<a asp-controller="Admin" asp-action="Bookings" class="card-body d-flex flex-column text-decoration-none text-reset" aria-label="Open bookings tab">
+			<a asp-controller="Admin" asp-action="Bookings" asp-route-filter="upcoming" class="card-body d-flex flex-column text-decoration-none text-reset" aria-label="Open bookings tab">
 				<h6 class="card-title mb-3 text-white-50"><i class="bi bi-calendar-check me-1"></i>Bookings</h6>
 				<div class="d-flex flex-grow-1">
 					<div class="flex-fill text-center d-flex flex-column justify-content-center text-white-50">
