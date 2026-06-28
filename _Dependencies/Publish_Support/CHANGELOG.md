@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-06-28
+
+### Added
+
+#### Supplier Features
+- Supplier offer descriptions can now be captured in admin forms and shown on the supplier visit page
+- Admins can now toggle whether supplier codes are required when recording visits
+
+### Changed
+
+#### Testing & Quality
+- UI and integration test runs now use dedicated test solution builds and `dotnet test`
+- Playwright browser installation now targets the UI test project directly for more reliable setup
+- Test package versions were refreshed to keep the suite stable
+
+#### Infrastructure & DevOps
+- CI now builds the test solution separately before running unit and integration tests
+
 ## [1.1.0] - 2026-06-25 Etna
 
 ### Added
@@ -132,6 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflow with automated GitHub release creation
 - `IsLocalDeployEnabled` flag for controlling auto-migrations per environment
 
+[1.1.1]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.1
 [1.1.0]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.0
 [1.0.2]: https://github.com/e33ah/FoodTour/releases/tag/v1.0.2
 [1.0.1]: https://github.com/e33ah/FoodTour/releases/tag/v1.0.1
