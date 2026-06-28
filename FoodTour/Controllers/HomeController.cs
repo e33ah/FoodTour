@@ -165,77 +165,25 @@ public class HomeController(
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SupplierVisit(Guid qrToken, int selectedSupplierId, string? supplierCode, int tastingExperiencesClaimed) {
-        var booking = await TryGetValidBookingByTokenAsync(qrToken, nameof(SupplierVisit), includeBookingSuppliers: true);
-        if (booking == null || booking.BookingSuppliers == null) {
-            Log.Error("Booking or BookingSuppliers is null for token {QrToken}.", qrToken);
-            return RedirectToAction(nameof(Error));
+        var contextResult = await TryCreateSupplierVisitPostContextAsync(qrToken);
+        if (contextResult.ErrorResult != null) {
+            return contextResult.ErrorResult;
         }
 
-        if (booking.IsCancelled) {
-            Log.Information("Booking {BookingId}: Booking marked as cancelled, redirecting to tour cancelled.", booking.Id);
-            return RedirectToAction(nameof(TourCancelled));
+        var booking = contextResult.Booking!;
+        var unclaimedSuppliers = contextResult.UnclaimedSuppliers!;
+
+        var validationResult = await TryValidateSupplierVisitRequestAsync(booking, unclaimedSuppliers, selectedSupplierId, supplierCode, tastingExperiencesClaimed);
+        if (validationResult.ErrorResult != null) {
+            return validationResult.ErrorResult;
         }
 
-        var unclaimedSuppliers = await GetUnclaimedSuppliersAsync(booking);
-        if (unclaimedSuppliers.Count == 0) {
-            Log.Information("Booking {BookingId}: All suppliers already visited, redirecting to tour completed.", booking.Id);
-            return RedirectToAction(nameof(TourCompleted));
-        }
+        var supplier = validationResult.Supplier!;
+        var visit = validationResult.Visit!;
 
-        if (booking.TourDate.Date != DateTime.Today) {
-            Log.Warning("Booking {BookingId}: Supplier visit confirmation attempted on non-tour date.", booking.Id);
-            return RedirectToAction(nameof(SupplierVisit), new { qrToken });
-        }
-
-        var supplier = unclaimedSuppliers.SingleOrDefault(s => s.Id == selectedSupplierId && s.IsActive);
-        if (supplier == null) {
-            ModelState.AddModelError(string.Empty, "Please select a valid business to confirm the visit.");
-            return View(CreateSupplierVisitViewModel(booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
-        }
-
-        if (tastingExperiencesClaimed <= 0) {
-            ModelState.AddModelError(string.Empty, "Number of tasting experiences must be at least 1.");
-            return View(CreateSupplierVisitViewModel(booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
-        }
-
-        if (tastingExperiencesClaimed > booking.TotalGuests) {
-            ModelState.AddModelError(string.Empty, $"Cannot claim {tastingExperiencesClaimed} tasting experiences. This booking has only {booking.TotalGuests} guest(s).");
-            return View(CreateSupplierVisitViewModel(booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
-        }
-
-        if (supplier.RequiresConfirmationCode && !string.Equals(supplier.ConfirmationCode, supplierCode, StringComparison.OrdinalIgnoreCase)) {
-            ModelState.AddModelError(string.Empty, "Invalid business code provided. Please try again or contact Support.");
-            return View(CreateSupplierVisitViewModel(booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
-        }
-
-        var visit = await context.Visits
-            .SingleOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == selectedSupplierId);
-
-        if (visit == null) {
-            Log.Warning("SupplierVisit POST could not find visit for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, selectedSupplierId);
-            ModelState.AddModelError(string.Empty, "Visit not found for this booking and business. Please contact Support.");
-            return View(CreateSupplierVisitViewModel(booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
-        }
-
-        try {
-            int rows = await context.Visits
-                .Where(v => v.Id == visit.Id && !v.IsClaimed)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(v => v.IsClaimed, true)
-                    .SetProperty(v => v.ClaimedAt, v => DateTime.UtcNow)
-                    .SetProperty(v => v.TastingExperiencesClaimed, tastingExperiencesClaimed));
-
-            if (rows == 0) {
-                Log.Warning("Booking {BookingId}, Supplier {SupplierId}: Visit already claimed.", booking.Id, selectedSupplierId);
-                ModelState.AddModelError(string.Empty, "This visit has already been confirmed.");
-                return View(CreateSupplierVisitViewModel(booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
-            }
-
-            await context.Entry(visit).ReloadAsync();
-        } catch (Exception ex) {
-            Log.Error(ex, "Visit {VisitId}, Booking {BookingId}, Supplier {SupplierId}: Failed to save visit record.", visit.Id, booking.Id, selectedSupplierId);
-            ModelState.AddModelError(string.Empty, "Unable to record visit due to a system error.");
-            return View(CreateSupplierVisitViewModel(booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
+        var claimErrorResult = await TryClaimVisitAsync(booking, visit, selectedSupplierId, tastingExperiencesClaimed, unclaimedSuppliers, supplierCode);
+        if (claimErrorResult != null) {
+            return claimErrorResult;
         }
 
         await TrySendVisitRecordedNotificationsAsync(booking, supplier, visit);
@@ -657,6 +605,105 @@ public class HomeController(
             SelectedSupplierId = selectedSupplierId,
             SupplierCode = supplierCode ?? string.Empty
         };
+    }
+
+    private async Task<(Booking? Booking, List<Supplier>? UnclaimedSuppliers, IActionResult? ErrorResult)> TryCreateSupplierVisitPostContextAsync(Guid qrToken) {
+        var booking = await TryGetValidBookingByTokenAsync(qrToken, nameof(SupplierVisit), includeBookingSuppliers: true);
+        if (booking == null || booking.BookingSuppliers == null) {
+            Log.Error("Booking or BookingSuppliers is null for token {QrToken}.", qrToken);
+            return (null, null, RedirectToAction(nameof(Error)));
+        }
+
+        if (booking.IsCancelled) {
+            Log.Information("Booking {BookingId}: Booking marked as cancelled, redirecting to tour cancelled.", booking.Id);
+            return (null, null, RedirectToAction(nameof(TourCancelled)));
+        }
+
+        var unclaimedSuppliers = await GetUnclaimedSuppliersAsync(booking);
+        if (unclaimedSuppliers.Count == 0) {
+            Log.Information("Booking {BookingId}: All suppliers already visited, redirecting to tour completed.", booking.Id);
+            return (null, null, RedirectToAction(nameof(TourCompleted)));
+        }
+
+        if (booking.TourDate.Date != DateTime.Today) {
+            Log.Warning("Booking {BookingId}: Supplier visit confirmation attempted on non-tour date.", booking.Id);
+            return (null, null, RedirectToAction(nameof(SupplierVisit), new { qrToken }));
+        }
+
+        return (booking, unclaimedSuppliers, null);
+    }
+
+    private async Task<(Supplier? Supplier, Visit? Visit, IActionResult? ErrorResult)> TryValidateSupplierVisitRequestAsync(
+        Booking booking,
+        List<Supplier> unclaimedSuppliers,
+        int selectedSupplierId,
+        string? supplierCode,
+        int tastingExperiencesClaimed) {
+        var supplier = unclaimedSuppliers.SingleOrDefault(s => s.Id == selectedSupplierId && s.IsActive);
+        if (supplier == null) {
+            return (null, null, CreateSupplierVisitErrorResult("Please select a valid business to confirm the visit.", booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
+        }
+
+        if (tastingExperiencesClaimed <= 0) {
+            return (null, null, CreateSupplierVisitErrorResult("Number of tasting experiences must be at least 1.", booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
+        }
+
+        if (tastingExperiencesClaimed > booking.TotalGuests) {
+            return (null, null, CreateSupplierVisitErrorResult($"Cannot claim {tastingExperiencesClaimed} tasting experiences. This booking has only {booking.TotalGuests} guest(s).", booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
+        }
+
+        if (supplier.RequiresConfirmationCode && !string.Equals(supplier.ConfirmationCode, supplierCode, StringComparison.OrdinalIgnoreCase)) {
+            return (null, null, CreateSupplierVisitErrorResult("Invalid business code provided. Please try again or contact Support.", booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
+        }
+
+        var visit = await context.Visits
+            .SingleOrDefaultAsync(v => v.BookingId == booking.Id && v.SupplierId == selectedSupplierId);
+
+        if (visit == null) {
+            Log.Warning("SupplierVisit POST could not find visit for booking id {BookingId} and supplier id {SupplierId}.", booking.Id, selectedSupplierId);
+            return (null, null, CreateSupplierVisitErrorResult("Visit not found for this booking and business. Please contact Support.", booking, unclaimedSuppliers, selectedSupplierId, supplierCode));
+        }
+
+        return (supplier, visit, null);
+    }
+
+    private async Task<IActionResult?> TryClaimVisitAsync(
+        Booking booking,
+        Visit visit,
+        int selectedSupplierId,
+        int tastingExperiencesClaimed,
+        List<Supplier> unclaimedSuppliers,
+        string? supplierCode) {
+        try {
+            int rows = await context.Visits
+                .Where(v => v.Id == visit.Id && !v.IsClaimed)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(v => v.IsClaimed, true)
+                    .SetProperty(v => v.ClaimedAt, v => DateTime.UtcNow)
+                    .SetProperty(v => v.TastingExperiencesClaimed, tastingExperiencesClaimed));
+
+            if (rows == 0) {
+                Log.Warning("Booking {BookingId}, Supplier {SupplierId}: Visit already claimed.", booking.Id, selectedSupplierId);
+                return CreateSupplierVisitErrorResult("This visit has already been confirmed.", booking, unclaimedSuppliers, selectedSupplierId, supplierCode);
+            }
+
+            await context.Entry(visit).ReloadAsync();
+            return null;
+        } catch (Exception ex) {
+            Log.Error(ex, "Visit {VisitId}, Booking {BookingId}, Supplier {SupplierId}: Failed to save visit record.", visit.Id, booking.Id, selectedSupplierId);
+            return CreateSupplierVisitErrorResult("Unable to record visit due to a system error.", booking, unclaimedSuppliers, selectedSupplierId, supplierCode);
+        }
+    }
+
+    private ViewResult CreateSupplierVisitErrorResult(
+        string errorMessage,
+        Booking booking,
+        List<Supplier> unclaimedSuppliers,
+        int selectedSupplierId,
+        string? supplierCode) {
+        ModelState.AddModelError(string.Empty, errorMessage);
+        var result = CreateSupplierVisitViewModel(booking, unclaimedSuppliers, selectedSupplierId, supplierCode);
+        return View(result);
     }
 
     private async Task TrySendVisitRecordedNotificationsAsync(Booking booking, Supplier supplier, Visit visit) {

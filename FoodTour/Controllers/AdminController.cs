@@ -240,6 +240,17 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         string sortColumn = sort ?? AdminSuppliersVM.SORT_NAME;
         bool descending = dir != null ? dir == "desc" : sortColumn is AdminSuppliersVM.SORT_ACTIVE or AdminSuppliersVM.SORT_EMAILS;
 
+        var suppliers = await ApplySuppliersSorting(query, sortColumn, descending);
+
+        return View(new AdminSuppliersVM {
+            Suppliers = suppliers,
+            ActiveFilter = filter,
+            SortColumn = sortColumn,
+            SortDescending = descending
+        });
+    }
+
+    private static async Task<List<Supplier>> ApplySuppliersSorting(IQueryable<Supplier> query, string sortColumn, bool descending) {
         var orderedQuery = sortColumn switch {
             AdminSuppliersVM.SORT_CONTACT => descending
                 ? query.OrderByDescending(s => s.ContactName).ThenByDescending(s => s.ContactEmail)
@@ -256,13 +267,7 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         };
 
         var suppliers = await orderedQuery.ToListAsync();
-
-        return View(new AdminSuppliersVM {
-            Suppliers = suppliers,
-            ActiveFilter = filter,
-            SortColumn = sortColumn,
-            SortDescending = descending
-        });
+        return suppliers;
     }
 
     public IActionResult CreateSupplier() {
