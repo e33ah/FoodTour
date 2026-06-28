@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="FoodTour.ITest.API/FoodTour.ITest.API.csproj" />
+  <Project Path="FoodTour.ITest.Shared/FoodTour.ITest.Shared.csproj" />
+  <Project Path="FoodTour.ITest.UI/FoodTour.ITest.UI.csproj" />
+</Solution>

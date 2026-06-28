@@ -41,11 +41,14 @@ jobs:
       - name: 'Run: BuildSolution'
         run: ./build.cmd BuildSolution
 
+      - name: 'Run: BuildTestSolution'
+        run: ./build.cmd BuildTestSolution
+
       - name: 'Run: ExecuteUnitTests'
         run: ./build.cmd ExecuteUnitTests --skip BuildSolution
 
       - name: 'Run: IntegrationTests'
-        run: ./build.cmd IntegrationTests --skip BuildSolution ExecuteUnitTests
+        run: ./build.cmd IntegrationTests --skip BuildSolution ExecuteUnitTests BuildTestSolution
 
       - name: Upload UI failure screenshots
         if: failure()

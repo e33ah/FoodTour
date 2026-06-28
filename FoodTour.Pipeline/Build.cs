@@ -23,13 +23,17 @@ public partial class Build : NukeBuild {
     }
 
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
-    AbsolutePath PublishDirectory => ArtifactsDirectory / "publish";
     AbsolutePath DependencyDirectory => RootDirectory / "_Dependencies/Publish_Support";
+    AbsolutePath PublishDirectory => ArtifactsDirectory / "publish";
+    AbsolutePath TestSolution => RootDirectory / "FoodTour.ITest.slnx";
+    AbsolutePath UiTestProjectDirectory => RootDirectory / "FoodTour.ITest.UI";
 
     public Target FoodTourCI => _ => _
         .DependsOn(ExecuteUnitTests);
+    public Target FoodTourCD => _ => _
+        .DependsOn(Release);
 
-    public Target FoodTourUI => _ => _
+    public Target FoodTourIntegrationTest => _ => _
         .DependsOn(ExecuteUnitTests, IntegrationTests);
 
     static void SetEnvironmentVariableIfMissing(string name, string value) {
