@@ -228,13 +228,40 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         };
     }
 
-    public async Task<IActionResult> Suppliers() {
-        var suppliers = await context.Suppliers
-            .OrderBy(s => s.Name)
-            .ToListAsync();
+    public async Task<IActionResult> Suppliers(string? filter = null, string? sort = null, string? dir = null) {
+        var query = context.Suppliers.AsQueryable();
+
+        query = filter switch {
+            "active" => query.Where(s => s.IsActive),
+            "inactive" => query.Where(s => !s.IsActive),
+            _ => query
+        };
+
+        string sortColumn = sort ?? AdminSuppliersVM.SORT_NAME;
+        bool descending = dir != null ? dir == "desc" : sortColumn is AdminSuppliersVM.SORT_ACTIVE or AdminSuppliersVM.SORT_EMAILS;
+
+        var orderedQuery = sortColumn switch {
+            AdminSuppliersVM.SORT_CONTACT => descending
+                ? query.OrderByDescending(s => s.ContactName).ThenByDescending(s => s.ContactEmail)
+                : query.OrderBy(s => s.ContactName).ThenBy(s => s.ContactEmail),
+            AdminSuppliersVM.SORT_ACTIVE => descending
+                ? query.OrderByDescending(s => s.IsActive).ThenBy(s => s.Name)
+                : query.OrderBy(s => s.IsActive).ThenBy(s => s.Name),
+            AdminSuppliersVM.SORT_EMAILS => descending
+                ? query.OrderByDescending(s => s.EmailNotificationsEnabled).ThenBy(s => s.Name)
+                : query.OrderBy(s => s.EmailNotificationsEnabled).ThenBy(s => s.Name),
+            _ => descending
+                ? query.OrderByDescending(s => s.Name)
+                : query.OrderBy(s => s.Name)
+        };
+
+        var suppliers = await orderedQuery.ToListAsync();
 
         return View(new AdminSuppliersVM {
-            Suppliers = suppliers
+            Suppliers = suppliers,
+            ActiveFilter = filter,
+            SortColumn = sortColumn,
+            SortDescending = descending
         });
     }
 

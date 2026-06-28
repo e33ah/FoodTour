@@ -25,6 +25,120 @@ public class AdminControllerSuppliersTests : AdminControllerTestBase {
     }
 
     [Fact]
+    public async Task Suppliers_FiltersToActiveSuppliers_WhenActiveFilterApplied() {
+        var context = TestHelper.CreateContextWithSuppliers(
+            new Supplier {
+                Id = 1,
+                Name = "Active Supplier",
+                ContactName = "Active Contact",
+                ContactEmail = "active@test.com",
+                ConfirmationCode = "ACTIVE",
+                IsActive = true
+            },
+            new Supplier {
+                Id = 2,
+                Name = "Inactive Supplier",
+                ContactName = "Inactive Contact",
+                ContactEmail = "inactive@test.com",
+                ConfirmationCode = "INACTIVE",
+                IsActive = false
+            });
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Suppliers(filter: "active");
+
+        var vm = result.Model.ShouldBeOfType<AdminSuppliersVM>();
+        vm.ActiveFilter.ShouldBe("active");
+        vm.Suppliers.Select(s => s.Name).ShouldBe(["Active Supplier"]);
+    }
+
+    [Fact]
+    public async Task Suppliers_FiltersToInactiveSuppliers_WhenInactiveFilterApplied() {
+        var context = TestHelper.CreateContextWithSuppliers(
+            new Supplier {
+                Id = 1,
+                Name = "Active Supplier",
+                ContactName = "Active Contact",
+                ContactEmail = "active@test.com",
+                ConfirmationCode = "ACTIVE",
+                IsActive = true
+            },
+            new Supplier {
+                Id = 2,
+                Name = "Inactive Supplier",
+                ContactName = "Inactive Contact",
+                ContactEmail = "inactive@test.com",
+                ConfirmationCode = "INACTIVE",
+                IsActive = false
+            });
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Suppliers(filter: "inactive");
+
+        var vm = result.Model.ShouldBeOfType<AdminSuppliersVM>();
+        vm.ActiveFilter.ShouldBe("inactive");
+        vm.Suppliers.Select(s => s.Name).ShouldBe(["Inactive Supplier"]);
+    }
+
+    [Fact]
+    public async Task Suppliers_SortsByContactName_WhenContactSortApplied() {
+        var context = TestHelper.CreateContextWithSuppliers(
+            new Supplier {
+                Id = 1,
+                Name = "Zulu Supplier",
+                ContactName = "Zed",
+                ContactEmail = "zed@test.com",
+                ConfirmationCode = "ZED",
+                IsActive = true
+            },
+            new Supplier {
+                Id = 2,
+                Name = "Alpha Supplier",
+                ContactName = "Amy",
+                ContactEmail = "amy@test.com",
+                ConfirmationCode = "AMY",
+                IsActive = true
+            });
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Suppliers(sort: AdminSuppliersVM.SORT_CONTACT);
+
+        var vm = result.Model.ShouldBeOfType<AdminSuppliersVM>();
+        vm.SortColumn.ShouldBe(AdminSuppliersVM.SORT_CONTACT);
+        vm.SortDescending.ShouldBeFalse();
+        vm.Suppliers.Select(s => s.ContactName).ShouldBe(["Amy", "Zed"]);
+    }
+
+    [Fact]
+    public async Task Suppliers_SortsByActiveStatus_WhenActiveSortApplied() {
+        var context = TestHelper.CreateContextWithSuppliers(
+            new Supplier {
+                Id = 1,
+                Name = "Active Supplier",
+                ContactName = "Active Contact",
+                ContactEmail = "active@test.com",
+                ConfirmationCode = "ACTIVE",
+                IsActive = true
+            },
+            new Supplier {
+                Id = 2,
+                Name = "Inactive Supplier",
+                ContactName = "Inactive Contact",
+                ContactEmail = "inactive@test.com",
+                ConfirmationCode = "INACTIVE",
+                IsActive = false
+            });
+        var sut = CreateController(context: context);
+
+        var result = (ViewResult)await sut.Suppliers(sort: AdminSuppliersVM.SORT_ACTIVE);
+
+        var vm = result.Model.ShouldBeOfType<AdminSuppliersVM>();
+        vm.SortColumn.ShouldBe(AdminSuppliersVM.SORT_ACTIVE);
+        vm.SortDescending.ShouldBeTrue();
+        vm.Suppliers.Select(s => s.Name).ShouldBe(["Active Supplier", "Inactive Supplier"]);
+    }
+
+    [Fact]
     public async Task CreateSupplier_Get_ReturnsView() {
         var sut = CreateController();
 

@@ -4,7 +4,7 @@ public sealed class AdminDashboardPage(IPage page) {
     private const string DASHBOARD_HEADING = "Dashboard";
     private const string BOOKINGS_TILE_LINK = "Open bookings tab";
     private const string VISITS_TILE_LINK = "Open visits awaiting reimbursement tab";
-    private const string SUPPLIERS_TILE_LINK = "Open suppliers tab";
+    private const string SUPPLIERS_TILE_LINK = "Open active suppliers tab";
 
     public ILocator PageHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions {
         Name = DASHBOARD_HEADING

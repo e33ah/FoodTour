@@ -15,6 +15,12 @@
 	To deactivate a supplier, edit it and untick <strong>Active</strong>.
 </p>
 
+<div class="btn-group mt-3" role="group" aria-label="Supplier filter">
+	<a asp-action="Suppliers" class="btn btn-sm @(Model.ActiveFilter == null ? "btn-primary" : "btn-outline-primary")">All</a>
+	<a asp-action="Suppliers" asp-route-filter="active" class="btn btn-sm @(Model.ActiveFilter == "active" ? "btn-success" : "btn-outline-success")">Active</a>
+	<a asp-action="Suppliers" asp-route-filter="inactive" class="btn btn-sm @(Model.ActiveFilter == "inactive" ? "btn-secondary" : "btn-outline-secondary")">Inactive</a>
+</div>
+
 @if (!Model.Suppliers.Any()) {
 	<p class="text-muted mt-3">No suppliers found.</p>
 } else {
@@ -22,16 +28,40 @@
 		<table class="table table-hover align-middle">
 			<thead class="table-light">
 				<tr>
-					<th scope="col">Name</th>
-					<th scope="col">Contact</th>
-					<th scope="col" class="text-center">Active</th>
-					<th scope="col" class="text-center">Emails</th>
+					<th scope="col">
+						<a asp-action="Suppliers" asp-route-filter="@Model.ActiveFilter" asp-route-sort="@AdminSuppliersVM.SORT_NAME" asp-route-dir="@Model.NextDirFor(AdminSuppliersVM.SORT_NAME)" class="text-decoration-none text-dark">
+							Name
+							<i class="bi @(Model.IsSortedBy(AdminSuppliersVM.SORT_NAME) ? (Model.SortDescending ? "bi-sort-down" : "bi-sort-up") : "bi-arrow-down-up opacity-25") ms-1" aria-hidden="true"></i>
+							<span class="visually-hidden">@(Model.IsSortedBy(AdminSuppliersVM.SORT_NAME) ? (Model.SortDescending ? ", sorted descending" : ", sorted ascending") : ", click to sort")</span>
+						</a>
+					</th>
+					<th scope="col">
+						<a asp-action="Suppliers" asp-route-filter="@Model.ActiveFilter" asp-route-sort="@AdminSuppliersVM.SORT_CONTACT" asp-route-dir="@Model.NextDirFor(AdminSuppliersVM.SORT_CONTACT)" class="text-decoration-none text-dark">
+							Contact
+							<i class="bi @(Model.IsSortedBy(AdminSuppliersVM.SORT_CONTACT) ? (Model.SortDescending ? "bi-sort-down" : "bi-sort-up") : "bi-arrow-down-up opacity-25") ms-1" aria-hidden="true"></i>
+							<span class="visually-hidden">@(Model.IsSortedBy(AdminSuppliersVM.SORT_CONTACT) ? (Model.SortDescending ? ", sorted descending" : ", sorted ascending") : ", click to sort")</span>
+						</a>
+					</th>
+					<th scope="col" class="text-center">
+						<a asp-action="Suppliers" asp-route-filter="@Model.ActiveFilter" asp-route-sort="@AdminSuppliersVM.SORT_ACTIVE" asp-route-dir="@Model.NextDirFor(AdminSuppliersVM.SORT_ACTIVE)" class="text-decoration-none text-dark">
+							Active
+							<i class="bi @(Model.IsSortedBy(AdminSuppliersVM.SORT_ACTIVE) ? (Model.SortDescending ? "bi-sort-down" : "bi-sort-up") : "bi-arrow-down-up opacity-25") ms-1" aria-hidden="true"></i>
+							<span class="visually-hidden">@(Model.IsSortedBy(AdminSuppliersVM.SORT_ACTIVE) ? (Model.SortDescending ? ", sorted descending" : ", sorted ascending") : ", click to sort")</span>
+						</a>
+					</th>
+					<th scope="col" class="text-center">
+						<a asp-action="Suppliers" asp-route-filter="@Model.ActiveFilter" asp-route-sort="@AdminSuppliersVM.SORT_EMAILS" asp-route-dir="@Model.NextDirFor(AdminSuppliersVM.SORT_EMAILS)" class="text-decoration-none text-dark">
+							Emails
+							<i class="bi @(Model.IsSortedBy(AdminSuppliersVM.SORT_EMAILS) ? (Model.SortDescending ? "bi-sort-down" : "bi-sort-up") : "bi-arrow-down-up opacity-25") ms-1" aria-hidden="true"></i>
+							<span class="visually-hidden">@(Model.IsSortedBy(AdminSuppliersVM.SORT_EMAILS) ? (Model.SortDescending ? ", sorted descending" : ", sorted ascending") : ", click to sort")</span>
+						</a>
+					</th>
 					<th scope="col">Actions</th>
 				</tr>
 			</thead>
 			<tbody>
 				@foreach (var supplier in Model.Suppliers) {
-					<tr>
+					<tr class="@(supplier.IsActive ? "" : "table-secondary text-body-secondary")">
 						<td>
 							<div class="fw-semibold">@supplier.Name</div>
 							@if (!string.IsNullOrWhiteSpace(supplier.Address)) {

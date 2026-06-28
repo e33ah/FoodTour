@@ -17,6 +17,63 @@ public sealed class AdminSuppliersUiTests(FoodTourApplicationFixture fixture) : 
     }
 
     [Fact]
+    public Task ViewSuppliersList_FiltersToInactiveSuppliers_WhenInactiveFilterSelected() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new AdminSuppliersPage(page);
+            var inactiveSupplier = Fixture.SeedData.InactiveSupplier;
+            var activeSupplier = Fixture.SeedData.ActiveSuppliers[0];
+
+            await sut.GotoAsync();
+            await sut.ClickInactiveFilterAsync();
+
+            bool hasInactiveSupplier = await sut.HasSupplierAsync(inactiveSupplier.Name);
+            bool hasActiveSupplier = await sut.HasSupplierAsync(activeSupplier.Name);
+            string? rowClass = await sut.GetSupplierRowClassAsync(inactiveSupplier.Name);
+
+            hasInactiveSupplier.ShouldBeTrue();
+            hasActiveSupplier.ShouldBeFalse();
+            rowClass.ShouldNotBeNull();
+            rowClass.ShouldContain("table-secondary");
+        });
+    }
+
+    [Fact]
+    public Task ViewSuppliersList_FiltersToActiveSuppliers_WhenActiveFilterSelected() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new AdminSuppliersPage(page);
+            var inactiveSupplier = Fixture.SeedData.InactiveSupplier;
+            var activeSupplier = Fixture.SeedData.ActiveSuppliers[0];
+
+            await sut.GotoAsync();
+            await sut.ClickActiveFilterAsync();
+
+            bool hasInactiveSupplier = await sut.HasSupplierAsync(inactiveSupplier.Name);
+            bool hasActiveSupplier = await sut.HasSupplierAsync(activeSupplier.Name);
+
+            hasActiveSupplier.ShouldBeTrue();
+            hasInactiveSupplier.ShouldBeFalse();
+        });
+    }
+
+    [Fact]
+    public Task ViewSuppliersList_SortsByActiveStatus_WhenActiveHeaderSelected() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new AdminSuppliersPage(page);
+            var inactiveSupplier = Fixture.SeedData.InactiveSupplier;
+
+            await sut.GotoAsync();
+            await sut.ClickAllFilterAsync();
+            await sut.ClickActiveHeaderAsync();
+
+            var supplierNames = await sut.GetSupplierNamesAsync();
+
+            supplierNames.ShouldNotBeEmpty();
+            supplierNames.Last().ShouldBe(inactiveSupplier.Name);
+            supplierNames.First().ShouldNotBe(inactiveSupplier.Name);
+        });
+    }
+
+    [Fact]
     public Task AddSupplier_CreatesNewSupplier_WhenValidDataProvided() {
         return ExecutePageTestAsync(async page => {
             var suppliersPage = new AdminSuppliersPage(page);
@@ -146,6 +203,7 @@ public sealed class AdminSuppliersUiTests(FoodTourApplicationFixture fixture) : 
             await dashboardPage.SuppliersTileLink.ClickAsync();
 
             await Expect(suppliersPage.PageHeading).ToBeVisibleAsync();
+            page.Url.ShouldContain("/Admin/Suppliers?filter=active");
         });
     }
 }
