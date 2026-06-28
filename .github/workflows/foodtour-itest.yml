@@ -9,12 +9,12 @@
 #
 #     - To trigger manual generation invoke:
 #
-#         nuke --generate-configuration GitHubActions_foodtour-ui --host GitHubActions
+#         nuke --generate-configuration GitHubActions_foodtour-itest --host GitHubActions
 #
 # </auto-generated>
 # ------------------------------------------------------------------------------
 
-name: foodtour-ui
+name: foodtour-itest
 
 on: [workflow_dispatch, pull_request]
 

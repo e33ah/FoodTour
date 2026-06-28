@@ -5,7 +5,7 @@ namespace FoodTour.Pipeline;
 [GitHubActions("foodtour-cd", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch },
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests), nameof(Publish), nameof(Release) },
     ImportSecrets = new[] { nameof(FtpHost), nameof(FtpUser), nameof(FtpPassword), nameof(GoogleClientId), nameof(GoogleClientSecret) }, AutoGenerate = false)]
-[GitHubActions("foodtour-ui", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch, GitHubActionsTrigger.PullRequest },
+[GitHubActions("foodtour-itest", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch, GitHubActionsTrigger.PullRequest },
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests), nameof(IntegrationTests) }, AutoGenerate = false)]
 public partial class Build : NukeBuild {
     public static int Main() {
