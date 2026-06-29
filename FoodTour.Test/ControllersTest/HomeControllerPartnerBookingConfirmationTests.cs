@@ -178,10 +178,10 @@ public class HomeControllerPartnerBookingConfirmationTests : HomeControllerTestB
             new BookingUpdateService(context),
             partnerBookingConfirmationService,
             adminNotificationService,
-            supplierNotificationService);
-
-        sut.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
-        sut.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+            supplierNotificationService) {
+            TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>()),
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
         sut.ControllerContext.HttpContext.Request.Scheme = "https";
 
         var urlHelperMock = new Mock<IUrlHelper>();

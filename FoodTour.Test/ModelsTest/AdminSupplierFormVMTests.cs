@@ -73,28 +73,28 @@ public class AdminSupplierFormVMTests {
 
     [Fact]
     public void FromSupplier_MapsFoodTourOfferDescription() {
-        const string offerDescription = "1 scone with jam and 1 pot of tea";
-        var supplier = TestHelper.CreateSupplier(1, "Supplier", true, foodTourOfferDescription: offerDescription);
+        const string OFFER_DESCRIPTION = "1 scone with jam and 1 pot of tea";
+        var supplier = TestHelper.CreateSupplier(1, "Supplier", true, foodTourOfferDescription: OFFER_DESCRIPTION);
 
         var result = AdminSupplierFormVM.FromSupplier(supplier);
 
-        result.FoodTourOfferDescription.ShouldBe(offerDescription);
+        result.FoodTourOfferDescription.ShouldBe(OFFER_DESCRIPTION);
     }
 
     [Fact]
     public void ApplyTo_MapsFoodTourOfferDescription() {
-        const string offerDescription = "Small fish and chips";
+        const string OFFER_DESCRIPTION = "Small fish and chips";
         var supplier = TestHelper.CreateSupplier(1, "Supplier");
         var sut = new AdminSupplierFormVM {
             Name = "Supplier",
             ContactName = "Contact",
             ContactEmail = "contact@test.com",
             ConfirmationCode = "TOUR",
-            FoodTourOfferDescription = offerDescription
+            FoodTourOfferDescription = OFFER_DESCRIPTION
         };
 
         sut.ApplyTo(supplier);
 
-        supplier.FoodTourOfferDescription.ShouldBe(offerDescription);
+        supplier.FoodTourOfferDescription.ShouldBe(OFFER_DESCRIPTION);
     }
 }
