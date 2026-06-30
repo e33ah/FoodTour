@@ -33,6 +33,22 @@ public class CheckBookingApiTests(ApiApplicationFixture fixture) : ApiTestBase(f
     }
 
     [Fact]
+    public async Task CheckBooking_ReturnsFoundBooking_WhenPartnerVoucherMatchesAndEmailMatchesCaseInsensitively() {
+        using var sut = CreateApiClient();
+        var booking = Fixture.SeedData.PartnerConfirmationBooking;
+        string mixedCaseEmail = booking.CustomerEmail.ToUpperInvariant();
+
+        var response = await PostCheckBookingAsync(sut, mixedCaseEmail, booking.VoucherNumber!);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var result = await ReadJsonAsync(response);
+        result.GetProperty("found").GetBoolean().ShouldBeTrue();
+        result.GetProperty("bookingId").GetInt32().ShouldBe(booking.Id);
+        result.TryGetProperty("requiresPartnerConfirmation", out _).ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task CheckBooking_ReturnsBadRequest_WhenRequestIsMissingRequiredFields() {
         using var sut = CreateApiClient();
 

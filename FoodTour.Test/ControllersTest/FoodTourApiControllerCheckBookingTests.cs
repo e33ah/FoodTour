@@ -260,6 +260,35 @@ public class FoodTourApiControllerCheckBookingTests : TestBase {
     }
 
     [Fact]
+    public async Task CheckBooking_ReturnsOkWithFoundTrue_WhenVoucherMatchesPendingBookingAndEmailMatchesCaseInsensitively() {
+        var context = TestHelper.CreateInMemoryContext();
+        var booking = new Booking {
+            CustomerEmail = "Customer@Partner.Test",
+            PurchaseCode = TestHelper.VALID_CODE,
+            VoucherNumber = TestHelper.VALID_VOUCHER,
+            TourDate = TestHelper.validTourDate,
+            RequiresEmailConfirmation = true
+        };
+        context.Bookings.Add(booking);
+        await context.SaveChangesAsync(CancellationToken);
+        var controller = TestHelper.CreateFoodTourApiController(context);
+
+        var request = new BookingCheckRequest {
+            CustomerEmail = "customer@partner.test",
+            PurchaseCode = TestHelper.VALID_VOUCHER
+        };
+
+        var result = await controller.CheckBooking(request);
+
+        var okResult = result.ShouldBeOfType<OkObjectResult>();
+        object? value = okResult.Value;
+        value.ShouldNotBeNull();
+        value.GetType().GetProperty("found")?.GetValue(value).ShouldBe(true);
+        value.GetType().GetProperty("isCancelled")?.GetValue(value).ShouldBe(false);
+        value.GetType().GetProperty("requiresPartnerConfirmation")?.GetValue(value).ShouldBeNull();
+    }
+
+    [Fact]
     public async Task CheckBooking_ReturnsBadRequest_WhenEmailIsEmpty() {
         var controller = TestHelper.CreateFoodTourApiController();
 

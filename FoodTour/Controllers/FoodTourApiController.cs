@@ -105,9 +105,14 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
         }
 
         var partnerBooking = await context.Bookings
-            .FirstOrDefaultAsync(b => b.VoucherNumber == bookingReference);
+            .FirstOrDefaultAsync(b => b.VoucherNumber == bookingReference && b.RequiresEmailConfirmation && !b.IsCancelled);
 
-        if (partnerBooking?.RequiresEmailConfirmation == true) {
+        if (partnerBooking != null) {
+            if (string.Equals(partnerBooking.CustomerEmail, customerEmail, StringComparison.OrdinalIgnoreCase)) {
+                Log.Information("Booking {BookingId}: Partner booking matched voucher number and email. Skipping email confirmation.", partnerBooking.Id);
+                return Ok(CreateBookingLookupResponse(partnerBooking));
+            }
+
             Log.Information("Booking {BookingId}: Partner booking matched voucher number but requires email confirmation.", partnerBooking.Id);
             return Ok(new {
                 found = false,

@@ -136,6 +136,25 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     }
 
     [Fact]
+    public Task EnterBooking_DoesNotShowPartnerConfirmation_WhenPartnerVoucherAndEmailMatchCaseInsensitively() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new BookingSelectionPage(page);
+            var booking = await CreateTemporaryPartnerBookingAsync(DateTime.SpecifyKind(DateTime.Today.AddDays(14).AddHours(11), DateTimeKind.Utc));
+            string mixedCaseEmail = booking.CustomerEmail.ToUpperInvariant();
+
+            try {
+                await sut.GotoAsync();
+                await sut.EnterBookingLookupDetailsAsync(mixedCaseEmail, booking.VoucherNumber);
+
+                await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_FOUND_MESSAGE);
+                await Expect(sut.PartnerConfirmationPrompt).ToBeHiddenAsync();
+            } finally {
+                await DeleteTemporaryBookingAsync(booking.Id);
+            }
+        });
+    }
+
+    [Fact]
     public Task EnterBooking_RemainsUsableAndRecoverable_WhenBookingLookupApiFails() {
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
@@ -447,6 +466,35 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         return new TemporaryBookingData(booking.Id, booking.CustomerEmail, booking.PurchaseCode);
     }
 
+    private async Task<TemporaryPartnerBookingData> CreateTemporaryPartnerBookingAsync(DateTime tourDate) {
+        DbContextOptionsBuilder<FoodTourContext> optionsBuilder = new();
+        optionsBuilder.UseSqlServer(Fixture.ConnectionString);
+
+        await using var context = new FoodTourContext(optionsBuilder.Options);
+        var qrToken = Guid.NewGuid();
+        string purchaseCode = Guid.NewGuid().ToString("N")[..9];
+        string voucherNumber = $"V{Guid.NewGuid():N}"[..10];
+        var booking = new Booking {
+            TourDate = tourDate,
+            CustomerEmail = $"partner-{purchaseCode}@example.com",
+            PurchaseCode = purchaseCode,
+            VoucherNumber = voucherNumber,
+            SelectedSupplierIds = [],
+            CreatedAt = DateTime.SpecifyKind(DateTime.Today.AddDays(-1).AddHours(9), DateTimeKind.Utc),
+            TotalGuests = 2,
+            CustomerName = "UI Partner Booking",
+            QrToken = qrToken,
+            IsConfirmed = false,
+            IsCancelled = false,
+            RequiresEmailConfirmation = true
+        };
+
+        await context.Bookings.AddAsync(booking, TestContext.Current.CancellationToken);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return new TemporaryPartnerBookingData(booking.Id, booking.CustomerEmail, booking.VoucherNumber!);
+    }
+
     private async Task DeleteTemporaryBookingAsync(int bookingId) {
         DbContextOptionsBuilder<FoodTourContext> optionsBuilder = new();
         optionsBuilder.UseSqlServer(Fixture.ConnectionString);
@@ -458,4 +506,5 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     }
 
     private sealed record TemporaryBookingData(int Id, string CustomerEmail, string PurchaseCode);
+    private sealed record TemporaryPartnerBookingData(int Id, string CustomerEmail, string VoucherNumber);
 }
