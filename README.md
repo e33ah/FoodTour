@@ -122,7 +122,7 @@ The SQL Server connection string template must include `{0}` so the fixture can 
 
 ### Running API Integration Tests
 
-HTTP-driven API integration tests are located in the `FoodTour.ITest.API` project. These tests host the MVC application with ASP.NET Core test infrastructure, create an isolated LocalDB database for each run, apply migrations automatically, seed deterministic test data, replace the real email sender with a test double, and exercise the real HTTP endpoints for `FoodTourApiController` and `VisitsController`.
+HTTP-driven API integration tests are located in the `FoodTour.ITest.API` project. These tests host the MVC application with ASP.NET Core test infrastructure, create an isolated LocalDB database for each run, apply migrations automatically, seed deterministic test data, replace the real email sender with a test double, and exercise the real HTTP endpoints for `FoodTourApiController` and active MVC flows including `HomeController.SupplierVisit`.
 
 Run the API integration tests with:
 ```

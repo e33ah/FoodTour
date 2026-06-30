@@ -32,7 +32,7 @@ public sealed class IntegrationTestEmailConfiguration {
         string resolvedHost = string.IsNullOrWhiteSpace(host) ? DEFAULT_HOST : host.Trim();
         string resolvedFromEmail = string.IsNullOrWhiteSpace(fromEmail) ? DEFAULT_FROM_EMAIL : fromEmail.Trim();
         string resolvedFromName = string.IsNullOrWhiteSpace(fromName) ? defaultFromName.Trim() : fromName.Trim();
-        bool resolvedUseSsl = string.IsNullOrWhiteSpace(useSsl) ? DEFAULT_USE_SSL : bool.Parse(useSsl);
+        bool resolvedUseSsl = !string.IsNullOrWhiteSpace(useSsl) && bool.Parse(useSsl);
         int resolvedPort = string.IsNullOrWhiteSpace(port) ? DEFAULT_PORT : int.Parse(port);
 
         return new IntegrationTestEmailConfiguration(resolvedHost, resolvedPort, resolvedUseSsl, resolvedFromEmail, resolvedFromName);

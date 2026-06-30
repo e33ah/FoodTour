@@ -258,17 +258,6 @@ public static class TestHelper {
         return context;
     }
 
-    public static VisitsController CreateVisitsController(FoodTourContext context) {
-        var emailSenderMock = new Mock<IEmailSender>();
-        var templateRendererMock = new Mock<IRazorTemplateRenderer>();
-        templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
-            .ReturnsAsync("<html>Mock email body</html>");
-        var adminNotificationService = new AdminNotificationService(emailSenderMock.Object, CreateAdminNotificationOptions(), templateRendererMock.Object);
-        var supplierNotificationService = new SupplierNotificationService(emailSenderMock.Object, templateRendererMock.Object);
-
-        return new VisitsController(context, adminNotificationService, supplierNotificationService);
-    }
-
     public static Booking CreateBookingWithVisits(FoodTourContext context, int supplierId) {
         var booking = CreateValidBooking([supplierId]);
         context.Bookings.Add(booking);
