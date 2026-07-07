@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-07-07
+
+### Added
+
+#### Testing & Quality
+- Expanded supplier visit integration coverage for negative paths, anti-forgery rejection, and prevention of legacy visit-recording route regressions
+- Added unit and integration coverage for partner booking lookup behaviour across partner reference and email-match scenarios
+
+### Changed
+
+#### Admin Experience
+- Improved supplier administration navigation with dashboard shortcuts, list filtering/sorting updates, and full-row navigation that preserves selected list context
+- Refined admin dashboard navigation and supplier form labelling to make admin workflows more intuitive
+
+#### Booking Flow
+- Removed the dedicated visit-recording API surface in favour of the existing MVC supplier-visit confirmation flow with anti-forgery protection
+
+#### Infrastructure & DevOps
+- Integration email SSL handling is now opt-in when no explicit test configuration value is provided
+
+### Fixed
+
+#### Booking Flow
+- Partner booking lookup now bypasses email confirmation when the entered email matches the stored booking email (case-insensitive), while retaining confirmation behaviour for mismatches
+
 ## [1.1.1] - 2026-06-28
 
 ### Added
@@ -150,6 +175,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflow with automated GitHub release creation
 - `IsLocalDeployEnabled` flag for controlling auto-migrations per environment
 
+[1.1.2]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.2
 [1.1.1]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.1
 [1.1.0]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.0
 [1.0.2]: https://github.com/e33ah/FoodTour/releases/tag/v1.0.2
