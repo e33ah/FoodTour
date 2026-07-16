@@ -5,6 +5,7 @@ namespace FoodTour.Controllers;
 public partial class FoodTourApiController(FoodTourContext context, IBookingValidationService bookingValidationService, IPurchaseCodeValidationService purchaseCodeValidationService) : ControllerBase {
     private const string FH_ITEM_NAME_KEY = "availability.item.name";
     private const string FH_ITEM_NAME_VALUE_5 = "Weymouth Self-Guided Food Tour (Five Tastings)";
+    private const string FH_ITEM_PK_5 = "700426";
     private const string KEY = "5N8GS1ZZKC8J";
     private const string PARTNER_BOOKING_CONFIRMATION_MESSAGE = "We found a partner booking for that reference. Please confirm your email address to continue.";
 
@@ -158,12 +159,26 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             ? itemNameElement.Value.GetString() ?? string.Empty
             : string.Empty;
 
-        if (itemName != FH_ITEM_NAME_VALUE_5) {
-            Log.Debug("Skipping detailed logging - Item name '{ItemName}' does not match '{FHItem}'", itemName, FH_ITEM_NAME_VALUE_5);
+        // Also attempt to read an explicit primary key from the item data (availability.item.pk)
+        var itemPkElement = NavigateJsonPath(bookingElement, "availability.item.pk");
+        string itemPk = itemPkElement?.ValueKind == JsonValueKind.String
+            ? itemPkElement.Value.GetString() ?? string.Empty
+            : (itemPkElement?.ValueKind == JsonValueKind.Number ? itemPkElement.Value.GetRawText() ?? string.Empty : string.Empty);
+
+        bool nameMatches = string.Equals(itemName, FH_ITEM_NAME_VALUE_5, StringComparison.Ordinal);
+        bool pkMatches = !string.IsNullOrWhiteSpace(itemPk) && string.Equals(itemPk, FH_ITEM_PK_5, StringComparison.Ordinal);
+
+        if (!nameMatches && !pkMatches) {
+            Log.Debug("Skipping detailed logging - Item did not match expected name or pk (name='{ItemName}', pk='{ItemPk}')", itemName, itemPk);
             return false;
         }
 
-        Log.Information("Processing booking for {FhItem}", FH_ITEM_NAME_VALUE_5);
+        if (nameMatches) {
+            Log.Information("Processing booking for {FhItem} (matched by name)", FH_ITEM_NAME_VALUE_5);
+        } else {
+            Log.Information("Processing booking for item with pk {ItemPk} (matched by pk)", itemPk);
+        }
+
         return true;
     }
 

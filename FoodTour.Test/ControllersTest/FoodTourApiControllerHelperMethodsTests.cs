@@ -308,6 +308,43 @@ public class FoodTourApiControllerHelperMethodsTests {
         result.ShouldBeFalse();
     }
 
+    [Fact]
+    public void IsWeymouthTourBooking_ReturnsTrue_WhenItemPkMatches_AsString() {
+        string jsonString = """
+            {
+                "availability": {
+                    "item": {
+                        "pk": "700426",
+                        "name": "Different Tour"
+                    }
+                }
+            }
+            """;
+        var bookingElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+
+        bool result = IsWeymouthTourBookingPublic(bookingElement);
+
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsWeymouthTourBooking_ReturnsTrue_WhenItemPkMatches_AsNumber() {
+        string jsonString = """
+            {
+                "availability": {
+                    "item": {
+                        "pk": 700426
+                    }
+                }
+            }
+            """;
+        var bookingElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+
+        bool result = IsWeymouthTourBookingPublic(bookingElement);
+
+        result.ShouldBeTrue();
+    }
+
     // Helper methods to access private static methods via reflection
     private static bool HasBookingChangesPublic(Booking existingBooking, Booking updatedBooking) {
         var method = typeof(FoodTourApiController).GetMethod("HasBookingChanges",
