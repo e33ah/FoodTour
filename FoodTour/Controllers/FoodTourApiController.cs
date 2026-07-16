@@ -4,7 +4,7 @@ namespace FoodTour.Controllers;
 [Route("api/foodtour")]
 public partial class FoodTourApiController(FoodTourContext context, IBookingValidationService bookingValidationService, IPurchaseCodeValidationService purchaseCodeValidationService) : ControllerBase {
     private const string FH_ITEM_NAME_KEY = "availability.item.name";
-    private const string FH_ITEM_NAME_VALUE = "Weymouth Self-Guided Food Tour";
+    private const string FH_ITEM_NAME_VALUE_5 = "Weymouth Self-Guided Food Tour (Five Tastings)";
     private const string KEY = "5N8GS1ZZKC8J";
     private const string PARTNER_BOOKING_CONFIRMATION_MESSAGE = "We found a partner booking for that reference. Please confirm your email address to continue.";
 
@@ -158,12 +158,12 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             ? itemNameElement.Value.GetString() ?? string.Empty
             : string.Empty;
 
-        if (itemName != FH_ITEM_NAME_VALUE) {
-            Log.Debug("Skipping detailed logging - Item name '{ItemName}' does not match '{FHItem}'", itemName, FH_ITEM_NAME_VALUE);
+        if (itemName != FH_ITEM_NAME_VALUE_5) {
+            Log.Debug("Skipping detailed logging - Item name '{ItemName}' does not match '{FHItem}'", itemName, FH_ITEM_NAME_VALUE_5);
             return false;
         }
 
-        Log.Information("Processing booking for {FhItem}", FH_ITEM_NAME_VALUE);
+        Log.Information("Processing booking for {FhItem}", FH_ITEM_NAME_VALUE_5);
         return true;
     }
 

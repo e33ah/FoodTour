@@ -10,7 +10,7 @@ public class FoodTourApiControllerJsonProcessingTests {
                 "booking": {
                     "availability": {
                         "item": {
-                            "name": "Weymouth Self-Guided Food Tour"
+                            "name": "Weymouth Self-Guided Food Tour (Five Tastings)"
                         },
                         "start_at": "2025-06-15T10:00:00Z"
                     },
@@ -69,7 +69,7 @@ public class FoodTourApiControllerJsonProcessingTests {
                 "booking": {
                     "availability": {
                         "item": {
-                            "name": "Weymouth Self-Guided Food Tour"
+                            "name": "Weymouth Self-Guided Food Tour (Five Tastings)"
                         },
                         "start_at": "2025-06-15T10:00:00Z"
                     },
@@ -97,7 +97,7 @@ public class FoodTourApiControllerJsonProcessingTests {
                 "booking": {
                     "availability": {
                         "item": {
-                            "name": "Weymouth Self-Guided Food Tour"
+                            "name": "Weymouth Self-Guided Food Tour (Five Tastings)"
                         }
                     },
                     "contact": {
@@ -122,7 +122,7 @@ public class FoodTourApiControllerJsonProcessingTests {
                 "booking": {
                     "availability": {
                         "item": {
-                            "name": "Weymouth Self-Guided Food Tour"
+                            "name": "Weymouth Self-Guided Food Tour (Five Tastings)"
                         },
                         "start_at": "invalid-date"
                     },
@@ -150,7 +150,7 @@ public class FoodTourApiControllerJsonProcessingTests {
                 "booking": {
                     "availability": {
                         "item": {
-                            "name": "Weymouth Self-Guided Food Tour"
+                            "name": "Weymouth Self-Guided Food Tour (Five Tastings)"
                         },
                         "start_at": "2025-06-15T10:00:00Z"
                     },
@@ -179,7 +179,7 @@ public class FoodTourApiControllerJsonProcessingTests {
             {
                 "availability": {
                     "item": {
-                        "name": "Weymouth Self-Guided Food Tour"
+                        "name": "Weymouth Self-Guided Food Tour (Five Tastings)"
                     }
                 },
                 "contact": {

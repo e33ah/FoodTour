@@ -21,7 +21,7 @@ public static class TestHelper {
     public static readonly string formattedTourDate = validTourDate.ToString(DATE_TIME_FORMAT);
 
     // FareHarbor API-specific constants
-    public const string WEYMOUTH_TOUR_NAME = "Weymouth Self-Guided Food Tour";
+    public const string WEYMOUTH_TOUR_NAME = "Weymouth Self-Guided Food Tour (Five Tastings)";
     public const int DEFAULT_GUEST_COUNT = 2;
     public const string DEFAULT_CUSTOMER_NAME = "Test Customer";
     public const string UPDATED_CUSTOMER_NAME = "Updated Name";

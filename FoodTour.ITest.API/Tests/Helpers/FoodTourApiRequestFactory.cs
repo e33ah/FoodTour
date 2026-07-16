@@ -2,7 +2,7 @@ namespace FoodTour.ITest.API.Tests.Helpers;
 
 internal static class FoodTourApiRequestFactory {
     private const string VALID_KEY = "5N8GS1ZZKC8J";
-    private const string WEYMOUTH_TOUR_NAME = "Weymouth Self-Guided Food Tour";
+    private const string WEYMOUTH_TOUR_NAME = "Weymouth Self-Guided Food Tour (Five Tastings)";
 
     public static string ValidKey => VALID_KEY;
 
@@ -93,11 +93,11 @@ internal sealed class BookingWebhookRequest {
 
     public string? VoucherNumber { get; init; }
 
-    public string ItemName { get; init; } = "Weymouth Self-Guided Food Tour";
+    public string ItemName { get; init; } = "Weymouth Self-Guided Food Tour (Five Tastings)";
 }
 
 internal sealed class CancelBookingWebhookRequest {
     public required string PurchaseCode { get; init; }
 
-    public string ItemName { get; init; } = "Weymouth Self-Guided Food Tour";
+    public string ItemName { get; init; } = "Weymouth Self-Guided Food Tour (Five Tastings)";
 }

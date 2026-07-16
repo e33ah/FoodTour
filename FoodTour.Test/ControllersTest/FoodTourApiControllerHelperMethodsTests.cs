@@ -81,7 +81,7 @@ public class FoodTourApiControllerHelperMethodsTests {
     [InlineData("contact.email", "test@example.com")]
     [InlineData("contact.name", "Test User")]
     [InlineData("availability.start_at", "2025-06-15T10:00:00Z")]
-    [InlineData("availability.item.name", "Weymouth Self-Guided Food Tour")]
+    [InlineData("availability.item.name", "Weymouth Self-Guided Food Tour (Five Tastings)")]
     [InlineData("customer_count", "2")]
     [InlineData("pk", "TEST123")]
     public void NavigateJsonPath_ReturnsElement_WhenPathExists(string jsonPath, string expectedValue) {
@@ -94,7 +94,7 @@ public class FoodTourApiControllerHelperMethodsTests {
                 "availability": {
                     "start_at": "2025-06-15T10:00:00Z",
                     "item": {
-                        "name": "Weymouth Self-Guided Food Tour"
+                        "name": "Weymouth Self-Guided Food Tour (Five Tastings)"
                     }
                 },
                 "customer_count": 2,
@@ -259,7 +259,7 @@ public class FoodTourApiControllerHelperMethodsTests {
             {
                 "availability": {
                     "item": {
-                        "name": "Weymouth Self-Guided Food Tour"
+                        "name": "Weymouth Self-Guided Food Tour (Five Tastings)"
                     }
                 }
             }
