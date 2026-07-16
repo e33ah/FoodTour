@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-07-16
+
+### Added
+
+#### Booking Flow
+- Accept identifying the Weymouth tour by either its tour name or availability.item.pk when processing incoming bookings.
+- Webhook handling now accepts pk as string or number and logs which match triggered processing.
+
+### Changed
+
+#### Testing & Quality
+- Updated unit and API tests to use the new Weymouth tour name and matching webhook payloads.
+- Isolated an anti-forgery integration test to avoid shared seeded state, ensured atomic setup/teardown, and improved teardown reliability.
+
 ## [1.1.2] - 2026-07-07
 
 ### Added
@@ -175,6 +189,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflow with automated GitHub release creation
 - `IsLocalDeployEnabled` flag for controlling auto-migrations per environment
 
+[1.1.3]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.3
 [1.1.2]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.2
 [1.1.1]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.1
 [1.1.0]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.0
