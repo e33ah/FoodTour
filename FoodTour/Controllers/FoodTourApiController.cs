@@ -6,6 +6,8 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
     private const string FH_ITEM_NAME_KEY = "availability.item.name";
     private const string FH_ITEM_NAME_VALUE_5 = "Weymouth Self-Guided Food Tour (Five Tastings)";
     private const string FH_ITEM_PK_5 = "700426";
+    private const string FH_ITEM_NAME_VALUE_3 = "Weymouth Self-Guided Food Tour (Three Tastings)";
+    private const string FH_ITEM_PK_3 = "746635";
     private const string KEY = "5N8GS1ZZKC8J";
     private const string PARTNER_BOOKING_CONFIRMATION_MESSAGE = "We found a partner booking for that reference. Please confirm your email address to continue.";
 
@@ -137,6 +139,7 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             { "contact.email", "Contact Email" },
             { "availability.start_at", "Tour Start Time" },
             { FH_ITEM_NAME_KEY, "Item Name" },
+            { "availability.item.pk", "Item PK" },
             { "customer_count", "Customer Count" },
             { "voucher_number", "Voucher Number" }
         };
@@ -165,18 +168,23 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             ? itemPkElement.Value.GetString() ?? string.Empty
             : (itemPkElement?.ValueKind == JsonValueKind.Number ? itemPkElement.Value.GetRawText() ?? string.Empty : string.Empty);
 
-        bool nameMatches = string.Equals(itemName, FH_ITEM_NAME_VALUE_5, StringComparison.Ordinal);
-        bool pkMatches = !string.IsNullOrWhiteSpace(itemPk) && string.Equals(itemPk, FH_ITEM_PK_5, StringComparison.Ordinal);
+        bool nameMatches5 = string.Equals(itemName, FH_ITEM_NAME_VALUE_5, StringComparison.Ordinal);
+        bool pkMatches5 = !string.IsNullOrWhiteSpace(itemPk) && string.Equals(itemPk, FH_ITEM_PK_5, StringComparison.Ordinal);
 
-        if (!nameMatches && !pkMatches) {
+        bool nameMatches3 = string.Equals(itemName, FH_ITEM_NAME_VALUE_3, StringComparison.Ordinal);
+        bool pkMatches3 = !string.IsNullOrWhiteSpace(itemPk) && string.Equals(itemPk, FH_ITEM_PK_3, StringComparison.Ordinal);
+
+        if (!nameMatches5 && !pkMatches5 && !nameMatches3 && !pkMatches3) {
             Log.Debug("Skipping detailed logging - Item did not match expected name or pk (name='{ItemName}', pk='{ItemPk}')", itemName, itemPk);
             return false;
         }
 
-        if (nameMatches) {
-            Log.Information("Processing booking for {FhItem} (matched by name)", FH_ITEM_NAME_VALUE_5);
+        if (nameMatches5 || nameMatches3) {
+            string matchedName = nameMatches5 ? FH_ITEM_NAME_VALUE_5 : FH_ITEM_NAME_VALUE_3;
+            Log.Information("Processing booking for {FhItem} (matched by name)", matchedName);
         } else {
-            Log.Information("Processing booking for item with pk {ItemPk} (matched by pk)", itemPk);
+            string matchedPk = pkMatches5 ? FH_ITEM_PK_5 : FH_ITEM_PK_3;
+            Log.Information("Processing booking for item with pk {ItemPk} (matched by pk)", matchedPk);
         }
 
         return true;
@@ -306,7 +314,25 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
                 break;
 
             case "Item Name":
-                LogValue(displayName, ExtractStringValue(element.Value));
+                string extractedName = ExtractStringValue(element.Value);
+                // Determine tasting count from known names
+                if (string.Equals(extractedName, FH_ITEM_NAME_VALUE_3, StringComparison.Ordinal)) {
+                    booking.TastingCount = 3;
+                } else if (string.Equals(extractedName, FH_ITEM_NAME_VALUE_5, StringComparison.Ordinal)) {
+                    booking.TastingCount = 5;
+                }
+                LogValue(displayName, extractedName);
+                break;
+
+            case "Item PK":
+                string extractedPk = ExtractStringValue(element.Value);
+                // Determine tasting count from known PKs
+                if (string.Equals(extractedPk, FH_ITEM_PK_3, StringComparison.Ordinal)) {
+                    booking.TastingCount = 3;
+                } else if (string.Equals(extractedPk, FH_ITEM_PK_5, StringComparison.Ordinal)) {
+                    booking.TastingCount = 5;
+                }
+                LogValue(displayName, extractedPk);
                 break;
         }
     }
@@ -545,7 +571,8 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
                 qrToken = booking.QrToken,
                 message = "This booking has been cancelled. Please contact support if you believe this is an error.",
                 bookingId = booking.Id,
-                tourDate = booking.TourDate
+                tourDate = booking.TourDate,
+                tastingCount = booking.TastingCount
             };
         }
 
@@ -556,7 +583,8 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
             qrToken = booking.QrToken,
             message = "We've found your booking!",
             bookingId = booking.Id,
-            tourDate = booking.TourDate
+            tourDate = booking.TourDate,
+            tastingCount = booking.TastingCount
         };
     }
 }

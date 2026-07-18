@@ -340,7 +340,7 @@ public static class TestHelper {
         return (controller, emailSenderMock);
     }
 
-    public static async Task<Booking> CreateBookingInDatabase(FoodTourContext context, DateTime? tourDate = null, string? email = null, string? purchaseCode = null, List<int>? selectedSupplierIds = null) {
+    public static async Task<Booking> CreateBookingInDatabase(FoodTourContext context, DateTime? tourDate = null, string? email = null, string? purchaseCode = null, List<int>? selectedSupplierIds = null, int tastingCount = EXPECTED_MAX_SELECTIONS) {
         tourDate ??= validTourDate;
         email ??= VALID_EMAIL;
         purchaseCode ??= VALID_CODE;
@@ -351,7 +351,8 @@ public static class TestHelper {
             CustomerEmail = email,
             PurchaseCode = purchaseCode,
             SelectedSupplierIds = selectedSupplierIds,
-            BookingSuppliers = [.. selectedSupplierIds.Select(id => new BookingSupplier { SupplierId = id })]
+            BookingSuppliers = [.. selectedSupplierIds.Select(id => new BookingSupplier { SupplierId = id })],
+            TastingCount = tastingCount
         };
 
         context.Bookings.Add(booking);

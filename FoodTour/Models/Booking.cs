@@ -28,6 +28,9 @@ public class Booking {
     public string? CustomerName { get; set; }
     public bool RequiresEmailConfirmation { get; set; } // True when a voucher booking may still be using a pseudo email and needs the customer to confirm their real one
 
+    // Number of tastings associated with this booking (e.g., 5 or 3)
+    public int TastingCount { get; set; } = 5;
+
     // Join collection for persistence of selected suppliers
     public ICollection<BookingSupplier> BookingSuppliers { get; set; } = [];
 }

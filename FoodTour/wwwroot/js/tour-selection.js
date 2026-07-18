@@ -1,7 +1,32 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Constants
-    const MAX_SELECTIONS = parseInt(document.querySelector('[data-max-selections]')?.dataset.maxSelections || '0');
     const ERROR_TIMEOUT_MS = 5000;
+
+    // Get the maximum number of selections from the form's data attribute
+    let maxSelections = parseInt(document.querySelector('[data-max-selections]')?.dataset.maxSelections || '0');
+
+    const formEl = document.querySelector('form[data-max-selections]');
+    const headingTemplateWithCount = formEl?.dataset.headingTemplate || 'Select {0} tasting experiences to create your personalised food tasting tour';
+    const headingTemplateNoCount = formEl?.dataset.headingTemplateNoCount || 'Select your tasting experiences to create your personalised food tasting tour';
+
+    const setMaxSelections = (value) => {
+        maxSelections = parseInt(String(value) || '0');
+        if (formEl) {
+            formEl.setAttribute('data-max-selections', String(maxSelections));
+        }
+        // Update heading text to be more user-friendly when count unknown
+        const heading = document.getElementById('selectionHeading');
+        if (heading) {
+            if (maxSelections > 0) {
+                heading.textContent = headingTemplateWithCount.replace('{0}', String(maxSelections));
+            } else {
+                heading.textContent = headingTemplateNoCount;
+            }
+        }
+
+        updateButtonState();
+    };
+
 
     // Cached selectors
     const checkboxes = document.querySelectorAll('.supplier-checkbox');
@@ -15,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateButtonState = () => {
         const checkedCount = document.querySelectorAll('.supplier-checkbox:checked').length;
         if (createTourBtn) {
-            createTourBtn.disabled = checkedCount !== MAX_SELECTIONS;
+            createTourBtn.disabled = checkedCount !== maxSelections;
         }
     };
 
@@ -107,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         messageElement.setAttribute('role', 'alert');
         messageElement.setAttribute('aria-live', 'polite');
         messageElement.setAttribute('aria-atomic', 'true');
-        messageElement.innerHTML = `<strong>Maximum selections reached!</strong><br>You must select exactly ${MAX_SELECTIONS} tasting experiences for your tour.`;
+        messageElement.innerHTML = `<strong>Maximum selections reached!</strong><br>You must select exactly ${maxSelections} tasting experiences for your tour.`;
         card.parentNode.insertBefore(messageElement, card.nextSibling);
         currentMessage = messageElement;
         clearTimeout(messageTimeout);
@@ -124,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentMessage.remove();
             currentMessage = null;
         }
-        if (checkedCount > MAX_SELECTIONS) {
+        if (checkedCount > maxSelections) {
             checkbox.checked = false;
             showMaxSelectionMessage(card);
         }
@@ -385,10 +410,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.isCancelled) {
                     showBookingWarning(data.message, email, purchaseCode);
                 } else if (data.isConfirmed) {
+                    if (typeof data.tastingCount === 'number') setMaxSelections(data.tastingCount);
                     applyTourDateOpeningTimes(data.tourDate);
                     showBookingConfirmedModal(email, purchaseCode, data.qrToken);
                 } else {
                     showBookingSuccess(data.message, data.bookingId, email, purchaseCode);
+                    if (typeof data.tastingCount === 'number') setMaxSelections(data.tastingCount);
                     applyTourDateOpeningTimes(data.tourDate);
                 }
             } else {
@@ -496,7 +523,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialise
     setupCheckboxes();
     setupSupplierCards();
-    updateButtonState();
+    // Ensure heading and button state use the initial maxSelections
+    setMaxSelections(maxSelections);
 
     // Check if email and purchase code are pre-populated (from qrToken navigation)
     if (emailInput?.value.trim() && purchaseCodeInput?.value.trim()) {

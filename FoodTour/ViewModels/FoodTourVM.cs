@@ -3,6 +3,7 @@
 public class FoodTourVM {
     public List<Supplier> Suppliers { get; set; } = [];
     public int MaxSelections { get; set; }
+    public int BookingId { get; set; }
     public string SupplierName { get; set; } = string.Empty;
     public string SupplierDescription { get; set; } = string.Empty;
     public string SupplierAddress { get; set; } = string.Empty;

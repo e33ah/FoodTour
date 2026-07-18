@@ -6,4 +6,7 @@ public class BookingValidationRequest {
     public string? CustomerName { get; set; }
     public int? CustomerCount { get; set; }
     public List<int>? SelectedSupplierIds { get; set; }
+
+    // Optional: number of tastings for this booking (used to vary selection rules)
+    public int? TastingCount { get; set; }
 }

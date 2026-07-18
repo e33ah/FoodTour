@@ -3,6 +3,7 @@ namespace FoodTour.Services;
 public class BookingValidationService(FoodTourContext context) : IBookingValidationService {
     private const int MAX_SUPPLIER_SELECTIONS = 5;
 
+
     private static readonly EmailAddressAttribute emailValidator = new();
 
     public async Task<BookingValidationResult> ValidateAsync(BookingValidationRequest request) {
@@ -12,7 +13,7 @@ public class BookingValidationService(FoodTourContext context) : IBookingValidat
         result.IsCustomerEmailValid = ValidateCustomerEmail(request.CustomerEmail, result);
         // Skip if not provided
         result.IsCustomerCountValid = !request.CustomerCount.HasValue || ValidateCustomerCount(request.CustomerCount, result);
-        result.AreSelectedSuppliersValid = request.SelectedSupplierIds == null || await ValidateSelectedSuppliersAsync(request.SelectedSupplierIds, result);
+        result.AreSelectedSuppliersValid = request.SelectedSupplierIds == null || await ValidateSelectedSuppliersAsync(request, result);
         result.IsCustomerNameValid = string.IsNullOrWhiteSpace(request.CustomerName) || IsCustomerNameValid(request.CustomerName);
         return result;
     }
@@ -78,14 +79,18 @@ public class BookingValidationService(FoodTourContext context) : IBookingValidat
         return true;
     }
 
-    private async Task<bool> ValidateSelectedSuppliersAsync(List<int>? selectedSupplierIds, BookingValidationResult result) {
+    private async Task<bool> ValidateSelectedSuppliersAsync(BookingValidationRequest request, BookingValidationResult result) {
+        var selectedSupplierIds = request.SelectedSupplierIds;
         if (selectedSupplierIds == null || selectedSupplierIds.Count == 0) {
             result.AddError("At least one supplier must be selected");
             return false;
         }
 
-        if (selectedSupplierIds.Count != MAX_SUPPLIER_SELECTIONS) {
-            result.AddError($"Exactly {MAX_SUPPLIER_SELECTIONS} suppliers must be selected. Currently selected: {selectedSupplierIds.Count}");
+        // Determine required selections based on provided tasting count (default to MAX_SUPPLIER_SELECTIONS)
+        int requiredSelections = request.TastingCount ?? MAX_SUPPLIER_SELECTIONS;
+
+        if (selectedSupplierIds.Count != requiredSelections) {
+            result.AddError($"Exactly {requiredSelections} suppliers must be selected. Currently selected: {selectedSupplierIds.Count}");
             return false;
         }
 

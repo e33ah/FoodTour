@@ -52,9 +52,11 @@
 					}
 					<form id="tourForm" asp-action="Index" method="post"
 						  data-max-selections="@Model.MaxSelections"
-						  data-selected-suppliers='@Html.Raw(JsonSerializer.Serialize(Model.SelectedSuppliers))'>
-						<input type="hidden" id="BookingId" name="BookingId" value="" />
-						<h2 class="lead mb-3 fs-3">Select @Model.MaxSelections tasting experiences to create your personalised food tasting tour</h2>
+						  data-selected-suppliers='@Html.Raw(JsonSerializer.Serialize(Model.SelectedSuppliers))'
+						  data-heading-template="Select {0} tasting experiences to create your personalised food tasting tour"
+						  data-heading-template-no-count="Select your tasting experiences to create your personalised food tasting tour">
+						<input type="hidden" id="BookingId" name="BookingId" value="@Model.BookingId" />
+						<h2 id="selectionHeading" class="lead mb-3 fs-3">@if (Model.MaxSelections > 0) {<text>Select @Model.MaxSelections tasting experiences to create your personalised food tasting tour</text>} else {<text>Select your tasting experiences to create your personalised food tasting tour</text>}</h2>
 
 						<p class="mb-4">
 							Some venues are designed for quick visits and may not include seating.

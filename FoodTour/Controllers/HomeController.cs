@@ -370,7 +370,8 @@ public class HomeController(
 
         return new FoodTourVM {
             Suppliers = suppliers,
-            MaxSelections = MAX_SUPPLIER_SELECTIONS,
+            // Do not assume a default tasting count for initial page render; let client show generic text
+            MaxSelections = 0,
             TourDate = tourDate
         };
     }
@@ -406,7 +407,7 @@ public class HomeController(
         return $"Only {supplierCount} {experienceText} currently available. You need at least {MAX_SUPPLIER_SELECTIONS} to create a tour. Please check back later.";
     }
 
-    private void MapValidationErrorsToModelState(BookingValidationResult validationResult) {
+    private void MapValidationErrorsToModelState(BookingValidationResult validationResult, int tastingCount) {
         if (!validationResult.AreSelectedSuppliersValid) {
             // Check if it's a supplier existence issue vs count issue
             bool hasSupplierExistenceError = validationResult.ErrorMessages.Any(msg => msg.Contains("do not exist or are inactive"));
@@ -414,7 +415,7 @@ public class HomeController(
             if (hasSupplierExistenceError) {
                 ModelState.AddModelError(string.Empty, "One or more selected suppliers are invalid. Please refresh and try again.");
             } else {
-                ModelState.AddModelError(string.Empty, $"You must select {MAX_SUPPLIER_SELECTIONS} tasting experiences for your tour.");
+                ModelState.AddModelError(string.Empty, $"You must select {tastingCount} tasting experiences for your tour.");
             }
         }
     }
@@ -458,6 +459,8 @@ public class HomeController(
         model.CustomerEmail = booking.CustomerEmail;
         model.PurchaseCode = !string.IsNullOrWhiteSpace(booking.VoucherNumber) ? booking.VoucherNumber : booking.PurchaseCode;
         model.TourDate = booking.TourDate;
+        model.BookingId = booking.Id;
+        model.MaxSelections = booking.TastingCount;
 
         Log.Debug("Index: Populated form from booking {BookingId} using QR token.", booking.Id);
     }
@@ -523,13 +526,14 @@ public class HomeController(
         var validationRequest = new BookingValidationRequest {
             TourDate = booking.TourDate,
             CustomerEmail = booking.CustomerEmail,
-            SelectedSupplierIds = selectedSuppliers
+            SelectedSupplierIds = selectedSuppliers,
+            TastingCount = booking.TastingCount
         };
 
         var validationResult = await bookingValidationService.ValidateAsync(validationRequest);
 
         if (!validationResult.IsValid) {
-            MapValidationErrorsToModelState(validationResult);
+            MapValidationErrorsToModelState(validationResult, booking.TastingCount);
             return false;
         }
 

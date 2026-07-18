@@ -35,7 +35,7 @@ public class HomeControllerIndexTests : HomeControllerTestBase {
     public async Task Index_SetsMaxSelections_InViewModel() {
         var (_, model) = await GetIndexViewModel();
 
-        model.MaxSelections.ShouldBe(TestHelper.EXPECTED_MAX_SELECTIONS);
+        model.MaxSelections.ShouldBe(0);
     }
 
     [Fact]

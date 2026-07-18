@@ -61,4 +61,28 @@ public class CreateBookingWebhookApiTests(ApiApplicationFixture fixture) : ApiTe
         booking.TotalGuests.ShouldBe(3);
         booking.VoucherNumber.ShouldBe("API-VOUCHER-001");
     }
+
+    [Fact]
+    public async Task CreateNewBooking_SetsTastingCount_WhenThreeTastingItemPosted() {
+        using var sut = CreateApiClient();
+        string purchaseCode = FoodTourApiRequestFactory.CreateUniquePurchaseCode("api-three");
+        const string CUSTOMER_EMAIL = "api.three@example.com";
+        BookingWebhookRequest request = new() {
+            PurchaseCode = purchaseCode,
+            CustomerEmail = CUSTOMER_EMAIL,
+            CustomerName = "API Three",
+            TourDate = DateTime.UtcNow.AddDays(33),
+            CustomerCount = 2,
+            VoucherNumber = "API-VOUCHER-THREE",
+            ItemName = "Weymouth Self-Guided Food Tour (Three Tastings)"
+        };
+
+        var response = await PostNewBookingAsync(sut, request);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var booking = await GetBookingByPurchaseCodeAsync(purchaseCode);
+        booking.CustomerEmail.ShouldBe(CUSTOMER_EMAIL);
+        booking.TastingCount.ShouldBe(3);
+    }
 }

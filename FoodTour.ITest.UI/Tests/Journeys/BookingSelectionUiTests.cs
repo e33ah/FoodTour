@@ -406,6 +406,24 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     }
 
     [Fact]
+    public Task GotoIndex_ShowsMaxSelections_ForThreeTastingBooking() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new BookingSelectionPage(page);
+            var booking = await CreateTemporaryBookingAsync(DateTime.SpecifyKind(DateTime.Today.AddDays(14).AddHours(11), DateTimeKind.Utc), 3);
+
+            try {
+                await sut.GotoAsync(booking.QrToken);
+
+                var form = page.Locator("#tourForm");
+                await Expect(form).ToHaveAttributeAsync("data-max-selections", "3");
+
+            } finally {
+                await DeleteTemporaryBookingAsync(booking.Id);
+            }
+        });
+    }
+
+    [Fact]
     public Task GotoIndex_LeavesBookingFieldsBlank_WhenQrTokenIsInvalid() {
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
@@ -438,7 +456,7 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         });
     }
 
-    private async Task<TemporaryBookingData> CreateTemporaryBookingAsync(DateTime tourDate) {
+    private async Task<TemporaryBookingData> CreateTemporaryBookingAsync(DateTime tourDate, int tastingCount = 5) {
         DbContextOptionsBuilder<FoodTourContext> optionsBuilder = new();
         optionsBuilder.UseSqlServer(Fixture.ConnectionString);
 
@@ -457,13 +475,14 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
             QrToken = qrToken,
             IsConfirmed = false,
             IsCancelled = false,
-            RequiresEmailConfirmation = false
+            RequiresEmailConfirmation = false,
+            TastingCount = tastingCount
         };
 
         await context.Bookings.AddAsync(booking, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        return new TemporaryBookingData(booking.Id, booking.CustomerEmail, booking.PurchaseCode);
+        return new TemporaryBookingData(booking.Id, booking.CustomerEmail, booking.PurchaseCode, booking.QrToken);
     }
 
     private async Task<TemporaryPartnerBookingData> CreateTemporaryPartnerBookingAsync(DateTime tourDate) {
@@ -505,6 +524,6 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
-    private sealed record TemporaryBookingData(int Id, string CustomerEmail, string PurchaseCode);
+    private sealed record TemporaryBookingData(int Id, string CustomerEmail, string PurchaseCode, Guid QrToken = default);
     private sealed record TemporaryPartnerBookingData(int Id, string CustomerEmail, string VoucherNumber);
 }
