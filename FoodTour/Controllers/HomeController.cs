@@ -408,6 +408,11 @@ public class HomeController(
     }
 
     private void MapValidationErrorsToModelState(BookingValidationResult validationResult, int tastingCount) {
+        if (!validationResult.IsTourDateValid) {
+            string? tourDateMsg = validationResult.ErrorMessages.FirstOrDefault(msg => msg != null && msg.Contains("Tour date", StringComparison.OrdinalIgnoreCase));
+            ModelState.AddModelError(string.Empty, tourDateMsg ?? "This booking is for a past tour date and can no longer be used to create a new tour.");
+        }
+
         if (!validationResult.AreSelectedSuppliersValid) {
             // Check if it's a supplier existence issue vs count issue
             bool hasSupplierExistenceError = validationResult.ErrorMessages.Any(msg => msg.Contains("do not exist or are inactive"));

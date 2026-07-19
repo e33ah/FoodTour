@@ -64,6 +64,23 @@ public class HomeControllerIndexPostTests : HomeControllerTestBase {
     }
 
     [Fact]
+    public async Task Index_ReturnsBadRequest_WhenTourDateIsInThePast() {
+        var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
+        var booking = await TestHelper.CreateBookingInDatabase(context, tourDate: TestHelper.pastTourDate);
+        var sut = CreateConfiguredController(context);
+        var selectedSuppliers = TestHelper.CreateSupplierIdList(5);
+
+        var result = await sut.Index(booking.Id, selectedSuppliers);
+
+        result.ShouldBeOfType<ViewResult>();
+        sut.ModelState.IsValid.ShouldBeFalse();
+        sut.ModelState[string.Empty]!.Errors.ShouldContain(
+            (error => error.ErrorMessage.Contains("Tour date")),
+            $"Expected error message to contain 'Tour date' but contained: {string.Join(", ", sut.ModelState[string.Empty]!.Errors.Select(e => e.ErrorMessage))}"
+            );
+    }
+
+    [Fact]
     public async Task Index_ReturnsBadRequest_WhenNoSuppliersSelected() {
         var context = TestHelper.CreateContextWithActiveSuppliersCount(5);
         var booking = await TestHelper.CreateBookingInDatabase(context);
