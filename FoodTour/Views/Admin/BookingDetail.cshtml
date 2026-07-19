@@ -90,7 +90,7 @@
 						</thead>
 						<tbody>
 							@foreach (var visit in Model.Visits) {
-								<tr>
+								<tr data-href='@Url.Action("Visits", "Admin", new { highlightVisitId = visit.Id })' role="link" tabindex="0" style="cursor:pointer" onclick="location.href=this.getAttribute('data-href')" onkeydown="if(event.key === 'Enter') location.href=this.getAttribute('data-href')">
 									<td>@visit.Supplier.Name</td>
 									<td class="text-center">
 										@if (visit.IsClaimed) {
@@ -110,3 +110,26 @@
 		</div>
 	</div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+	document.querySelectorAll('tr[data-href]').forEach(function(row){
+		row.addEventListener('click', function(e){
+			if (e.defaultPrevented) return;
+			if (e.button !== 0) return; // only left-click
+			if (e.target.closest('a, button, input, form')) return; // ignore clicks on interactive controls
+			var href = row.getAttribute('data-href');
+			if (!href) return;
+			if (e.ctrlKey || e.metaKey) { window.open(href, '_blank'); }
+			else { location.href = href; }
+		});
+		row.addEventListener('keydown', function(e){
+			if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						var href = row.getAttribute('data-href');
+						if (href) location.href = href;
+			}
+		});
+	});
+});
+</script>

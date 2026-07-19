@@ -82,6 +82,23 @@
 			});
 		})();
 	</script>
+	<script>
+	document.addEventListener('DOMContentLoaded', function(){
+		try {
+		var hash = location.hash;
+		if (hash) {
+			var el = document.querySelector(hash);
+			if (el) {
+				el.scrollIntoView({behavior:'smooth', block:'center'});
+				el.classList.add('table-success');
+				setTimeout(function(){ el.classList.remove('table-success'); }, 3000);
+				var focusable = el.querySelector('a, button, input');
+				if (focusable) focusable.focus();
+			}
+		}
+		} catch (e) { console.error(e); }
+	});
+	</script>
 	<div class="table-responsive">
 		<table class="table table-hover align-middle">
 			<thead class="table-light">
@@ -128,7 +145,7 @@
 			</thead>
 			<tbody>
 				@foreach (var visit in Model.Visits) {
-					<tr>
+					<tr id="visit-@visit.Id">
 						<td class="text-nowrap">@visit.Booking.TourDate.ToString("ddd dd MMM yyyy")</td>
 						<td>
 							@if (!string.IsNullOrEmpty(visit.Booking.CustomerName)) {

@@ -496,4 +496,36 @@ public class AdminControllerVisitsTests : AdminControllerTestBase {
         vm.SortColumn.ShouldBe(sort);
         vm.SortDescending.ShouldBe(dir == "desc");
     }
+
+    [Fact]
+    public async Task Visits_RedirectsToPageContainingHighlightedVisit_WhenHighlightProvided() {
+        var context = TestHelper.CreateInMemoryContext();
+        var today = DateTime.UtcNow.Date;
+        var supplier = TestHelper.CreateSupplier(1);
+        context.Suppliers.Add(supplier);
+        await context.SaveChangesAsync(CancellationToken);
+        var bookings = Enumerable.Range(1, 30).Select(i => {
+                    var booking = TestHelper.CreateValidBooking([supplier.Id]);
+            booking.PurchaseCode = $"CODE{i:D2}";
+            booking.TourDate = today.AddDays(i);
+            return booking;
+        }).ToList();
+        context.Bookings.AddRange(bookings);
+        await context.SaveChangesAsync(CancellationToken);
+        context.Visits.AddRange(bookings.Select(b => TestHelper.CreateVisit(b.Id, supplier.Id)));
+        await context.SaveChangesAsync(CancellationToken);
+
+        // The earliest booking (CODE01) will be last when sorted by date descending and thus should be on page 2
+        var targetBooking = bookings.First();
+        var visit = await context.Visits.FirstAsync(v => v.BookingId == targetBooking.Id, CancellationToken);
+
+        var sut = CreateController(context: context);
+
+        var result = await sut.Visits(highlightVisitId: visit.Id);
+
+        result.ShouldBeOfType<RedirectResult>();
+        var redirect = (RedirectResult)result;
+        redirect.Url.ShouldNotBeNull();
+        redirect.Url.ShouldContain($"#visit-{visit.Id}");
+    }
 }

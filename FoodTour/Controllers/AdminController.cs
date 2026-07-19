@@ -130,7 +130,7 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
         });
     }
 
-    public async Task<IActionResult> Visits(string? filter = null, int page = 1, string? sort = null, string? dir = null) {
+    public async Task<IActionResult> Visits(string? filter = null, int page = 1, string? sort = null, string? dir = null, int? highlightVisitId = null) {
         var query = context.Visits
             .Include(v => v.Booking)
             .Include(v => v.Supplier)
@@ -144,14 +144,26 @@ public class AdminController(IAdminAccessService adminAccessService, IConfigurat
             _ => query
         };
 
-        int totalCount = await query.CountAsync();
-        int totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / PAGE_SIZE) : 1;
-        page = Math.Clamp(page, 1, totalPages);
-
+        // Determine sorting early so we can locate the highlighted visit if requested
         string sortColumn = sort ?? AdminVisitsVM.SORT_DATE;
         bool descending = dir != null ? dir == "desc" : sortColumn == AdminVisitsVM.SORT_DATE;
 
         var orderedQuery = ApplyVisitsSorting(query, sortColumn, descending);
+
+        if (highlightVisitId.HasValue) {
+            // Build a list of ordered ids and compute which page the highlighted visit falls on
+            var orderedIds = await orderedQuery.Select(v => v.Id).ToListAsync();
+            int idx = orderedIds.IndexOf(highlightVisitId.Value);
+            if (idx >= 0) {
+                int targetPage = (idx / PAGE_SIZE) + 1;
+                string url = Url.Action(nameof(Visits), new { filter, page = targetPage, sort = sortColumn, dir = (descending ? "desc" : "asc") }) + $"#visit-{highlightVisitId.Value}";
+                return Redirect(url);
+            }
+        }
+
+        int totalCount = await query.CountAsync();
+        int totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / PAGE_SIZE) : 1;
+        page = Math.Clamp(page, 1, totalPages);
 
         var visits = await orderedQuery
             .Skip((page - 1) * PAGE_SIZE)
