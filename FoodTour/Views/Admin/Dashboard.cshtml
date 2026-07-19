@@ -11,7 +11,7 @@
 			<a asp-controller="Admin" asp-action="Bookings" asp-route-filter="upcoming" class="card-body d-flex flex-column text-decoration-none text-reset" aria-label="Open bookings tab">
 				<h6 class="card-title mb-3 text-white-50"><i class="bi bi-calendar-check me-1"></i>Bookings</h6>
 				<div class="d-flex flex-grow-1">
-					<div class="flex-fill text-center d-flex flex-column justify-content-center text-white-50">
+					<div class="flex-fill text-center d-flex flex-column justify-content-center text-white-50" role="link" tabindex="0" id="bookings-past-link" data-href="@Url.Action("Bookings","Admin", new { filter = "past" })">
 						<p class="fs-3 mb-0 fw-bold">@Model.PastBookings</p>
 						<div class="small">Past</div>
 					</div>
@@ -56,3 +56,22 @@
 		</div>
 	</div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var el = document.getElementById('bookings-past-link');
+            if (!el) return;
+            var href = el.dataset.href;
+            function navigate(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                if (href) window.location.href = href;
+            }
+            el.addEventListener('click', navigate);
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') navigate(e);
+            });
+        })();
+    </script>
+}
