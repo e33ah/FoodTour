@@ -48,7 +48,7 @@
 							<span class="visually-hidden">@(Model.IsSortedBy(AdminBookingsVM.SORT_GUESTS) ? (Model.SortDescending ? ", sorted descending" : ", sorted ascending") : ", click to sort")</span>
 						</a>
 					</th>
-					<th scope="col" class="text-center">Tasting Experiences</th>
+					<th scope="col" class="text-center">Tour</th>
 					<th scope="col">Status</th>
 				</tr>
 			</thead>
@@ -66,10 +66,13 @@
 						<td>@booking.PurchaseCode</td>
 						<td class="text-center">@booking.TotalGuests</td>
 						<td class="text-center">
-							@if (booking.SelectedSupplierIds.Count > 0) {
-									<span class="badge bg-success-subtle text-success-emphasis">@booking.SelectedSupplierIds.Count selected</span>
+							<div>@booking.TastingCount Tastings</div>
+							@if (booking.SelectedSupplierIds.Count == booking.TastingCount) {
+								<div class="small text-success"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Selected</div>
+							} else if (booking.SelectedSupplierIds.Count == 0) {
+								<div class="small text-warning-emphasis">Not selected</div>
 							} else {
-									<span class="badge bg-warning-subtle text-warning-emphasis">None</span>
+								<div class="small text-warning-emphasis">@booking.SelectedSupplierIds.Count / @booking.TastingCount selected</div>
 							}
 						</td>
 						<td>

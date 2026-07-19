@@ -35,6 +35,7 @@ public sealed record SeededBooking(
     bool IsConfirmed,
     bool IsCancelled,
     bool RequiresEmailConfirmation,
-    int TotalGuests);
+    int TotalGuests, 
+    int TastingCount);
 
 public sealed record SeededVisit(int Id, int BookingId, int SupplierId, bool IsClaimed);

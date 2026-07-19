@@ -16,7 +16,7 @@
 	<div class="col-md-6">
 		<div class="card">
 			<div class="card-header fw-semibold"><i class="bi bi-calendar-event me-1"></i>Booking Details</div>
-			<div class="card-body">
+			<div class="card-body" id="booking-details">
 				<dl class="row mb-0">
 					<dt class="col-sm-5">Tour Date</dt>
 					<dd class="col-sm-7">@Model.Booking.TourDate.ToString("dddd dd MMMM yyyy HH:mm")</dd>
@@ -37,6 +37,9 @@
 
 					<dt class="col-sm-5">Guests</dt>
 					<dd class="col-sm-7">@Model.Booking.TotalGuests</dd>
+
+					<dt class="col-sm-5">Tour Type</dt>
+					<dd class="col-sm-7">@Model.Booking.TastingCount Tastings</dd>
 
 					@if (Model.Booking.IsCancelled) {
 						<dt class="col-sm-5">Cancelled At</dt>

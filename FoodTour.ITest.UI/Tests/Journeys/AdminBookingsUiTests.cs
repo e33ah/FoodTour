@@ -36,11 +36,16 @@ public sealed class AdminBookingsUiTests(FoodTourApplicationFixture fixture) : U
 
             await sut.GotoAsync();
             await sut.ClickBookingDetailAsync(confirmedBooking.PurchaseCode);
-
             await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
             page.Url.ShouldEndWith($"/Admin/BookingDetail/{confirmedBooking.Id}");
             string html = await page.ContentAsync();
-            html.ShouldContain(confirmedBooking.CustomerEmail);
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = $"Booking {confirmedBooking.PurchaseCode}" })).ToBeVisibleAsync();
+            await Expect(page.Locator("#booking-details")).ToContainTextAsync(confirmedBooking.CustomerEmail);
+            await Expect(page.Locator("#booking-details")).ToContainTextAsync(confirmedBooking.PurchaseCode);
+            await Expect(page.Locator("#booking-details")).ToContainTextAsync(confirmedBooking.TourDate.ToString("dd MMMM yyyy HH:mm"));
+            await Expect(page.Locator("#booking-details")).ToContainTextAsync(confirmedBooking.TotalGuests.ToString());
+            await Expect(page.Locator("#booking-details")).ToContainTextAsync(confirmedBooking.TastingCount.ToString());
         });
     }
 

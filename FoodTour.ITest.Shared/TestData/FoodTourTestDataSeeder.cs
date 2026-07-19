@@ -29,7 +29,8 @@ public static class FoodTourTestDataSeeder {
         IsConfirmed: false,
         IsCancelled: false,
         RequiresEmailConfirmation: false,
-        CancelledAt: null);
+        CancelledAt: null,
+        TastingCount: 5);
     private static readonly BookingSeedDefinition confirmedBookingDefinition = new(
         CustomerName: "Luna Rivers",
         CustomerEmail: "luna.rivers@moonlight.net",
@@ -42,7 +43,8 @@ public static class FoodTourTestDataSeeder {
         IsConfirmed: true,
         IsCancelled: false,
         RequiresEmailConfirmation: false,
-        CancelledAt: null);
+        CancelledAt: null,
+        TastingCount: 5);
     private static readonly BookingSeedDefinition cancelledBookingDefinition = new(
         CustomerName: "Maple Frost",
         CustomerEmail: "maple.frost@cozydays.com",
@@ -55,7 +57,8 @@ public static class FoodTourTestDataSeeder {
         IsConfirmed: false,
         IsCancelled: true,
         RequiresEmailConfirmation: false,
-        CancelledAt: CreateCancelledAt(cancelledBookingFutureTourDate));
+        CancelledAt: CreateCancelledAt(cancelledBookingFutureTourDate),
+        TastingCount: 5);
     private static readonly BookingSeedDefinition pastBookingDefinition = new(
         CustomerName: "Grace Valentine",
         CustomerEmail: "grace.valentine@sweetheart.net",
@@ -68,7 +71,8 @@ public static class FoodTourTestDataSeeder {
         IsConfirmed: true,
         IsCancelled: false,
         RequiresEmailConfirmation: false,
-        CancelledAt: null);
+        CancelledAt: null,
+        TastingCount: 5);
     private static readonly BookingSeedDefinition supplierVisitBookingDefinition = new(
         CustomerName: "Clover Greene",
         CustomerEmail: "clover.greene@luckycharm.com",
@@ -81,7 +85,8 @@ public static class FoodTourTestDataSeeder {
         IsConfirmed: true,
         IsCancelled: false,
         RequiresEmailConfirmation: false,
-        CancelledAt: null);
+        CancelledAt: null,
+        TastingCount: 5);
     private static readonly BookingSeedDefinition partnerConfirmationBookingDefinition = new(
         CustomerName: "Mrs Test",
         CustomerEmail: "mrstest@example.com",
@@ -94,7 +99,8 @@ public static class FoodTourTestDataSeeder {
         IsConfirmed: false,
         IsCancelled: false,
         RequiresEmailConfirmation: true,
-        CancelledAt: null);
+        CancelledAt: null,
+        TastingCount: 5);
 
     public static async Task<FoodTourSeedData> SeedAsync(FoodTourContext context) {
         bool hasExistingData = await context.Suppliers.AnyAsync()
@@ -313,6 +319,7 @@ public static class FoodTourTestDataSeeder {
             IsCancelled = bookingDefinition.IsCancelled,
             CancelledAt = bookingDefinition.CancelledAt,
             RequiresEmailConfirmation = bookingDefinition.RequiresEmailConfirmation,
+            TastingCount = bookingDefinition.TastingCount,
             BookingSuppliers = bookingSuppliers
         };
     }
@@ -369,7 +376,8 @@ public static class FoodTourTestDataSeeder {
             booking.IsConfirmed,
             booking.IsCancelled,
             booking.RequiresEmailConfirmation,
-            booking.TotalGuests);
+            booking.TotalGuests,
+            booking.TastingCount);
     }
 
     private sealed record BookingSeedDefinition(
@@ -384,5 +392,6 @@ public static class FoodTourTestDataSeeder {
         bool IsConfirmed,
         bool IsCancelled,
         bool RequiresEmailConfirmation,
-        DateTime? CancelledAt);
+        DateTime? CancelledAt,
+        int TastingCount);
 }
