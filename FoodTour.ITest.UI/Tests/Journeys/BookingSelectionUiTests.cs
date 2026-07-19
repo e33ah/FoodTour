@@ -6,7 +6,7 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     private const string BOOKING_CANCELLED_MESSAGE = "This booking has been cancelled.";
     private const string BOOKING_FOUND_MESSAGE = "We've found your booking!";
     private const string BOOKING_NOT_FOUND_MESSAGE = "We couldn't find your booking.";
-    private const string BOOKING_REFERENCE_REQUIRED_MESSAGE = "Please enter your booking reference to validate your booking.";
+    private const string SELECTION_LOCKED_MESSAGE = "Please enter your email and booking reference to enable tasting selection.";
     private const string BOOKING_SUMMARY_PATH = "/Home/BookingSummary";
     private const string BOOKING_SUMMARY_PATH_TEMPLATE = "/Home/BookingSummary?qrToken={0}";
     private const string BOOKING_SUMMARY_URL_PATTERN = "**/Home/BookingSummary?*";
@@ -438,21 +438,71 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     }
 
     [Fact]
-    public Task SubmitSelection_ShowsBookingReferenceValidation_WhenLookupHasNotValidatedBooking() {
+    public Task CreateTourButton_IsDisabled_WhenBookingNotValidated() {
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
 
             await sut.GotoAsync();
-            var supplierNames = await sut.GetAvailableSupplierNamesAsync(Fixture.SeedData.RequiredSupplierSelectionCount);
-            supplierNames.Count.ShouldBe(Fixture.SeedData.RequiredSupplierSelectionCount);
 
-            await sut.CustomerEmailInput.FillAsync("person@example.com");
-            foreach (string supplierName in supplierNames) {
-                await sut.ToggleSupplierAsync(supplierName);
+            await Expect(sut.CreateTourButton).ToBeDisabledAsync();
+        });
+    }
+
+    [Fact]
+    public Task SelectingSupplier_ShowsLockedMessage_WhenBookingNotYetValidated() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new BookingSelectionPage(page);
+
+            await sut.GotoAsync();
+            var supplierNames = await sut.GetAvailableSupplierNamesAsync(1);
+            supplierNames.Count.ShouldBe(1);
+
+            await sut.ToggleSupplierAsync(supplierNames[0]);
+
+            await Expect(sut.BookingStatusMessage).ToContainTextAsync(SELECTION_LOCKED_MESSAGE);
+            await Expect(sut.CreateTourButton).ToBeDisabledAsync();
+        });
+    }
+
+    [Fact]
+    public Task SelectionRelocks_WhenPreviouslyValidatedBookingDetailsAreCleared() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new BookingSelectionPage(page);
+            var booking = await CreateTemporaryBookingAsync(lookupResetTourDate);
+
+            try {
+                await sut.GotoAsync();
+                await sut.EnterBookingDetailsAsync(booking.CustomerEmail, booking.PurchaseCode);
+
+                await sut.PurchaseCodeInput.FillAsync(string.Empty);
+
+                await Expect(sut.BookingStatusMessage).ToBeHiddenAsync();
+                await Expect(sut.CreateTourButton).ToBeDisabledAsync();
+
+                var supplierNames = await sut.GetAvailableSupplierNamesAsync(1);
+                await sut.ToggleSupplierAsync(supplierNames[0]);
+                await Expect(sut.BookingStatusMessage).ToContainTextAsync(SELECTION_LOCKED_MESSAGE);
+            } finally {
+                await DeleteTemporaryBookingAsync(booking.Id);
             }
-            await sut.SubmitSelectionAsync();
+        });
+    }
 
-            await Expect(page.GetByText(BOOKING_REFERENCE_REQUIRED_MESSAGE)).ToBeVisibleAsync();
+    [Fact]
+    public Task GotoIndex_UnlocksSelectionAfterValidation_WhenNavigatedViaQrToken() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new BookingSelectionPage(page);
+            var booking = await CreateTemporaryBookingAsync(DateTime.SpecifyKind(DateTime.Today.AddDays(14).AddHours(11), DateTimeKind.Utc));
+
+            try {
+                await sut.GotoAsync(booking.QrToken);
+                await Expect(sut.BookingStatusMessage).ToContainTextAsync(BOOKING_FOUND_MESSAGE);
+
+                var selectedSupplierNames = await sut.GetAvailableSupplierNamesAsync(Fixture.SeedData.RequiredSupplierSelectionCount);
+                await sut.SelectSuppliersAsync(selectedSupplierNames);
+            } finally {
+                await DeleteTemporaryBookingAsync(booking.Id);
+            }
         });
     }
 

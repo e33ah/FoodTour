@@ -36,8 +36,68 @@ document.addEventListener('DOMContentLoaded', () => {
     let messageTimeout;
     let currentMessage = null;
 
+    // Whether supplier selection is locked until a booking is validated
+    let selectionLocked = true;
+
+    const showSelectionLockedMessage = () => {
+        if (bookingStatusMessage && bookingStatusIcon && bookingStatusText) {
+            showBookingMessage('alert-warning', 'bi-lock-fill', 'Please enter your email and booking reference to enable tasting selection.');
+            // focus is handled inside showBookingMessage
+        } else {
+            // Fallback small inline message near the form
+            if (!currentMessage) {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'alert alert-warning mt-2 mb-3';
+                messageElement.setAttribute('role', 'alert');
+                messageElement.setAttribute('aria-live', 'polite');
+                messageElement.setAttribute('aria-atomic', 'true');
+                messageElement.setAttribute('tabindex', '-1');
+                messageElement.textContent = 'Please enter your email and booking reference to enable tasting selection.';
+                const mainForm = document.querySelector('form[data-max-selections]');
+                if (mainForm) {
+                    mainForm.parentNode.insertBefore(messageElement, mainForm);
+                    currentMessage = messageElement;
+                    messageElement.focus();
+                    clearTimeout(messageTimeout);
+                    messageTimeout = setTimeout(() => {
+                        if (messageElement.parentNode) messageElement.remove();
+                        currentMessage = null;
+                    }, ERROR_TIMEOUT_MS);
+                }
+            } else {
+                currentMessage.focus();
+            }
+        }
+    };
+
+    const lockSelection = () => {
+        selectionLocked = true;
+        checkboxes.forEach(cb => cb.disabled = true);
+        supplierCards.forEach(card => {
+            card.classList.add('selection-locked');
+            card.setAttribute('tabindex', '-1');
+            card.setAttribute('aria-disabled', 'true');
+        });
+        if (createTourBtn) createTourBtn.disabled = true;
+    };
+
+    const unlockSelection = () => {
+        selectionLocked = false;
+        checkboxes.forEach(cb => cb.disabled = false);
+        supplierCards.forEach(card => {
+            card.classList.remove('selection-locked');
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('aria-disabled', 'false');
+        });
+        updateButtonState();
+    };
+
     // Utility functions
     const updateButtonState = () => {
+        if (selectionLocked) {
+            if (createTourBtn) createTourBtn.disabled = true;
+            return;
+        }
         const checkedCount = document.querySelectorAll('.supplier-checkbox:checked').length;
         if (createTourBtn) {
             createTourBtn.disabled = checkedCount !== maxSelections;
@@ -143,6 +203,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const handleCheckboxChange = (checkbox) => {
+        // Guard against programmatic or legacy-browser events while selection is locked
+        if (selectionLocked) {
+            checkbox.checked = false;
+            return;
+        }
+
         const checkedCount = document.querySelectorAll('.supplier-checkbox:checked').length;
         const card = checkbox.closest('.supplier-card');
         if (currentMessage) {
@@ -158,6 +224,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const toggleSupplierCheckbox = (card) => {
+        if (selectionLocked) {
+            showSelectionLockedMessage();
+            return;
+        }
+
         const checkbox = card.querySelector('.supplier-checkbox');
         checkbox.checked = !checkbox.checked;
         handleCheckboxChange(checkbox);
@@ -288,6 +359,12 @@ document.addEventListener('DOMContentLoaded', () => {
             bookingStatusIcon.className = `bi ${iconClass}`;
             bookingStatusText.textContent = ` ${message}`;
             bookingStatusMessage.classList.remove('d-none');
+            // Only move focus if the user is not currently typing in a booking input field,
+            // to avoid interrupting keystrokes during debounced background validation.
+            const activeEl = document.activeElement;
+            if (activeEl !== emailInput && activeEl !== purchaseCodeInput) {
+                bookingStatusMessage.focus();
+            }
         }
     };
 
@@ -298,6 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (bookingIdInput) {
             bookingIdInput.value = bookingId;
         }
+        // Unlock selection now the booking is validated
+        unlockSelection();
         showBookingMessage('alert-success', 'bi-check-circle-fill', message);
     };
 
@@ -332,6 +411,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bookingIdInput) {
                 bookingIdInput.value = '';
             }
+            // Lock selection whenever lookup state is reset
+            lockSelection();
         }
         if (resetOpeningTimes) {
             restoreInitialOpeningTimes();
@@ -412,6 +493,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (data.isConfirmed) {
                     if (typeof data.tastingCount === 'number') setMaxSelections(data.tastingCount);
                     applyTourDateOpeningTimes(data.tourDate);
+                    // Treat confirmed bookings as validated for selection
+                    if (typeof data.bookingId !== 'undefined' && data.bookingId !== null) {
+                        validatedBookingId = data.bookingId;
+                        if (bookingIdInput) bookingIdInput.value = data.bookingId;
+                    }
+                    unlockSelection();
                     showBookingConfirmedModal(email, purchaseCode, data.qrToken);
                 } else {
                     showBookingSuccess(data.message, data.bookingId, email, purchaseCode);
@@ -523,6 +610,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialise
     setupCheckboxes();
     setupSupplierCards();
+    // Lock selection until booking is validated by default
+    lockSelection();
     // Ensure heading and button state use the initial maxSelections
     setMaxSelections(maxSelections);
 

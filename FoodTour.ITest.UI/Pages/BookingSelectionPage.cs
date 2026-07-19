@@ -119,7 +119,13 @@ public sealed class BookingSelectionPage(IPage page) {
         var supplierCard = GetSupplierCard(supplierName);
 
         await Expect(supplierCard).ToBeVisibleAsync(new() { Timeout = 5000 });
-        await supplierCard.ClickAsync();
+        // If the card is aria-disabled (locked), force the click so the UI's locked-message can be shown
+        string? ariaDisabled = await supplierCard.GetAttributeAsync("aria-disabled");
+        if (ariaDisabled == "true") {
+            await supplierCard.ClickAsync(new() { Force = true });
+        } else {
+            await supplierCard.ClickAsync();
+        }
     }
 
     public async Task SubmitSelectionAsync() {
