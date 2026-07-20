@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-20 Vesuvius 
+
+### Added
+
+#### Booking Flow
+- Support three‑tasting tour bookings: persisted TastingCount on the Booking model, parsing FareHarbor items to derive tasting count, and API/webhook handling to set the count.
+- EF Core migration added (20260718145929_AddThreeTastingTour) and model snapshot updated — deploys must run the migration.
+
+### Changed
+
+#### Admin Experience
+- Admin bookings: link booking visits to the Visits list and highlight the target row; booking-detail rows are clickable, keyboard-accessible, and preserve list context when navigating back.
+
+### Fixed
+
+#### Booking Flow
+- Past bookings tile now navigates to the past bookings filter.
+- Tour validation now surfaces results for tours in the past.
+- Tasting selection is locked until booking validation completes; improved accessibility and client-side guards to prevent programmatic bypass.
+
+### Changed
+
+#### Testing & Quality
+- Unit, API and UI tests updated to cover the three‑tasting flow, locked/unlocked selection behaviour, and admin bookings navigation.
+
 ## [1.1.3] - 2026-07-16
 
 ### Added
@@ -189,6 +214,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflow with automated GitHub release creation
 - `IsLocalDeployEnabled` flag for controlling auto-migrations per environment
 
+[1.2.0]: https://github.com/e33ah/FoodTour/releases/tag/v1.2.0
 [1.1.3]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.3
 [1.1.2]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.2
 [1.1.1]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.1
