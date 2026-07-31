@@ -361,7 +361,7 @@ public class HomeController(
     private async Task<FoodTourVM> CreateFoodTourViewModel(DateTime? tourDate = null) {
         List<Supplier> suppliers;
         try {
-            suppliers = await context.Suppliers.Where(s => s.IsActive).ToListAsync();
+            suppliers = await context.Suppliers.Where(s => s.IsActive).OrderBy(s => s.Name).ToListAsync();
             Log.Debug("Retrieved {SupplierCount} active suppliers from the database.", suppliers.Count);
         } catch (Exception ex) {
             Log.Error(ex, "Failed to retrieve active suppliers from the database.");
