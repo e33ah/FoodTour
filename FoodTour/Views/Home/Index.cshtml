@@ -3,6 +3,13 @@
 @{
 	ViewData["Title"] = "Home Page";
 	ViewData["TourDate"] = Model.TourDate;
+	List<string> availableTags = Model.Suppliers
+		.SelectMany(supplier => new[] { supplier.Tag1, supplier.Tag2, supplier.Tag3, supplier.Tag4 })
+		.Where(tag => !string.IsNullOrWhiteSpace(tag))
+		.Select(tag => tag!.Trim())
+		.Distinct(StringComparer.OrdinalIgnoreCase)
+		.OrderBy(tag => tag)
+		.ToList();
 }
 
 <div class="text-center">
@@ -112,6 +119,30 @@
 								</div>
 							</div>
 						</div>
+						@if (availableTags.Count > 0) {
+							<div class="supplier-filter-bar mb-2">
+								<div class="supplier-tag-filter d-flex justify-content-end">
+									<div class="text-start supplier-tag-filter-control">
+										<div class="d-flex align-items-center gap-1">
+											<label for="supplierTagFilter" class="visually-hidden">Filter tasting experiences by type</label>
+											<button type="button" id="supplierTagFilterIconButton" class="btn btn-link supplier-tag-filter-icon-btn text-muted p-0" aria-label="Filter tasting experiences by type" title="Filter tasting experiences by type" disabled tabindex="-1" aria-disabled="true">
+												<i id="supplierTagFilterIcon" class="bi bi-funnel" aria-hidden="true"></i>
+											</button>
+											<select id="supplierTagFilter" class="form-select form-select-sm" style="min-width: 180px; max-width: 240px;" aria-label="Filter tasting experiences by type">
+												<option value="">All experiences</option>
+											@foreach (var tag in availableTags) {
+												<option value="@tag">@tag</option>
+											}
+											</select>
+										</div>
+										<div id="supplierTagFilterStatus" class="small text-muted mt-1 d-none" aria-live="polite"></div>
+										<div id="supplierTagNoResults" class="small text-muted mt-1 d-none" role="status" aria-live="polite">
+											No tasting experiences match this type.
+										</div>
+									</div>
+								</div>
+							</div>
+						}
 						@foreach (var item in Model.Suppliers) {
 							<partial name="_SupplierCard" model="item" />
 						}

@@ -46,6 +46,38 @@ body {
   background-color: #f8fff9;
 }
 
+.supplier-card.tag-filter-hidden {
+  display: none;
+}
+
+.supplier-tag-filter .btn-link {
+  text-decoration: none;
+}
+
+.supplier-tag-filter .btn-link:hover,
+.supplier-tag-filter .btn-link:focus {
+  text-decoration: underline;
+}
+
+.supplier-filter-bar {
+  min-height: 2rem;
+}
+
+.supplier-tag-filter-control .supplier-tag-filter-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  line-height: 1;
+}
+
+@media (max-width: 576px) {
+  .supplier-tag-filter {
+    justify-content: flex-start !important;
+  }
+}
+
 /* Logo styles */
 .page-logo {
   max-height: 100px;

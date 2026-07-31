@@ -31,6 +31,14 @@ public sealed class BookingSelectionPage(IPage page) {
 
     public ILocator EmailValidationMessage => page.GetByText(EMAIL_VALIDATION_MESSAGE);
 
+    public ILocator ExperienceTypeFilter => page.Locator("#supplierTagFilter");
+
+    public ILocator ExperienceTypeFilterButton => page.Locator("#supplierTagFilterIconButton");
+
+    public ILocator ExperienceTypeFilterStatus => page.Locator("#supplierTagFilterStatus");
+
+    public ILocator ExperienceTypeFilterNoResults => page.Locator("#supplierTagNoResults");
+
     public ILocator PageHeading => page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = FOOD_TOUR_PAGE_HEADING });
 
     public ILocator MaxSelectionMessage => page.GetByRole(AriaRole.Alert).Filter(new LocatorFilterOptions {
@@ -130,6 +138,20 @@ public sealed class BookingSelectionPage(IPage page) {
 
     public async Task SubmitSelectionAsync() {
         await CreateTourButton.ClickAsync();
+    }
+
+    public async Task FilterSuppliersByExperienceTypeAsync(string experienceType) {
+        await ExperienceTypeFilter.SelectOptionAsync(new SelectOptionValue {
+            Label = experienceType
+        });
+    }
+
+    public async Task ClearExperienceTypeFilterAsync() {
+        await ExperienceTypeFilterButton.ClickAsync();
+    }
+
+    public ILocator SupplierCard(string supplierName) {
+        return GetSupplierCard(supplierName);
     }
 
     private ILocator GetSupplierCard(string supplierName) {

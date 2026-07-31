@@ -32,6 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkboxes = document.querySelectorAll('.supplier-checkbox');
     const supplierCards = document.querySelectorAll('.supplier-card');
     const createTourBtn = document.getElementById('createTourBtn');
+    const supplierTagFilter = document.getElementById('supplierTagFilter');
+    const supplierTagFilterIconButton = document.getElementById('supplierTagFilterIconButton');
+    const supplierTagFilterIcon = document.getElementById('supplierTagFilterIcon');
+    const supplierTagFilterStatus = document.getElementById('supplierTagFilterStatus');
+    const supplierTagNoResults = document.getElementById('supplierTagNoResults');
 
     let messageTimeout;
     let currentMessage = null;
@@ -257,6 +262,103 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleSupplierCheckbox(card);
             });
         });
+    };
+
+    const normaliseTag = (tag) => (tag || '').trim().toLowerCase();
+
+    const getPluralSuffix = (value) => value === 1 ? '' : 's';
+
+    const updateSupplierTagFilterIcon = (selectedTag) => {
+        if (!supplierTagFilterIconButton || !supplierTagFilterIcon) {
+            return;
+        }
+
+        if (selectedTag) {
+            supplierTagFilterIcon.className = 'bi bi-x-circle';
+            supplierTagFilterIconButton.disabled = false;
+            supplierTagFilterIconButton.removeAttribute('tabindex');
+            supplierTagFilterIconButton.setAttribute('aria-disabled', 'false');
+            supplierTagFilterIconButton.setAttribute('aria-label', 'Clear type filter');
+            supplierTagFilterIconButton.setAttribute('title', 'Clear type filter');
+            return;
+        }
+
+        supplierTagFilterIcon.className = 'bi bi-funnel';
+        supplierTagFilterIconButton.disabled = true;
+        supplierTagFilterIconButton.setAttribute('tabindex', '-1');
+        supplierTagFilterIconButton.setAttribute('aria-disabled', 'true');
+        supplierTagFilterIconButton.setAttribute('aria-label', 'Filter tasting experiences by type');
+        supplierTagFilterIconButton.setAttribute('title', 'Filter tasting experiences by type');
+    };
+
+    const updateSupplierTagFilterFeedback = (selectedTag, visibleCount, totalCount, hiddenSelectedCount) => {
+        if (!supplierTagFilterStatus || !supplierTagNoResults) {
+            return;
+        }
+
+        if (!selectedTag) {
+            supplierTagFilterStatus.classList.add('d-none');
+            supplierTagFilterStatus.textContent = '';
+            supplierTagNoResults.classList.add('d-none');
+            return;
+        }
+
+        if (visibleCount === 0) {
+            supplierTagFilterStatus.classList.add('d-none');
+            supplierTagFilterStatus.textContent = '';
+            supplierTagNoResults.classList.remove('d-none');
+            return;
+        }
+
+        supplierTagNoResults.classList.add('d-none');
+        supplierTagFilterStatus.classList.remove('d-none');
+
+        const hiddenSelectedSummary = hiddenSelectedCount > 0
+            ? ` ${hiddenSelectedCount} selected item${getPluralSuffix(hiddenSelectedCount)} hidden by the filter.`
+            : '';
+        supplierTagFilterStatus.textContent = `${visibleCount} of ${totalCount} tasting experience${getPluralSuffix(totalCount)} shown.${hiddenSelectedSummary}`;
+    };
+
+    const applySupplierTagFilter = (selectedTag) => {
+        const normalisedSelectedTag = normaliseTag(selectedTag);
+        let visibleCardCount = 0;
+        let hiddenSelectedCardCount = 0;
+
+        supplierCards.forEach(card => {
+            const checkbox = card.querySelector('.supplier-checkbox');
+
+            if (!normalisedSelectedTag) {
+                card.classList.remove('tag-filter-hidden');
+                card.removeAttribute('aria-hidden');
+                return;
+            }
+
+            const supplierTags = (card.dataset.supplierTags || '')
+                .split('|')
+                .map(normaliseTag)
+                .filter(Boolean);
+
+            const shouldShowCard = supplierTags.includes(normalisedSelectedTag);
+            card.classList.toggle('tag-filter-hidden', !shouldShowCard);
+
+            if (shouldShowCard) {
+                card.removeAttribute('aria-hidden');
+                visibleCardCount++;
+            } else {
+                card.setAttribute('aria-hidden', 'true');
+                if (checkbox?.checked) {
+                    hiddenSelectedCardCount++;
+                }
+            }
+        });
+
+        if (!normalisedSelectedTag) {
+            visibleCardCount = supplierCards.length;
+            hiddenSelectedCardCount = 0;
+        }
+
+        updateSupplierTagFilterFeedback(normalisedSelectedTag, visibleCardCount, supplierCards.length, hiddenSelectedCardCount);
+        updateSupplierTagFilterIcon(normalisedSelectedTag);
     };
 
     // Email validation helpers
@@ -605,6 +707,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         restorePostedSelections();
+    }
+
+    if (supplierTagFilter) {
+        supplierTagFilter.addEventListener('change', () => {
+            applySupplierTagFilter(supplierTagFilter.value);
+        });
+    }
+
+    if (supplierTagFilterIconButton && supplierTagFilter) {
+        supplierTagFilterIconButton.addEventListener('click', () => {
+            if (supplierTagFilter.value) {
+                supplierTagFilter.value = '';
+                applySupplierTagFilter('');
+            }
+            supplierTagFilter.focus();
+        });
     }
 
     // Initialise

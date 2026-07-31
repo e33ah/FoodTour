@@ -18,6 +18,61 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
     private const string OPENING_TIMES_SUPPLIER = "Coffee and Cake";
 
     [Fact]
+    public Task GotoIndex_HidesExperienceTypeFilter_WhenActiveSuppliersHaveNoTags() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new BookingSelectionPage(page);
+            var originalSupplierTags = await ClearActiveSupplierTagsAsync();
+
+            try {
+                await sut.GotoAsync();
+                await Expect(sut.ExperienceTypeFilter).ToHaveCountAsync(0);
+                await Expect(sut.ExperienceTypeFilterButton).ToHaveCountAsync(0);
+            } finally {
+                await RestoreSupplierTagsAsync(originalSupplierTags);
+            }
+        });
+    }
+
+    [Fact]
+    public Task FilterSuppliersByType_FiltersAndClears_WhenUsingFilterControls() {
+        return ExecutePageTestAsync(async page => {
+            var sut = new BookingSelectionPage(page);
+
+            await sut.GotoAsync();
+
+            await Expect(sut.ExperienceTypeFilter).ToBeVisibleAsync();
+            await Expect(sut.SupplierCard("Cream Teas")).ToBeVisibleAsync();
+
+            // Icon button should be inactive (disabled) before any filter is selected
+            await Expect(sut.ExperienceTypeFilterButton).ToBeDisabledAsync();
+            await Expect(sut.ExperienceTypeFilterStatus).ToBeHiddenAsync();
+
+            await sut.FilterSuppliersByExperienceTypeAsync("Lunch");
+
+            await Expect(sut.SupplierCard("Fish and Chips")).ToBeVisibleAsync();
+            await Expect(sut.SupplierCard("Pirates Pub")).ToBeVisibleAsync();
+            await Expect(sut.SupplierCard("Seafood Shack")).ToBeVisibleAsync();
+            await Expect(sut.SupplierCard("Cream Teas")).ToBeHiddenAsync();
+
+            // Status message should describe the filtered result; icon button should be enabled as a clear action
+            await Expect(sut.ExperienceTypeFilterStatus).ToBeVisibleAsync();
+            await Expect(sut.ExperienceTypeFilterStatus).ToContainTextAsync("of");
+            await Expect(sut.ExperienceTypeFilterStatus).ToContainTextAsync("tasting experience");
+            await Expect(sut.ExperienceTypeFilterButton).ToBeEnabledAsync();
+
+            // Note: the no-results message (#supplierTagNoResults) cannot be reached through the normal UI
+            // because the dropdown is populated from actual supplier tags, so every option always matches
+            // at least one active supplier card.
+
+            await sut.ClearExperienceTypeFilterAsync();
+
+            await Expect(sut.SupplierCard("Cream Teas")).ToBeVisibleAsync();
+            await Expect(sut.ExperienceTypeFilterStatus).ToBeHiddenAsync();
+            await Expect(sut.ExperienceTypeFilterButton).ToBeDisabledAsync();
+        });
+    }
+
+    [Fact]
     public Task CreateTour_NavigatesToBookingConfirmation_WhenBookingIsValidAndSuppliersAreSelected() {
         return ExecutePageTestAsync(async page => {
             var sut = new BookingSelectionPage(page);
@@ -574,6 +629,53 @@ public class BookingSelectionUiTests(FoodTourApplicationFixture fixture) : UiTes
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
+    private async Task<List<TemporarySupplierTagState>> ClearActiveSupplierTagsAsync() {
+        DbContextOptionsBuilder<FoodTourContext> optionsBuilder = new();
+        optionsBuilder.UseSqlServer(Fixture.ConnectionString);
+
+        await using var context = new FoodTourContext(optionsBuilder.Options);
+        var suppliers = await context.Suppliers
+            .Where(existingSupplier => existingSupplier.IsActive)
+            .OrderBy(existingSupplier => existingSupplier.Id)
+            .ToListAsync(TestContext.Current.CancellationToken);
+
+        List<TemporarySupplierTagState> result = [];
+        foreach (var supplier in suppliers) {
+            result.Add(new TemporarySupplierTagState(supplier.Id, supplier.Tag1, supplier.Tag2, supplier.Tag3, supplier.Tag4));
+            supplier.Tag1 = null;
+            supplier.Tag2 = null;
+            supplier.Tag3 = null;
+            supplier.Tag4 = null;
+        }
+
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return result;
+    }
+
+    private async Task RestoreSupplierTagsAsync(IReadOnlyList<TemporarySupplierTagState> supplierTagStates) {
+        DbContextOptionsBuilder<FoodTourContext> optionsBuilder = new();
+        optionsBuilder.UseSqlServer(Fixture.ConnectionString);
+
+        await using var context = new FoodTourContext(optionsBuilder.Options);
+        var suppliersById = await context.Suppliers
+            .Where(existingSupplier => supplierTagStates.Select(state => state.Id).Contains(existingSupplier.Id))
+            .ToDictionaryAsync(existingSupplier => existingSupplier.Id, TestContext.Current.CancellationToken);
+
+        foreach (var supplierTagState in supplierTagStates) {
+            if (!suppliersById.TryGetValue(supplierTagState.Id, out var supplier)) {
+                continue;
+            }
+
+            supplier.Tag1 = supplierTagState.Tag1;
+            supplier.Tag2 = supplierTagState.Tag2;
+            supplier.Tag3 = supplierTagState.Tag3;
+            supplier.Tag4 = supplierTagState.Tag4;
+        }
+
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
     private sealed record TemporaryBookingData(int Id, string CustomerEmail, string PurchaseCode, Guid QrToken = default);
     private sealed record TemporaryPartnerBookingData(int Id, string CustomerEmail, string VoucherNumber);
+    private sealed record TemporarySupplierTagState(int Id, string? Tag1, string? Tag2, string? Tag3, string? Tag4);
 }
