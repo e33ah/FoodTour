@@ -1,13 +1,13 @@
 namespace FoodTour.Pipeline;
 
-[GitHubActions("foodtour-ci", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.Push, GitHubActionsTrigger.PullRequest },
+[GitHubActions("foodtour-ci", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.Push, GitHubActionsTrigger.PullRequest, GitHubActionsTrigger.WorkflowDispatch },
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests) }, AutoGenerate = false)]
 [GitHubActions("foodtour-cd", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch },
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests), nameof(Publish), nameof(Release) },
     ImportSecrets = new[] { nameof(FtpHost), nameof(FtpUser), nameof(FtpPassword), nameof(GoogleClientId), nameof(GoogleClientSecret) }, AutoGenerate = false)]
 [GitHubActions("foodtour-itest", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch, GitHubActionsTrigger.PullRequest },
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests), nameof(IntegrationTests) }, AutoGenerate = false)]
-public partial class Build : NukeBuild {
+public partial class Build : FalloutBuild {
     public static int Main() {
         if (IsLocalBuild) {
             var config = new ConfigurationBuilder()

@@ -1,6 +1,6 @@
 namespace FoodTour.Pipeline;
 
-public partial class Build : NukeBuild {
+public partial class Build : FalloutBuild {
     public Target IntegrationTests => _ => _
         .DependsOn(InstallPlaywrightBrowsers)
         .Executes(() => {

@@ -1,6 +1,6 @@
-﻿namespace FoodTour.Pipeline;
+namespace FoodTour.Pipeline;
 
-public partial class Build : NukeBuild {
+public partial class Build : FalloutBuild {
     public Target BuildSolution => _ => _
         .Executes(() => {
             DotNetTasks.DotNetBuild(s => s

@@ -12,7 +12,7 @@ FoodTour allows users to browse and select from a list of active food suppliers 
 - **Language**: C# 14.0
 - **Database**: SQL Server with Entity Framework Core
 - **Frontend**: Bootstrap 5, Razor Views
-- **Build System**: NUKE Build Automation
+- **Build System**: FALLOUT Build Automation
 - **CI/CD**: GitHub Actions
 
 ## Getting Started
@@ -22,7 +22,7 @@ FoodTour allows users to browse and select from a list of active food suppliers 
 - .NET 10 SDK
 - SQL Server (LocalDB or full installation)
 - Visual Studio 2026 or VS Code
-- Nuke global tool (optional)
+- Fallout global tool (optional)
 - Playwright browser binaries for the UI integration test project
 
 ### Database Setup
@@ -190,9 +190,9 @@ Use a separate Google OAuth app for production to keep audit logs clean.
 
 ## CI/CD
 
-The project uses NUKE for build automation. The build CI pipeline is set to run as the default.
+The project uses FALLOUT for build automation. The build CI pipeline is set to run as the default.
 
-To run the CI pipeline locally using NUKE, use the following commands based on your operating system:
+To run the CI pipeline locally using FALLOUT, use the following commands based on your operating system:
 
 ```
 # Windows
@@ -201,11 +201,11 @@ To run the CI pipeline locally using NUKE, use the following commands based on y
 # Linux/macOS
 ./build.sh 
 
-# Using Nuke global tool
-nuke
+# Using Fallout global tool
+fallout
 ```
 
-To run the CD pipeline locally with the Nuke global tool, add `FtpHost`, `FtpUser`, `FtpPassword`, `GoogleClientId`, and `GoogleClientSecret` to the pipeline user secrets:
+To run the CD pipeline locally with the Fallout global tool, add `FtpHost`, `FtpUser`, `FtpPassword`, `GoogleClientId`, and `GoogleClientSecret` to the pipeline user secrets:
 ```
 dotnet user-secrets set "FtpHost" "YOUR_FTP_HOST" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
 dotnet user-secrets set "FtpUser" "YOUR_FTP_USER" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
@@ -216,7 +216,7 @@ dotnet user-secrets set "GoogleClientSecret" "YOUR_CLIENT_SECRET" --project Food
 
 Local deployment is disabled by default (`IsLocalDeployEnabled = false` in `Parameters.cs`) to prevent accidental deploys. To enable it temporarily, set it to `true` before running:
 ```
-nuke Release
+fallout Release
 ```
 
 > **Remember to revert `IsLocalDeployEnabled` to `false` after a local deploy.**

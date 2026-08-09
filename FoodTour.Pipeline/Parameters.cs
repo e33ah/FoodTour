@@ -1,6 +1,6 @@
-﻿namespace FoodTour.Pipeline;
+namespace FoodTour.Pipeline;
 
-public partial class Build : NukeBuild {
+public partial class Build : FalloutBuild {
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild && !IsLocalDeployEnabled ? Configuration.Debug : Configuration.Release;
 
