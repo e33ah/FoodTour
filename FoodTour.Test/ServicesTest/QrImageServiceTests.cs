@@ -24,7 +24,8 @@ public class QrImageServiceTests {
     public void GenerateQrForUrl_ShouldThrowArgumentException_WhenUrlIsEmpty() {
         string url = string.Empty;
 
-        Should.Throw<ArgumentException>(() => sut.GenerateQrForUrl(url));
+        var exception = Should.Throw<ArgumentException>(() => sut.GenerateQrForUrl(url));
+        exception.Message.ShouldBe("URL cannot be null or empty. (Parameter 'url')");
     }
 
     [Theory]

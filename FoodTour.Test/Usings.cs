@@ -1,11 +1,14 @@
 global using System.ComponentModel.DataAnnotations;
+global using System.Net;
 global using System.Reflection;
 global using System.Security.Claims;
 global using System.Text.Json;
+global using FoodTour.Authorization;
 global using FoodTour.Controllers;
 global using FoodTour.Models;
 global using FoodTour.Services;
 global using Microsoft.AspNetCore.Authentication;
+global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.Authentication.Cookies;
 global using Microsoft.AspNetCore.DataProtection;
 global using Microsoft.AspNetCore.Http;
