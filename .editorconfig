@@ -189,3 +189,7 @@ dotnet_diagnostic.IDE1006.severity = error
 csharp_indent_case_contents = true
 csharp_indent_case_contents_when_block = true
 csharp_space_after_keywords_in_control_flow_statements = true
+
+# Generated code
+[**/Migrations/**]
+generated_code = true

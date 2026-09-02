@@ -9,10 +9,10 @@ public class Visit {
     public int SupplierId { get; set; }
     public Supplier Supplier { get; set; } = null!;
 
-    public bool IsClaimed { get; set; } = false;
+    public bool IsClaimed { get; set; }
     public DateTime? ClaimedAt { get; set; }
     public int TastingExperiencesClaimed { get; set; }
 
-    public bool IsSupplierReimbursed { get; set; } = false;
+    public bool IsSupplierReimbursed { get; set; }
     public DateTime? ReimbursedAt { get; set; }
 }
