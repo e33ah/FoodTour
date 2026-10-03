@@ -181,14 +181,18 @@ public sealed class AdminSuppliersApiTests(ApiApplicationFixture fixture) : ApiT
         };
         request.Headers.Add("Cookie", antiForgeryData.CookieHeader);
 
-        var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        try {
+            var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
 
-        response.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+            response.StatusCode.ShouldBe(HttpStatusCode.Redirect);
 
-        await using var context = Fixture.CreateDbContext();
-        var supplier = await context.Suppliers.FindAsync([supplierId], TestContext.Current.CancellationToken);
-        supplier.ShouldNotBeNull();
-        supplier.IsActive.ShouldBeFalse();
+            await using var context = Fixture.CreateDbContext();
+            var supplier = await context.Suppliers.FindAsync([supplierId], TestContext.Current.CancellationToken);
+            supplier.ShouldNotBeNull();
+            supplier.IsActive.ShouldBeFalse();
+        } finally {
+            await RestoreSupplierAsync(supplierId);
+        }
     }
 
     [Fact]
@@ -215,5 +219,14 @@ public sealed class AdminSuppliersApiTests(ApiApplicationFixture fixture) : ApiT
         var client = CreateApiClient();
         client.DefaultRequestHeaders.Add("X-Test-Auth", "true");
         return client;
+    }
+
+    private async Task RestoreSupplierAsync(int supplierId) {
+        await using var context = Fixture.CreateDbContext();
+        var supplier = await context.Suppliers.FindAsync([supplierId], TestContext.Current.CancellationToken);
+        if (supplier is not null) {
+            supplier.IsActive = true;
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
     }
 }

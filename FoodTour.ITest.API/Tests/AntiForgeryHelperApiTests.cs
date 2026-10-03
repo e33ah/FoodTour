@@ -106,12 +106,12 @@ public class AntiForgeryHelperApiTests(ApiApplicationFixture fixture) : ApiTestB
             return;
         }
 
-        List<Visit> visits = await context.Visits
+        var visits = await context.Visits
             .Where(visit => visit.BookingId == bookingId)
             .ToListAsync(CancellationToken.None);
         context.Visits.RemoveRange(visits);
 
-        List<BookingSupplier> bookingSuppliers = await context.BookingSuppliers
+        var bookingSuppliers = await context.BookingSuppliers
             .Where(bookingSupplier => bookingSupplier.BookingId == bookingId)
             .ToListAsync(CancellationToken.None);
         context.BookingSuppliers.RemoveRange(bookingSuppliers);
