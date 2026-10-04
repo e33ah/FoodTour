@@ -1,6 +1,13 @@
 namespace FoodTour.Test.Models;
 
 public class SupplierTests {
+    [Fact]
+    public void Constructor_RequiresConfirmationCode_WhenCreatedWithDefaults() {
+        var sut = new Supplier();
+
+        sut.RequiresConfirmationCode.ShouldBeTrue();
+    }
+
     [Theory]
     [InlineData(DayOfWeek.Monday, "Monday 9am - 5pm")]
     [InlineData(DayOfWeek.Tuesday, "Tuesday 10am - 6pm")]
@@ -104,6 +111,27 @@ public class SupplierTests {
         string[] result = sut.GetContactEmailAddresses();
 
         result.ShouldBe(["first@test.com", "second@test.com", "third@test.com"]);
+    }
+
+    [Fact]
+    public void GetContactEmailAddresses_ReturnsSingleEmailAddress_WhenOnlyOneAddressConfigured() {
+        var sut = TestHelper.CreateSupplier(1);
+        sut.ContactEmail = "john@test.com";
+
+        string[] result = sut.GetContactEmailAddresses();
+
+        result.ShouldBe(["john@test.com"]);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void GetContactEmailAddresses_ReturnsEmptyArray_WhenContactEmailIsNullOrWhitespace(string? contactEmail) {
+        var sut = TestHelper.CreateSupplier(1);
+        sut.ContactEmail = contactEmail!;
+        string[] result = sut.GetContactEmailAddresses();
+        result.ShouldBeEmpty();
     }
 
     [Fact]

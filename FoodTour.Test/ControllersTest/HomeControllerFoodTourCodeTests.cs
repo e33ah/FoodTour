@@ -73,6 +73,7 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
         var model = viewResult.Model.ShouldBeOfType<FoodTourCodeVM>();
         model.QrToken.ShouldBe(booking.QrToken);
         model.AllVisitsClaimed.ShouldBeTrue();
+        model.TourDate.Date.ShouldBeLessThan(DateTime.Today);
     }
 
     [Fact]
@@ -88,6 +89,8 @@ public class HomeControllerFoodTourCodeTests : HomeControllerTestBase {
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<FoodTourCodeVM>();
         model.QrToken.ShouldBe(booking.QrToken);
+        model.AllVisitsClaimed.ShouldBeFalse();
+        model.TourDate.Date.ShouldBe(DateTime.Today);
     }
 
     [Fact]

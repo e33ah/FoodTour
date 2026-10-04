@@ -21,15 +21,17 @@ public class SupplierNotificationServiceTests {
         supplier.EmailNotificationsEnabled = true;
         var visit = TestHelper.CreateVisit(isClaimed: true);
         var (sut, emailSenderMock, templateRendererMock) = TestHelper.CreateSupplierNotificationService();
-        templateRendererMock.Setup(x => x.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
-            .ReturnsAsync((string path, object model) => $"<html>Email body for {supplier.Name}</html>");
+        string expectedBody = $"<html>Email body for {supplier.Name}</html>";
+        templateRendererMock.Setup(x => x.RenderTemplateAsync("Emails/SupplierVisitRecorded", It.IsAny<object>()))
+            .ReturnsAsync(expectedBody);
 
         await sut.NotifySupplierVisitRecordedAsync(booking, supplier, visit, TestHelper.SUPPORT_URL);
 
+        templateRendererMock.Verify(x => x.RenderTemplateAsync("Emails/SupplierVisitRecorded", It.IsAny<object>()), Times.Once);
         emailSenderMock.Verify(x => x.SendEmailAsync(
             supplier.ContactEmail,
             It.Is<string>(subject => subject.Contains(TestHelper.formattedTourDate)),
-            It.Is<string>(body => body.Contains(supplier.Name))
+            expectedBody
         ), Times.Once);
     }
 
@@ -61,5 +63,96 @@ public class SupplierNotificationServiceTests {
             It.Is<string>(subject => subject.Contains(TestHelper.formattedTourDate)),
             It.Is<string>(body => body.Contains(supplier.Name))
         ), Times.Once);
+    }
+
+    [Fact]
+    public async Task NotifySupplierVisitRecordedAsync_ThrowsException_WhenSupplierContactEmailIsNotConfigured() {
+        var booking = TestHelper.CreateValidBooking();
+        var supplier = TestHelper.CreateSupplier(1);
+        supplier.EmailNotificationsEnabled = true;
+        supplier.ContactEmail = null!; // Not configured
+        var visit = TestHelper.CreateVisit(isClaimed: true);
+
+        var (sut, _, _) = TestHelper.CreateSupplierNotificationService();
+
+        var result = await Should.ThrowAsync<InvalidOperationException>(() =>
+            sut.NotifySupplierVisitRecordedAsync(booking, supplier, visit, TestHelper.SUPPORT_URL));
+
+        result.Message.ShouldBe("Supplier.ContactEmail is not configured.");
+    }
+
+    [Fact]
+    public async Task NotifySupplierVisitRecordedAsync_ThrowsException_WhenVisitClaimedAtIsNull() {
+        var booking = TestHelper.CreateValidBooking();
+        var supplier = TestHelper.CreateSupplier(1);
+        supplier.EmailNotificationsEnabled = true;
+        var visit = TestHelper.CreateVisit(isClaimed: false); // ClaimedAt is null
+
+        var (sut, _, _) = TestHelper.CreateSupplierNotificationService();
+
+        var result = await Should.ThrowAsync<InvalidOperationException>(() =>
+            sut.NotifySupplierVisitRecordedAsync(booking, supplier, visit, TestHelper.SUPPORT_URL));
+
+        result.Message.ShouldBe("Visit.ClaimedAt is required.");
+    }
+    [Fact]
+    public async Task NotifySupplierVisitRecordedAsync_ThrowsException_WhenSupportUrlIsNullOrEmpty() {
+        var booking = TestHelper.CreateValidBooking();
+        var supplier = TestHelper.CreateSupplier(1);
+        supplier.EmailNotificationsEnabled = true;
+        var visit = TestHelper.CreateVisit(isClaimed: true);
+
+        var (sut, _, _) = TestHelper.CreateSupplierNotificationService();
+
+        var result = await Should.ThrowAsync<InvalidOperationException>(() =>
+            sut.NotifySupplierVisitRecordedAsync(booking, supplier, visit, null!));
+
+        result.Message.ShouldBe("Support URL is required.");
+    }
+
+    [Fact]
+    public async Task NotifySupplierVisitRecordedAsync_ThrowsException_WhenSupplierNameIsNullOrEmpty() {
+        var booking = TestHelper.CreateValidBooking();
+        var supplier = TestHelper.CreateSupplier(1);
+        supplier.EmailNotificationsEnabled = true;
+        supplier.Name = null!; // Name is null
+        var visit = TestHelper.CreateVisit(isClaimed: true);
+        var (sut, _, _) = TestHelper.CreateSupplierNotificationService();
+
+        var result = await Should.ThrowAsync<InvalidOperationException>(() =>
+            sut.NotifySupplierVisitRecordedAsync(booking, supplier, visit, TestHelper.SUPPORT_URL));
+
+        result.Message.ShouldBe("Supplier.Name is required.");
+    }
+
+    [Fact]
+    public async Task NotifySupplierVisitRecordedAsync_ThrowsException_WhenSupplierContactEmailIsEmpty() {
+        var booking = TestHelper.CreateValidBooking();
+        var supplier = TestHelper.CreateSupplier(1);
+        supplier.EmailNotificationsEnabled = true;
+        supplier.ContactEmail = ""; // Empty
+        var visit = TestHelper.CreateVisit(isClaimed: true);
+        
+        var (sut, _, _) = TestHelper.CreateSupplierNotificationService();
+
+        var result = await Should.ThrowAsync<InvalidOperationException>(() =>
+            sut.NotifySupplierVisitRecordedAsync(booking, supplier, visit, TestHelper.SUPPORT_URL));
+
+        result.Message.ShouldBe("Supplier.ContactEmail is not configured.");
+    }
+    [Fact]
+    public async Task NotifySupplierVisitRecordedAsync_ThrowsException_WhenSupplierContactEmailIsEmptyList() {
+        var booking = TestHelper.CreateValidBooking();
+        var supplier = TestHelper.CreateSupplier(1);
+        supplier.EmailNotificationsEnabled = true;
+        supplier.ContactEmail = ";;"; // Empty
+        var visit = TestHelper.CreateVisit(isClaimed: true);
+
+        var (sut, _, _) = TestHelper.CreateSupplierNotificationService();
+
+        var result = await Should.ThrowAsync<InvalidOperationException>(() =>
+            sut.NotifySupplierVisitRecordedAsync(booking, supplier, visit, TestHelper.SUPPORT_URL));
+
+        result.Message.ShouldBe("Supplier.ContactEmail is not configured.");
     }
 }

@@ -1,6 +1,12 @@
 namespace FoodTour.Test.Controllers;
 
 public class AdminControllerVisitsTests : AdminControllerTestBase {
+    private sealed class FailingSaveFoodTourContext(DbContextOptions<FoodTourContext> options) : FoodTourContext(options) {
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) {
+            throw new InvalidOperationException("Simulated save failure.");
+        }
+    }
+
     [Fact]
     public async Task Visits_ReturnsView() {
         var sut = CreateController();
@@ -232,6 +238,32 @@ public class AdminControllerVisitsTests : AdminControllerTestBase {
         ((bool)value!.success).ShouldBeTrue();
         ((bool)value!.isReimbursed).ShouldBeFalse();
         ((string)value!.message).ShouldBe("Reimbursement undone.");
+    }
+
+    [Fact]
+    public async Task MarkReimbursed_ReturnsJsonError_WhenAjaxSaveFails() {
+        var options = new DbContextOptionsBuilder<FoodTourContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        using var context = new FailingSaveFoodTourContext(options);
+        var supplier = TestHelper.CreateSupplier(1);
+        var booking = TestHelper.CreateValidBooking([supplier.Id]);
+        context.Suppliers.Add(supplier);
+        context.Bookings.Add(booking);
+        context.SaveChanges();
+        var visit = TestHelper.CreateVisit(booking.Id, supplier.Id, isClaimed: true);
+        context.Visits.Add(visit);
+        context.SaveChanges();
+        var sut = CreateController(context: context);
+        sut.ControllerContext.HttpContext.Request.Headers.XRequestedWith = "XMLHttpRequest";
+
+        var result = await sut.MarkReimbursed(visit.Id);
+
+        var jsonResult = result.ShouldBeOfType<JsonResult>();
+        var value = jsonResult.Value.ShouldBeAssignableTo<dynamic>();
+        ((bool)value!.success).ShouldBeFalse();
+        ((string)value!.message).ShouldBe("Failed to update reimbursement status. Please try again.");
+        sut.Response.StatusCode.ShouldBe(500);
     }
 
     [Theory]

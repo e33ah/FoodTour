@@ -92,6 +92,16 @@ Unit tests are located in the `FoodTour.Test` project. To run them, use the foll
 dotnet run --project FoodTour.Test\FoodTour.Test.csproj
 ```
 
+### Running SMTP Integration Tests
+
+SMTP integration tests are located in `FoodTour.ITest`. Each test uses fresh settings and an isolated loopback SMTP server on a dynamically allocated port; no external mail server or credentials are required.
+
+```
+dotnet run --project FoodTour.ITest\FoodTour.ITest.csproj
+```
+
+These tests cover connection rejection, missing passwords, authentication rejection and sending without a sender display name. Input-validation tests remain in `FoodTour.Test`.
+
 ### Running UI Integration Tests
 
 Browser-driven UI integration tests are located in the `FoodTour.ITest.UI` project. These tests host the MVC application on a real localhost port, create an isolated LocalDB database for each run, apply migrations automatically, seed deterministic test data, and replace the real email sender with a test double so no external emails are sent.

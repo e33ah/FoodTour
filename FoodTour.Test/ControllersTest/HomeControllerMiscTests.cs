@@ -10,17 +10,20 @@ public class HomeControllerMiscTests : HomeControllerTestBase {
         result.ShouldBeOfType<ViewResult>();
     }
 
-    [Fact]
-    public void Error_ReturnsViewResult_WithErrorViewModel() {
+    [Theory]
+    [InlineData("TestTraceId", true)]
+    [InlineData("", false)]
+    public void Error_ReturnsViewResult_WithErrorViewModel(string traceId, bool showRequestId) {
         var sut = CreateController();
-        var httpContext = new DefaultHttpContext { TraceIdentifier = "TestTraceId" };
+        var httpContext = new DefaultHttpContext { TraceIdentifier = traceId };
         sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
         var result = sut.Error();
 
         var viewResult = result.ShouldBeOfType<ViewResult>();
         var model = viewResult.Model.ShouldBeOfType<ErrorViewModel>();
-        model.RequestId.ShouldBe("TestTraceId");
+        model.RequestId.ShouldBe(traceId);
+        model.ShowRequestId.ShouldBe(showRequestId);
     }
 
     [Fact]

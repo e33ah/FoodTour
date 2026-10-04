@@ -61,6 +61,73 @@ public class FoodTourApiControllerJsonProcessingTests {
         okResult.StatusCode.ShouldBe(200);
     }
 
+    [Theory]
+    [InlineData("746635", "746635", 3)]
+    [InlineData("\"746635\"", "746635", 3)]
+    [InlineData("700426", "700426", 5)]
+    [InlineData("\"700426\"", "700426", 5)]
+    public async Task CreateNewBooking_MapsTastingCount_WhenItemPrimaryKeyMatches(string itemPkJson, string purchaseCode, int expectedTastingCount) {
+        using var context = TestHelper.CreateInMemoryContext();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+        string jsonString = $$"""
+            {
+                "booking": {
+                    "availability": {
+                        "item": {
+                            "pk": {{itemPkJson}},
+                            "name": "Unrecognised item name"
+                        },
+                        "start_at": "{{TestHelper.validTourDate:yyyy-MM-ddTHH:mm:ssZ}}"
+                    },
+                    "contact": {
+                        "name": "{{TestHelper.DEFAULT_CUSTOMER_NAME}}",
+                        "email": "{{TestHelper.VALID_EMAIL}}"
+                    },
+                    "customer_count": {{TestHelper.DEFAULT_GUEST_COUNT}},
+                    "pk": "{{purchaseCode}}"
+                }
+            }
+            """;
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
+
+        result.ShouldBeOfType<OkObjectResult>();
+        var booking = await context.Bookings.SingleAsync(item => item.PurchaseCode == purchaseCode, TestContext.Current.CancellationToken);
+        booking.TastingCount.ShouldBe(expectedTastingCount);
+    }
+
+    [Fact]
+    public async Task CreateNewBooking_SkipsProcessing_WhenNeitherItemNameNorPrimaryKeyMatches() {
+        using var context = TestHelper.CreateInMemoryContext();
+        var controller = TestHelper.CreateFoodTourApiController(context);
+        string jsonString = $$"""
+            {
+                "booking": {
+                    "availability": {
+                        "item": {
+                            "pk": "unknown-item",
+                            "name": "Unrecognised item name"
+                        },
+                        "start_at": "{{TestHelper.validTourDate:yyyy-MM-ddTHH:mm:ssZ}}"
+                    },
+                    "contact": {
+                        "name": "{{TestHelper.DEFAULT_CUSTOMER_NAME}}",
+                        "email": "{{TestHelper.VALID_EMAIL}}"
+                    },
+                    "customer_count": {{TestHelper.DEFAULT_GUEST_COUNT}},
+                    "pk": "UNMATCHED-ITEM"
+                }
+            }
+            """;
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+
+        var result = await controller.CreateNewBooking(jsonElement, KEY);
+
+        result.ShouldBeOfType<OkObjectResult>();
+        (await context.Bookings.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(0);
+    }
+
     [Fact]
     public async Task CreateNewBooking_HandlesBookingDataWrapper_Correctly() {
         var controller = TestHelper.CreateFoodTourApiController();

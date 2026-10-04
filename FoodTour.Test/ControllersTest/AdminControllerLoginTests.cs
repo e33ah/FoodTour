@@ -76,4 +76,49 @@ public class AdminControllerLoginTests : AdminControllerTestBase {
 
         result.Properties?.RedirectUri.ShouldNotBeNullOrEmpty();
     }
+
+    [Fact]
+    public async Task GoogleCallback_RedirectsToAccessDenied_WhenEmailIsMissing() {
+        var sut = CreateController();
+        sut.ControllerContext.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
+
+        var result = await sut.GoogleCallback();
+
+        var redirect = result.ShouldBeOfType<RedirectToActionResult>();
+        redirect.ActionName.ShouldBe(nameof(AdminController.AccessDenied));
+    }
+
+    [Fact]
+    public async Task GoogleCallback_RedirectsToAccessDenied_WhenEmailIsNotAllowed() {
+        var adminAccessService = Mock.Of<IAdminAccessService>(service => service.IsAllowed(It.IsAny<string>()) == false);
+        var sut = CreateController(adminAccessService);
+        sut.ControllerContext.HttpContext.User = CreateAuthenticatedUser("blocked@test.com");
+
+        var result = await sut.GoogleCallback();
+
+        var redirect = result.ShouldBeOfType<RedirectToActionResult>();
+        redirect.ActionName.ShouldBe(nameof(AdminController.AccessDenied));
+    }
+
+    [Fact]
+    public async Task GoogleCallback_RedirectsToLocalReturnUrl_WhenEmailIsAllowed() {
+        var sut = CreateController();
+        sut.ControllerContext.HttpContext.User = CreateAuthenticatedUser();
+
+        var result = await sut.GoogleCallback("/Admin/Visits");
+
+        var redirect = result.ShouldBeOfType<RedirectResult>();
+        redirect.Url.ShouldBe("/Admin/Visits");
+    }
+
+    [Fact]
+    public async Task GoogleCallback_RedirectsToDashboard_WhenReturnUrlIsExternal() {
+        var sut = CreateController();
+        sut.ControllerContext.HttpContext.User = CreateAuthenticatedUser();
+
+        var result = await sut.GoogleCallback("https://attacker.example");
+
+        var redirect = result.ShouldBeOfType<RedirectToActionResult>();
+        redirect.ActionName.ShouldBe(nameof(AdminController.Dashboard));
+    }
 }

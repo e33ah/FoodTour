@@ -45,14 +45,6 @@ public static class TestHelper {
 
     // Past date for validation tests
     public static readonly DateTime pastTourDate = new(2020, 1, 1, 10, 0, 0);
-    public static readonly EmailSettings testEmailSettings = new() {
-        Host = "smtp.test",
-        Port = 25,
-        UseSsl = false,
-        FromEmail = "dev@localhost",
-        FromName = "Test Sender"
-    };
-
     public static IOptions<SupportSettings> CreateSupportOptions() {
         return Options.Create(new SupportSettings {
             PhoneNumberDisplay = "01234 567890",

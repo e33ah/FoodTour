@@ -1,6 +1,22 @@
 namespace FoodTour.Test.Models;
 
 public class AdminBookingsVMTests {
+    [Fact]
+    public void TotalPages_ReturnsOne_WhenPageSizeIsZero() {
+        var sut = new AdminBookingsVM { TotalCount = 100, PageSize = 0 };
+
+        int result = sut.TotalPages;
+
+        result.ShouldBe(1);
+    }
+
+    [Fact]
+    public void Constructor_SortsDescending_WhenCreatedWithDefaults() {
+        var sut = new AdminBookingsVM();
+
+        sut.SortDescending.ShouldBeTrue();
+    }
+
     private static AdminBookingsVM BuildVM(int totalCount, int currentPage, int pageSize = 25) =>
         new() { TotalCount = totalCount, CurrentPage = currentPage, PageSize = pageSize };
 

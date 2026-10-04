@@ -214,6 +214,29 @@ public class HomeControllerSupplierVisitTests : HomeControllerTestBase {
         redirectResult.ActionName.ShouldBe(nameof(HomeController.TourCompleted));
     }
 
+    [Fact]
+    public async Task SupplierVisit_Post_RejectsClaimedSupplier_WhenOtherSuppliersRemainUnclaimed() {
+        var claimedSupplier = TestHelper.CreateSupplier(1, "Already Visited Supplier", true);
+        var unclaimedSupplier = TestHelper.CreateSupplier(2, "Remaining Supplier", true);
+        var booking = TestHelper.CreateValidBooking([1, 2]);
+        booking.TourDate = DateTime.Today;
+        var context = TestHelper.CreateContextWithSuppliersAndBookings([claimedSupplier, unclaimedSupplier], [booking]);
+        var existingVisit = TestHelper.CreateVisit(booking.Id, claimedSupplier.Id, isClaimed: true);
+        var remainingVisit = TestHelper.CreateVisit(booking.Id, unclaimedSupplier.Id, isClaimed: false);
+        context.Visits.AddRange(existingVisit, remainingVisit);
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = CreateConfiguredController(context);
+
+        var result = await sut.SupplierVisit(booking.QrToken, claimedSupplier.Id, claimedSupplier.ConfirmationCode, 1);
+
+        result.ShouldBeOfType<ViewResult>();
+        sut.ModelState.IsValid.ShouldBeFalse();
+        sut.ModelState[string.Empty]!.Errors.Select(error => error.ErrorMessage)
+            .ShouldContain("Please select a valid business to confirm the visit.");
+        var storedVisit = await context.Visits.SingleAsync(visit => visit.Id == existingVisit.Id, CancellationToken);
+        storedVisit.IsClaimed.ShouldBeTrue();
+    }
+
     [Theory]
     [InlineData(-1)]
     [InlineData(1)]

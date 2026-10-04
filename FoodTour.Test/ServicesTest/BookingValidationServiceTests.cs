@@ -91,6 +91,7 @@ public class BookingValidationServiceTests : TestBase {
         result.IsValid.ShouldBeFalse();
         result.IsCustomerEmailValid.ShouldBeFalse();
         result.IsCustomerEmailEmpty.ShouldBeTrue();
+        result.ErrorMessages.ShouldContain("Customer email is required");
     }
 
     [Theory]
@@ -113,6 +114,7 @@ public class BookingValidationServiceTests : TestBase {
 
         result.IsValid.ShouldBeFalse();
         result.IsCustomerEmailValid.ShouldBeFalse();
+        result.ErrorMessages.ShouldContain($"Customer email '{email}' is not in a valid format");
     }
 
     [Theory]
@@ -133,6 +135,7 @@ public class BookingValidationServiceTests : TestBase {
 
         result.IsValid.ShouldBeFalse();
         result.IsCustomerCountValid.ShouldBeFalse();
+        result.ErrorMessages.ShouldContain($"Customer count must be greater than 0. Provided value: {customerCount}");
     }
 
     [Fact]
@@ -177,6 +180,7 @@ public class BookingValidationServiceTests : TestBase {
 
         result.IsValid.ShouldBeFalse();
         result.AreSelectedSuppliersValid.ShouldBeFalse();
+        result.ErrorMessages.ShouldContain("At least one supplier must be selected");
     }
 
     [Fact]
@@ -195,6 +199,7 @@ public class BookingValidationServiceTests : TestBase {
 
         result.IsValid.ShouldBeFalse();
         result.AreSelectedSuppliersValid.ShouldBeFalse();
+        result.ErrorMessages.ShouldContain("Exactly 5 suppliers must be selected. Currently selected: 6");
     }
 
     [Theory]
@@ -223,6 +228,7 @@ public class BookingValidationServiceTests : TestBase {
 
         result.IsValid.ShouldBeFalse();
         result.AreSelectedSuppliersValid.ShouldBeFalse();
+        result.ErrorMessages.ShouldContain($"Exactly 5 suppliers must be selected. Currently selected: {supplierCount}");
     }
 
     [Fact]
@@ -250,6 +256,79 @@ public class BookingValidationServiceTests : TestBase {
     }
 
     [Fact]
+    public async Task ValidateAsync_ReturnsValid_WhenTastingCountSpecifiesRequiredSupplierCount() {
+        using var context = TestHelper.CreateInMemoryContext();
+        context.Suppliers.AddRange([
+            TestHelper.CreateSupplier(1),
+            TestHelper.CreateSupplier(2)
+        ]);
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = new BookingValidationService(context);
+        var request = new BookingValidationRequest {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            CustomerCount = 2,
+            TastingCount = 2,
+            SelectedSupplierIds = [1, 2]
+        };
+
+        var result = await sut.ValidateAsync(request);
+
+        result.IsValid.ShouldBeTrue();
+        result.AreSelectedSuppliersValid.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ReturnsInvalid_WhenSelectedSupplierIsMissingOrInactive() {
+        using var context = TestHelper.CreateInMemoryContext();
+        context.Suppliers.AddRange([
+            TestHelper.CreateSupplier(1),
+            TestHelper.CreateSupplier(2),
+            TestHelper.CreateSupplier(3),
+            TestHelper.CreateSupplier(4)
+        ]);
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = new BookingValidationService(context);
+        var request = new BookingValidationRequest {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            CustomerCount = 2,
+            SelectedSupplierIds = [1, 2, 3, 4, 99]
+        };
+
+        var result = await sut.ValidateAsync(request);
+
+        result.IsValid.ShouldBeFalse();
+        result.AreSelectedSuppliersValid.ShouldBeFalse();
+        result.ErrorMessages.ShouldContain(
+            "One or more selected suppliers do not exist or are inactive. Missing supplier IDs: [99]");
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ReportsCommaSeparatedMissingIds_WhenMultipleSuppliersAreMissing() {
+        using var context = TestHelper.CreateInMemoryContext();
+        context.Suppliers.AddRange([
+            TestHelper.CreateSupplier(1),
+            TestHelper.CreateSupplier(2),
+            TestHelper.CreateSupplier(3)
+        ]);
+        await context.SaveChangesAsync(CancellationToken);
+        var sut = new BookingValidationService(context);
+        var request = new BookingValidationRequest {
+            TourDate = TestHelper.validTourDate,
+            CustomerEmail = TestHelper.VALID_EMAIL,
+            CustomerCount = 2,
+            SelectedSupplierIds = [1, 2, 3, 98, 99]
+        };
+
+        var result = await sut.ValidateAsync(request);
+
+        result.AreSelectedSuppliersValid.ShouldBeFalse();
+        result.ErrorMessages.ShouldContain(
+            "One or more selected suppliers do not exist or are inactive. Missing supplier IDs: [98, 99]");
+    }
+
+    [Fact]
     public void IsTourDateValid_ReturnsTrue_WhenDateIsValid() {
         using var context = TestHelper.CreateInMemoryContext();
         var sut = new BookingValidationService(context);
@@ -265,6 +344,16 @@ public class BookingValidationServiceTests : TestBase {
         var sut = new BookingValidationService(context);
 
         bool result = sut.IsTourDateValid(null);
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsTourDateValid_ReturnsFalse_WhenDateIsToday() {
+        using var context = TestHelper.CreateInMemoryContext();
+        var sut = new BookingValidationService(context);
+
+        bool result = sut.IsTourDateValid(DateTime.Today);
 
         result.ShouldBeFalse();
     }

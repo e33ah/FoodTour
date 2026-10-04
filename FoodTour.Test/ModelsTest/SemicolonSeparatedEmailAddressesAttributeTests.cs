@@ -1,6 +1,18 @@
 ﻿namespace FoodTour.Test.ModelsTest;
 
 public class SemicolonSeparatedEmailAddressesAttributeTests {
+    [Theory]
+    [InlineData(" first@test.com ; second@test.com ")]
+    [InlineData("first@test.com;;second@test.com;")]
+    [InlineData(" first@test.com ; ; second@test.com ;")]
+    public void IsValid_ReturnsTrue_WhenAddressesContainWhitespaceOrEmptyEntries(string emailAddresses) {
+        var sut = new SemicolonSeparatedEmailAddressesAttribute();
+
+        bool result = sut.IsValid(emailAddresses);
+
+        result.ShouldBeTrue();
+    }
+
     [Fact]
     public void IsValid_ShouldReturnTrue_ForValidEmailAddresses() {
         var attribute = new SemicolonSeparatedEmailAddressesAttribute();
@@ -35,4 +47,10 @@ public class SemicolonSeparatedEmailAddressesAttributeTests {
         attribute.IsValid(nonStringInput).ShouldBeFalse();
     }
 
+    [Fact]
+    public void IsValid_ShouldReturnFalse_ForEmptyList() {
+        var attribute = new SemicolonSeparatedEmailAddressesAttribute();
+        string emptyListEmails = ";;;";
+        attribute.IsValid(emptyListEmails).ShouldBeFalse();
+    }
 }
