@@ -63,14 +63,16 @@ You will need the email and purchase code from one of the bookings in the databa
 
 ### FareHarbor Webhook Key
 
-All three webhook endpoints (`fhwebhook/newbooking`, `fhwebhook/updatebooking` and `fhwebhook/cancelbooking`, under `/api/foodtour/`) require the configured key in the `key` query parameter. Missing, blank and incorrect keys return HTTP 401. The application refuses to start if `FareHarbor:WebhookKey` is missing or blank.
+All three webhook endpoints (`fhwebhook/newbooking`, `fhwebhook/updatebooking` and `fhwebhook/cancelbooking`, under `/api/foodtour/`) require 
+the configured key in the `key` query parameter. Missing, blank and incorrect keys return HTTP 401. 
+The application refuses to start if `FareHarbor:WebhookKey` is missing or blank.
 
 For local development, store a development-only key in User Secrets:
 ```powershell
 dotnet user-secrets set "FareHarbor:WebhookKey" "<development-key>" --project FoodTour\FoodTour.csproj
 ```
 
-For hosted environments, supply the key using the `FareHarbor__WebhookKey` environment variable. The deployment pipeline injects this into `web.config` from the `FAREHARBOR_WEBHOOK_KEY` GitHub Actions secret for development and `FAREHARBOR_WEBHOOK_KEY_PROD` for production. Provision these secrets before deploying. Never commit a real key to application settings or test code.
+For hosted environments, supply the key using the `FareHarbor__WebhookKey` environment variable. The deployment pipeline injects this into `web.config` from the `FAREHARBOR_WEBHOOK_KEY` GitHub Actions secret.
 
 
 API and UI integration hosts supply dummy keys independently of developer or production secrets.
