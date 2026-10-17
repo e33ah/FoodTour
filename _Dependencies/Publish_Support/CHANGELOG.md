@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-10-17 Vesuvius patch
+
+### 🔄 Changed
+
+#### Infrastructure & DevOps
+- Moved FareHarbor webhook authentication to validated configuration, with deployment secrets wired and local setup documented.
+- Separated environment-specific settings and refreshed pipeline package versions.
+
+### ✅ Added
+
+#### Testing & Quality
+- Expanded unit and API coverage and added isolated SMTP integration tests.
+
 ## [1.2.1] - 2026-10-03 Vesuvius patch
 
 ### ✅ Added
@@ -234,6 +247,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflow with automated GitHub release creation
 - `IsLocalDeployEnabled` flag for controlling auto-migrations per environment
 
+[1.2.2]: https://github.com/e33ah/FoodTour/releases/tag/v1.2.2
 [1.2.1]: https://github.com/e33ah/FoodTour/releases/tag/v1.2.1
 [1.2.0]: https://github.com/e33ah/FoodTour/releases/tag/v1.2.0
 [1.1.3]: https://github.com/e33ah/FoodTour/releases/tag/v1.1.3
