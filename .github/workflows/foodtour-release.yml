@@ -28,6 +28,7 @@ jobs:
       FtpPassword: ${{ secrets.FTP_PASSWORD_PROD }}
       GoogleClientId: ${{ secrets.GOOGLE_CLIENT_ID }}
       GoogleClientSecret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      FareHarborWebhookKey: ${{ secrets.FAREHARBOR_WEBHOOK_KEY }}
     steps:
       - uses: actions/checkout@v7
 

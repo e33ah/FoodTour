@@ -1,7 +1,7 @@
 namespace FoodTour.Test.Controllers;
 
 public class FoodTourApiControllerJsonProcessingTests {
-    private const string KEY = "5N8GS1ZZKC8J";
+    private const string KEY = TestHelper.VALID_KEY;
     [Fact]
     public async Task CreateNewBooking_ProcessesWeymouthTourBooking_WhenItemNameMatches() {
         var controller = TestHelper.CreateFoodTourApiController();

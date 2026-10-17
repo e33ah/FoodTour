@@ -33,6 +33,7 @@ public sealed class ApiApplicationFixture : WebApplicationFactory<global::FoodTo
         builder.UseEnvironment(DEVELOPMENT_ENVIRONMENT);
         builder.ConfigureAppConfiguration((context, configBuilder) => {
             configBuilder.AddInMemoryCollection(new Dictionary<string, string?> {
+                ["FareHarbor:WebhookKey"] = FoodTourApiRequestFactory.ValidKey,
                 ["AdminSettings:AllowedEmails:0"] = TestAuthenticationHandler.TEST_ADMIN_EMAIL
             });
         });

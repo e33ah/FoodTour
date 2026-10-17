@@ -23,6 +23,12 @@ public class Program {
             // Add services to the container.
             builder.Services.AddControllersWithViews();
 
+            // Add FareHarbor settings with validation
+            builder.Services.AddOptions<FareHarborSettings>()
+                .Bind(builder.Configuration.GetSection("FareHarbor"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
             // Add database context
             string connectionString = builder.Configuration.GetConnectionString("FoodTourContext") ?? throw new InvalidOperationException("Connection string 'FoodTourContext' not found.");
             builder.Services.AddDbContext<FoodTourContext>(options =>
@@ -97,6 +103,8 @@ public class Program {
                     policy.Requirements.Add(new AdminOnlyRequirement()));
 
             var app = builder.Build();
+
+            _ = app.Services.GetRequiredService<IOptions<FareHarborSettings>>().Value;
 
             Log.Information("Starting FoodTour application...");
 

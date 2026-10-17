@@ -6,7 +6,12 @@ public partial class Build : FalloutBuild {
         .OnlyWhenDynamic(() => IsLocalDeployEnabled || IsServerBuild)
         .Requires(() => GoogleClientId)
         .Requires(() => GoogleClientSecret)
+        .Requires(() => FareHarborWebhookKey)
         .Executes(() => {
+            if (string.IsNullOrWhiteSpace(FareHarborWebhookKey)) {
+                throw new InvalidOperationException("The FareHarbor webhook key is required for deployment.");
+            }
+
             var webConfigPath = PublishDirectory / "web.config";
 
             if (!File.Exists(webConfigPath)) {
@@ -29,13 +34,14 @@ public partial class Build : FalloutBuild {
 
             SetOrUpdateVariable(environmentVariables, "Authentication__Google__ClientId", GoogleClientId);
             SetOrUpdateVariable(environmentVariables, "Authentication__Google__ClientSecret", GoogleClientSecret);
+            SetOrUpdateVariable(environmentVariables, "FareHarbor__WebhookKey", FareHarborWebhookKey);
 
             if (aspNetCore.Element("environmentVariables") == null) {
                 aspNetCore.Add(environmentVariables);
             }
 
             document.Save(webConfigPath);
-            Log.Information("web.config patched with Google OAuth credentials.");
+            Log.Information("web.config patched with Google OAuth credentials and FareHarbor webhook configuration.");
         });
 
     static void SetOrUpdateVariable(XElement environmentVariables, string name, string value) {

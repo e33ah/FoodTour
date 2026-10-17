@@ -75,6 +75,7 @@ public sealed class FoodTourApplicationFixture : WebApplicationFactory<global::F
         builder.UseEnvironment(DEVELOPMENT_ENVIRONMENT);
         builder.ConfigureAppConfiguration((context, configBuilder) => {
             configBuilder.AddInMemoryCollection(new Dictionary<string, string?> {
+                ["FareHarbor:WebhookKey"] = "ui-integration-test-webhook-key",
                 ["AdminSettings:AllowedEmails:0"] = TestAuthenticationHandler.TEST_ADMIN_EMAIL
             });
         });

@@ -4,7 +4,7 @@ namespace FoodTour.Pipeline;
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests) }, AutoGenerate = false)]
 [GitHubActions("foodtour-cd", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch },
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests), nameof(Publish), nameof(Release) },
-    ImportSecrets = new[] { nameof(FtpHost), nameof(FtpUser), nameof(FtpPassword), nameof(GoogleClientId), nameof(GoogleClientSecret) }, AutoGenerate = false)]
+    ImportSecrets = new[] { nameof(FtpHost), nameof(FtpUser), nameof(FtpPassword), nameof(GoogleClientId), nameof(GoogleClientSecret), nameof(FareHarborWebhookKey) }, AutoGenerate = false)]
 [GitHubActions("foodtour-itest", GitHubActionsImage.WindowsLatest, On = new[] { GitHubActionsTrigger.WorkflowDispatch, GitHubActionsTrigger.PullRequest },
     InvokedTargets = new[] { nameof(BuildSolution), nameof(ExecuteUnitTests), nameof(IntegrationTests) }, AutoGenerate = false)]
 public partial class Build : FalloutBuild {
@@ -18,6 +18,7 @@ public partial class Build : FalloutBuild {
             SetEnvironmentVariableIfMissing(nameof(FtpPassword), config[nameof(FtpPassword)]);
             SetEnvironmentVariableIfMissing(nameof(GoogleClientId), config[nameof(GoogleClientId)]);
             SetEnvironmentVariableIfMissing(nameof(GoogleClientSecret), config[nameof(GoogleClientSecret)]);
+            SetEnvironmentVariableIfMissing(nameof(FareHarborWebhookKey), config[nameof(FareHarborWebhookKey)]);
         }
         return Execute<Build>(x => x.FoodTourCI);
     }

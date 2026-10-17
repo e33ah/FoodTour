@@ -2,19 +2,19 @@ namespace FoodTour.Controllers;
 
 [ApiController]
 [Route("api/foodtour")]
-public partial class FoodTourApiController(FoodTourContext context, IBookingValidationService bookingValidationService, IPurchaseCodeValidationService purchaseCodeValidationService) : ControllerBase {
+public partial class FoodTourApiController(FoodTourContext context, IBookingValidationService bookingValidationService, IPurchaseCodeValidationService purchaseCodeValidationService, IOptions<FareHarborSettings> fareHarborSettings) : ControllerBase {
     private const string FH_ITEM_NAME_KEY = "availability.item.name";
     private const string FH_ITEM_NAME_VALUE_5 = "Weymouth Self-Guided Food Tour (Five Tastings)";
     private const string FH_ITEM_PK_5 = "700426";
     private const string FH_ITEM_NAME_VALUE_3 = "Weymouth Self-Guided Food Tour (Three Tastings)";
     private const string FH_ITEM_PK_3 = "746635";
-    private const string KEY = "5N8GS1ZZKC8J";
+    private readonly string webhookKey = fareHarborSettings.Value.WebhookKey;
     private const string PARTNER_BOOKING_CONFIRMATION_MESSAGE = "We found a partner booking for that reference. Please confirm your email address to continue.";
 
     [HttpPost("fhwebhook/newbooking")]
-    public async Task<IActionResult> CreateNewBooking([FromBody] JsonElement jsonData, [FromQuery] string key) {
-        if (key != KEY) {
-            Log.Warning("Received request with invalid key: {Key}", key);
+    public async Task<IActionResult> CreateNewBooking([FromBody] JsonElement jsonData, [FromQuery] string? key) {
+        if (string.IsNullOrWhiteSpace(webhookKey) || string.IsNullOrWhiteSpace(key) || !string.Equals(key, webhookKey, StringComparison.Ordinal)) {
+            Log.Warning("Received webhook request with invalid key.");
             return Unauthorized("Invalid key provided.");
         }
         try {
@@ -38,9 +38,9 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
     }
 
     [HttpPost("fhwebhook/updatebooking")]
-    public async Task<IActionResult> UpdateBooking([FromBody] JsonElement jsonData, [FromQuery] string key) {
-        if (key != KEY) {
-            Log.Warning("Received request with invalid key: {Key}", key);
+    public async Task<IActionResult> UpdateBooking([FromBody] JsonElement jsonData, [FromQuery] string? key) {
+        if (string.IsNullOrWhiteSpace(webhookKey) || string.IsNullOrWhiteSpace(key) || !string.Equals(key, webhookKey, StringComparison.Ordinal)) {
+            Log.Warning("Received webhook request with invalid key.");
             return Unauthorized("Invalid key provided.");
         }
         try {
@@ -64,9 +64,9 @@ public partial class FoodTourApiController(FoodTourContext context, IBookingVali
     }
 
     [HttpPost("fhwebhook/cancelbooking")]
-    public async Task<IActionResult> CancelBooking([FromBody] JsonElement jsonData, [FromQuery] string key) {
-        if (key != KEY) {
-            Log.Warning("Received request with invalid key: {Key}", key);
+    public async Task<IActionResult> CancelBooking([FromBody] JsonElement jsonData, [FromQuery] string? key) {
+        if (string.IsNullOrWhiteSpace(webhookKey) || string.IsNullOrWhiteSpace(key) || !string.Equals(key, webhookKey, StringComparison.Ordinal)) {
+            Log.Warning("Received webhook request with invalid key.");
             return Unauthorized("Invalid key provided.");
         }
         try {

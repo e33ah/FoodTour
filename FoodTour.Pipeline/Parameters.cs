@@ -32,4 +32,8 @@ public partial class Build : FalloutBuild {
     [Parameter("Google OAuth Client Secret")]
     [Secret]
     readonly string GoogleClientSecret;
+
+    [Parameter("FareHarbor webhook key")]
+    [Secret]
+    readonly string FareHarborWebhookKey;
 }

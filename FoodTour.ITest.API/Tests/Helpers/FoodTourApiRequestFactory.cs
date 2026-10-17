@@ -1,7 +1,7 @@
 namespace FoodTour.ITest.API.Tests.Helpers;
 
 internal static class FoodTourApiRequestFactory {
-    private const string VALID_KEY = "5N8GS1ZZKC8J";
+    private const string VALID_KEY = "api-integration-test-webhook-key";
     private const string WEYMOUTH_TOUR_NAME = "Weymouth Self-Guided Food Tour (Five Tastings)";
 
     public static string ValidKey => VALID_KEY;

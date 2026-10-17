@@ -25,7 +25,7 @@ public static class TestHelper {
     public const int DEFAULT_GUEST_COUNT = 2;
     public const string DEFAULT_CUSTOMER_NAME = "Test Customer";
     public const string UPDATED_CUSTOMER_NAME = "Updated Name";
-    public const string VALID_KEY = "5N8GS1ZZKC8J";
+    public const string VALID_KEY = "unit-test-webhook-key";
     public const string INVALID_KEY = "WRONG_KEY";
 
     // Alternative test emails for update/cancel scenarios
@@ -271,13 +271,13 @@ public static class TestHelper {
         var context = new FoodTourContext(options);
         var bookingValidationService = new BookingValidationService(context);
         var purchaseCodeValidationService = new PurchaseCodeValidationService(context);
-        return new FoodTourApiController(context, bookingValidationService, purchaseCodeValidationService);
+        return new FoodTourApiController(context, bookingValidationService, purchaseCodeValidationService, Options.Create(new FareHarborSettings { WebhookKey = VALID_KEY }));
     }
 
-    public static FoodTourApiController CreateFoodTourApiController(FoodTourContext context) {
+    public static FoodTourApiController CreateFoodTourApiController(FoodTourContext context, string? webhookKey = VALID_KEY) {
         var bookingValidationService = new BookingValidationService(context);
         var purchaseCodeValidationService = new PurchaseCodeValidationService(context);
-        return new FoodTourApiController(context, bookingValidationService, purchaseCodeValidationService);
+        return new FoodTourApiController(context, bookingValidationService, purchaseCodeValidationService, Options.Create(new FareHarborSettings { WebhookKey = webhookKey ?? string.Empty }));
     }
 
 

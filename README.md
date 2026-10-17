@@ -56,10 +56,24 @@ Run the SQL scripts in `_Dependencies/Sample_Data/` against your database to pop
 ### Creating Bookings
 
 Bookings can be created in two ways:
-- **Via API**: Use the `/api/foodtour/fhwebhooks/newbooking` endpoint with the JSON in `_Dependencies/Sample_Data/` to create bookings
+- **Via API**: Use the `/api/foodtour/fhwebhook/newbooking` endpoint with the JSON in `_Dependencies/Sample_Data/` to create bookings
 - **Sample Data**: Run the `Bookings.sql` script in `_Dependencies/Sample_Data/` to add some sample bookings directly to the database
 
 You will need the email and purchase code from one of the bookings in the database to use the app and test the booking confirmation flow.
+
+### FareHarbor Webhook Key
+
+All three webhook endpoints (`fhwebhook/newbooking`, `fhwebhook/updatebooking` and `fhwebhook/cancelbooking`, under `/api/foodtour/`) require the configured key in the `key` query parameter. Missing, blank and incorrect keys return HTTP 401. The application refuses to start if `FareHarbor:WebhookKey` is missing or blank.
+
+For local development, store a development-only key in User Secrets:
+```powershell
+dotnet user-secrets set "FareHarbor:WebhookKey" "<development-key>" --project FoodTour\FoodTour.csproj
+```
+
+For hosted environments, supply the key using the `FareHarbor__WebhookKey` environment variable. The deployment pipeline injects this into `web.config` from the `FAREHARBOR_WEBHOOK_KEY` GitHub Actions secret for development and `FAREHARBOR_WEBHOOK_KEY_PROD` for production. Provision these secrets before deploying. Never commit a real key to application settings or test code.
+
+
+API and UI integration hosts supply dummy keys independently of developer or production secrets.
 
 ### Running the Application
 
@@ -215,13 +229,14 @@ To run the CI pipeline locally using FALLOUT, use the following commands based o
 fallout
 ```
 
-To run the CD pipeline locally with the Fallout global tool, add `FtpHost`, `FtpUser`, `FtpPassword`, `GoogleClientId`, and `GoogleClientSecret` to the pipeline user secrets:
+To run the CD pipeline locally with the Fallout global tool, add `FtpHost`, `FtpUser`, `FtpPassword`, `GoogleClientId`, `GoogleClientSecret`, and `FareHarborWebhookKey` to the pipeline user secrets:
 ```
 dotnet user-secrets set "FtpHost" "YOUR_FTP_HOST" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
 dotnet user-secrets set "FtpUser" "YOUR_FTP_USER" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
 dotnet user-secrets set "FtpPassword" "YOUR_FTP_PASSWORD" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
 dotnet user-secrets set "GoogleClientId" "YOUR_CLIENT_ID" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
 dotnet user-secrets set "GoogleClientSecret" "YOUR_CLIENT_SECRET" --project FoodTour.Pipeline/FoodTour.Pipeline.csproj
+dotnet user-secrets set "FareHarborWebhookKey" "<deployment-webhook-key>" --project FoodTour.Pipeline\FoodTour.Pipeline.csproj
 ```
 
 Local deployment is disabled by default (`IsLocalDeployEnabled = false` in `Parameters.cs`) to prevent accidental deploys. To enable it temporarily, set it to `true` before running:
