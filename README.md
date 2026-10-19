@@ -1,10 +1,12 @@
 # FoodTour
 
-A web application for creating self-guided tasting tours in Weymouth.
+<p align="center">
+    <img width="250" alt="Index" src="https://github.com/user-attachments/assets/6df708f3-9e01-4f76-8e84-bbffdb7e4f6f" />
+    <img width="250" alt="FoodTourCode" src="https://github.com/user-attachments/assets/6c1d8bf0-f20e-4976-a494-a9499db5db07" />
+    <img width="250" alt="SupplierVisit" src="https://github.com/user-attachments/assets/8c22b694-8752-42cd-aade-fa379a6ee5dc" />
+</p>
 
-## Overview
-
-FoodTour allows users to browse and select from a list of active food suppliers to create their own personalised tasting tour experience. Users can select a max number of suppliers at a time to visit on their self-guided tour.
+FoodTour is a .NET MVC web app used by customers who book tasting tours through third-party booking platforms. After booking, users select the food venues they want to visit and receive a tour map and a QR code for check‑ins. Each supplier scans the QR code to record the visit, enabling a smooth, self‑guided tasting experience.
 
 ## Technology Stack
 
